@@ -167,8 +167,8 @@ source("../R/splist_stats.R")
     actno[rr] <- as.numeric(words[[1]][3])
     actseq[rr] <- words[[1]][4]
     words <-strsplit(cf[rpos[rr]+6,1],split=" ")
-    pasno[rr] <- words[[1]][3]
-    passeq[rr] <- as.numeric(words[[1]][4])
+    pasno[rr] <- as.numeric(words[[1]][3])
+    passeq[rr] <- words[[1]][4]
     message(sprintf("Active  molecule %s seq %s",actno[rr],actseq[rr]))
     message(sprintf("Passive molecule %s seq %s",actno[rr],actseq[rr]))
   }
@@ -181,6 +181,26 @@ source("../R/splist_stats.R")
   for(rr in 1:nrow(reactions)){
     ca <- eachreaction[eachreaction$actno == reactions$actno[rr] & eachreaction$pasno == reactions$pasno[rr],]
     reactions$count[rr] = nrow(ca)
+  }
+  reactions <- reactions[order(reactions$count,decreasing = T),]
+  
+  #Get the product molecule from the splist: 
+  for(rr in 1:nrow(reactions)){
+    dd <- spldata[(spldata$act == reactions$actno[rr]) & (spldata$pass == reactions$pasno[rr]), ]
+    if(nrow(dd)==0){
+      message("Reaction %d has no product (NP)")
+      reactions$type[rr]= "NP"
+    }
+    if(nrow(dd)==1){
+      message("Reaction %d is an exact replicator (ER)*")
+      reactions$type[rr]= "ER"
+    }
+    if(nrow(dd)>1){
+      message("Reaction %d is a pathological replicator (PR)")
+      reactions$type[rr]= "PR"
+    }
+    
+    
   }
   
   
