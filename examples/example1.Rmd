@@ -5,6 +5,15 @@ output:
   html_notebook: default
 ---
 
+# prelims
+
+Set the `froot` variable to the path to the files for these tests:
+
+```{r}
+froot="D:/sjh/stringmol/"
+
+```
+
 
 # Popdy
 
@@ -13,6 +22,11 @@ First thing we want is overall pop size in a file. This function is in `14.04/ho
 ```{r}
 plot.onepop <- function(infn,outfn,w,h, col.fun=rainbow, totpop = F, plotnspp = F, log = "", time.lim= NA, minpop=0){
 	x	<- read.table(infn,sep=",", col.names=c('time', 'species', 'count'))
+	
+	#diagnostics
+	message(sprintf("Reading file %s",infn))
+	message(sprintf("Read %d lines",nrow(x)))
+	
 	
 	if(is.na(time.lim))
 	  time.lim <- range(x$time)
@@ -65,7 +79,7 @@ plot.onepop <- function(infn,outfn,w,h, col.fun=rainbow, totpop = F, plotnspp = 
 	axis(2, las=2)
 	title(ylab='population')
 	x.positions <- seq(from=time.lim[1], to=time.lim[2], length.out=20)
-	axis(1, at=x.positions, labels=sprintf('%d', x.positions / 1e3))
+	axis(1, at=x.positions, labels=sprintf('%d', as.integer(x.positions / 1e3)))
 	
 	
 	if(plotnspp){
@@ -81,9 +95,11 @@ plot.onepop <- function(infn,outfn,w,h, col.fun=rainbow, totpop = F, plotnspp = 
 }
 
 
-plot.onepop("~/Desktop/paulien/confs/out3/popdy001.dat","example1popdy.pdf",12,12,minpop=100, totpop=T,plotnspp = T)
+plot.onepop(sprintf("%spopdy001.dat",froot),"example1popdy.pdf",12,12,minpop=100, totpop=T,plotnspp = T)
+segments(x0=100000,y0=0,y1=1200,col="blue")
 ```
 
+the blue line indicates $t=100000$ - which is where the splist and out1 files explored below relate to. 
 
 Concerns:
 - this only records pop every 10000 timesteps - potentially many generations between recordings. Understandable though - if we find a particular feature, we can go back and rerun to get more detail. 
@@ -100,7 +116,7 @@ Theres a function called `splist_stats` that generates these - let's check it ou
 
 ```{r}
 source("../R/splist_stats.R")
-sps <- splist_stats("~/Desktop/paulien/confs/out3/splist300000.dat",tmin=290000)
+sps <- splist_stats(sprintf("%ssplist100000.dat",froot),tmin=90000)
 ```
 
 That works, so let's see if we can do an iteration: 
@@ -109,7 +125,7 @@ That works, so let's see if we can do an iteration:
 gotdata<- T
 tt <- 10000
 while(gotdata){
-  fn <- sprintf("~/Desktop/paulien/confs/out3/splist%d.dat",tt)
+  fn <- sprintf("%ssplist%d.dat",froot,tt)
   if(file.exists(fn)){
     message(sprintf("\nProcessing Time %d:",tt))
     splist_stats(fn,tmin=(tt-10000))
@@ -150,9 +166,9 @@ require (stringr)
 source("../R/splist_stats.R")
 
 ####Function 'arguments'
-  fn <- "~/Desktop/paulien/confs/out3/out1_100000.conf"
+  fn <- sprintf("%sout1_100000.conf",froot)
   verbose <- T
-  spldata <-  splist_stats("~/Desktop/paulien/confs/out3/splist100000.dat")
+  spldata <-  splist_stats(sprintf("%ssplist100000.dat",froot))
 
 ####Function 'body'
 
@@ -161,8 +177,14 @@ source("../R/splist_stats.R")
   #get the row number of the start of each reaction entry
   rpos <- which(str_sub(cf[,1],1,12)=="%%% REACTION")
   
+  nr <- length(rpos)
+  actno <- vector(length = nr)
+  actseq <- vector(length = nr)
+  pasno <- vector(length = nr)
+  passeq <- vector(length = nr)
+  
   #build the data for each reaction - similar to the splist analysis
-  for(rr in 1:length(rpos)){
+  for(rr in 1:nr){
     words <-strsplit(cf[rpos[rr]+2,1],split=" ")
     actno[rr] <- as.numeric(words[[1]][3])
     actseq[rr] <- words[[1]][4]
