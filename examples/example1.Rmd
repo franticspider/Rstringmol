@@ -92,6 +92,9 @@ plot.onepop <- function(infn,outfn,w,h, col.fun=rainbow, totpop = F, plotnspp = 
 	title(xlab=expression(time%*%10^3))
 	#box()
 	# dev.off()
+	
+	legend()
+	
 }
 
 
