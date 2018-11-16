@@ -12,7 +12,7 @@ output:
 Set the `froot` variable to the path to the files for these tests:
 
 ```{r}
-froot="D:/sjh/stringmol/"
+froot="D:/sjh/stringmol/out3smsp/"
 #froot="~/Desktop/paulien/confs/out3/"
 ```
 
@@ -95,7 +95,7 @@ plot.onepop <- function(infn,outfn,w,h, col.fun=rainbow, totpop = F, plotnspp = 
 	#box()
 	# dev.off()
 	
-	legend()
+	#legend()
 	
 }
 
@@ -171,9 +171,9 @@ require (stringr)
 source("../R/splist_stats.R")
 
 ####Function 'arguments'
-  fn <- sprintf("%sout1_200000.conf",froot)
+  fn <- sprintf("%sout1_100000.conf",froot)
   verbose <- T
-  spldata <-  splist_stats(sprintf("%ssplist200000.dat",froot))
+  spldata <-  splist_stats(sprintf("%ssplist100000.dat",froot))
 
 ####Function 'body'
 
@@ -217,7 +217,7 @@ source("../R/splist_stats.R")
     if(is.na(reactions$actno[rr]) || is.na(reactions$pasno[rr])){
       
         #message(sprintf("Reaction %d has NAs  (NA)",rr))
-        reactions$type[rr]= "NA"
+        reactions$type[rr]= "na"
         next
     }
     
@@ -250,7 +250,7 @@ source("../R/splist_stats.R")
         reactions$type[rr]= "PA"
         }
         else{
-          #message(sprintf("none-self reaction with different product (DP)*",rr))
+          #message(sprintf("non-self reaction with different product (DN)*",rr))
           reactions$type[rr]= "DN"
         }
       }
@@ -270,7 +270,7 @@ Check that we've now got this in a function:
 
 ```{r}
 source("../R/rconf_stats.R")
-reactions <- rconf_stats(fn = sprintf("%sout1_200000.conf",froot), spfn = sprintf("%ssplist200000.dat",froot))
+reactions <- rconf_stats(fn = sprintf("%sout1_100000.conf",froot), spfn = sprintf("%ssplist100000.dat",froot))
 ```
 
 
@@ -296,14 +296,17 @@ source("../R/splist_stats.R")
 source("../R/rconf_stats.R")
 
 gotdata<- T
-tt <- 10000
+tt <- 20000
 #rcounts <- data.frame(rclass)
-rcounts <- data.frame(time=0,"NA"=0,NP=0,ER=500,DP=0,PR=0,PA=0,DN=0,PN=0)
+rcounts <- data.frame(time=0,"NA"=0,NP=0,ER=1,DP=0,PR=0,PA=0,DN=0,PN=0)
+rsumcounts <- data.frame(time=0,"NA"=0,NP=0,ER=500,DP=0,PR=0,PA=0,DN=0,PN=0)
 count <- vector(length = length(rclass))
+scount <- vector(length = length(rclass))
 count <- 0
+sumcount <- 0
 rno<-2
 
-while(gotdata){
+while(gotdata ){#&& tt < 320000){
   message(sprintf("Processing time %d",tt))
   fn <- sprintf("%ssplist%d.dat",froot,tt)
   spfn <- sprintf("%sout1_%d.dat",froot,tt)
@@ -312,28 +315,68 @@ while(gotdata){
     reactions <- rconf_stats(fn = sprintf("%sout1_%d.conf",froot,tt), spfn = sprintf("%ssplist%d.dat",froot,tt))
     
     
-    for(rr in 1:length(rclass)){
-      
-      dd <- reactions$type[reactions$type == rclass[rr]]
-      count[rr] <- length(dd)
+    if(is.na(reactions)){
     }
-    #assign(sprintf("t%d",tt))
+    else{
     
-    trow = c(tt,t(count))
-    rcounts <- rbind(rcounts,trow)
-    #colnames(rcounts)[rno] <- sprintf("t%d",tt)
-    
-    #rno <- rno + 1
+      count <- 0
+      sumcount <- 0
+      
+      for(rr in 1:length(rclass)){
+        
+        dd <- reactions[reactions$type == rclass[rr],]
+        count[rr] <- nrow(dd)
+        sumcount[rr] <- sum(dd$count)
+      }
+      #assign(sprintf("t%d",tt))
+      
+      trow = c(tt,t(count))
+      rcounts <- rbind(rcounts,trow)
+      
+      trow = c(tt,t(sumcount))
+      rsumcounts <- rbind(rsumcounts,trow)
+      #colnames(rcounts)[rno] <- sprintf("t%d",tt)
+      
+      #rno <- rno + 1
+    }
     
   }
   else{
     gotdata <- F
   }
-  tt = tt+10000
+  tt = tt+20000
 }
 #Now we can plot the change in diversity: 
 #https://www.r-graph-gallery.com/stacked-barplot/
-barplot(t(rcounts[2:9]))
+```
+
+
+```{r fig.height=8, fig.width=10}
+bcols = rainbow(ncol(rcounts[2:9]))
+par(mfrow=c(2,1))
+barplot(t(rcounts[2:9]),col=bcols,border=bcols,names=rcounts[,1],las=2,main="Reaction Types")
+cn <-colnames(rcounts)
+legend("topleft",legend=rev(cn[2:9]),fill=rev(bcols),border=rev(bcols))
+
+barplot(t(rsumcounts[2:9]),col=bcols,border=bcols,names=rcounts[,1],las=2,main="Reaction Counts")
+cn <-colnames(rcounts)
+legend("topleft",legend=rev(cn[2:9]),fill=rev(bcols),border=rev(bcols))
+#legend("topleft",legend=(cn[2:9]),fill=(bcols),border=(bcols))
+```
+
+## Handling the warnings...
+
+let's look at t=80000 again and make sure we are handling warnings properly. 
+
+```{r}
+
+source("../R/splist_stats.R")
+source("../R/rconf_stats.R")
+tt <- 80000
+spfn = sprintf("%ssplist%d.dat",froot,tt)
+spldata <-  splist_stats(spfn)
+reactions <- rconf_stats(fn = sprintf("%sout1_%d.conf",froot,tt), spfn, verbose = T)
+
 ```
 
 ## Changes in community structure over time
