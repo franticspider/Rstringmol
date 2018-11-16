@@ -1,20 +1,13 @@
 
 
-####Function 'arguments'
-#fn <- sprintf("%sout1_200000.conf",froot)
-#verbose <- T
-
-rconf_stats <- function(fn,spfn,verbose=F){
-
-  spldata <-  splist_stats(spfn)
-
-  ####Function 'body'
+rconf_rdata <- function(fn,verbose = F){
 
   cf <- read.table(fn,as.is = T, fill = T, sep="\n",comment.char="",stringsAsFactors = F)
 
   #get the row number of the start of each reaction entry
   rpos <- which(str_sub(cf[,1],1,12)=="%%% REACTION")
 
+  #create some data structures to hold the reaction data
   nr <- length(rpos)
   actno <- vector(length = nr)
   actseq <- vector(length = nr)
@@ -44,12 +37,38 @@ rconf_stats <- function(fn,spfn,verbose=F){
   }
   reactions <- reactions[order(reactions$count,decreasing = T),]
 
+}
+
+
+####Function 'arguments'
+#fn <- sprintf("%sout1_200000.conf",froot)
+#verbose <- T
+
+rconf_stats <- function(fn,spfn,verbose=F){
+
+  spldata <-  splist_stats(spfn)
+
+  if(verbose)message("outside spldata")
+
+  if(is.na(spldata)){
+    return(NA)
+  }
+
+  ####Function 'body'
+  reactions <- rconf_rdata(fn,verbose)
+
   #Get the product molecule from the splist:
   for(rr in 1:nrow(reactions)){
 
+
+    #NA reactions - this needs debugging....missing data in config file, possibly after a cleave...
     if(is.na(reactions$actno[rr]) || is.na(reactions$pasno[rr])){
 
-      if(verbose)message(sprintf("Reaction %d has NAs  (NA)",rr))
+      if(verbose){
+        message(sprintf("Reaction %d has NAs  (NA)",rr))
+        message(sprintf("   Active  is %d: %s",reactions$actno[rr],reactions$actseq[rr]))
+        message(sprintf("   Passive is %d: %s",reactions$pasno[rr],reactions$passeq[rr]))
+      }
       reactions$type[rr]= "NA"
       next
     }
@@ -57,40 +76,73 @@ rconf_stats <- function(fn,spfn,verbose=F){
 
     dd <- spldata[(spldata$act == reactions$actno[rr]) & (spldata$pass == reactions$pasno[rr]), ]
     if(nrow(dd)==0){
-      if(verbose)message(sprintf("Reaction %d has no product (NP)",rr))
+      if(verbose){message(sprintf("Reaction %d has no product (NP)",rr))
+        message(sprintf("   Active  is %d: %s",reactions$actno[rr],reactions$actseq[rr]))
+        message(sprintf("   Passive is %d: %s",reactions$pasno[rr],reactions$passeq[rr]))
+      }
       reactions$type[rr]= "NP"
+      next
     }
+
     if(reactions$actno[rr] == reactions$pasno[rr]){
       if(nrow(dd)==1){
         if(dd$spp == reactions$actno[rr]){
-          if(verbose)message(sprintf("Reaction %d is an exact self:self replicator (ER)*",rr))
+          if(verbose){message(sprintf("Reaction %d is an exact self:self replicator (ER)*",rr))
+              message(sprintf("   Active  is %d: %s",reactions$actno[rr],reactions$actseq[rr]))
+              message(sprintf("   Passive is %d: %s",reactions$pasno[rr],reactions$passeq[rr]))
+            }
           reactions$type[rr]= "ER"
+          next
         }
         else{
-          if(verbose)message(sprintf("Self:self reaction with different product (DP)*",rr))
+          if(verbose){message(sprintf("Self:self reaction with different product (DP)*",rr))
+            message(sprintf("   Active  is %d: %s",reactions$actno[rr],reactions$actseq[rr]))
+            message(sprintf("   Passive is %d: %s",reactions$pasno[rr],reactions$passeq[rr]))
+          }
           reactions$type[rr]= "DP"
+          next
         }
       }
       if(nrow(dd)>1){
-        if(verbose)message(sprintf("Reaction %d is a pathological replicator (PR)",rr))
+        if(verbose){message(sprintf("Reaction %d is a pathological replicator (PR)",rr))
+          message(sprintf("   Active  is %d: %s",reactions$actno[rr],reactions$actseq[rr]))
+          message(sprintf("   Passive is %d: %s",reactions$pasno[rr],reactions$passeq[rr]))
+        }
         reactions$type[rr]= "PR"
+        next
       }
     }
     else{
       if(nrow(dd)==1){
         if(dd$spp == reactions$pasno[rr]){
-          if(verbose)message(sprintf("Reaction %d is parsitic (PA)*",rr))
+          if(verbose){message(sprintf("Reaction %d is parsitic (PA)*",rr))
+            message(sprintf("   Active  is %d: %s",reactions$actno[rr],reactions$actseq[rr]))
+            message(sprintf("   Passive is %d: %s",reactions$pasno[rr],reactions$passeq[rr]))
+          }
           reactions$type[rr]= "PA"
+          next
         }
         else{
-          if(verbose)message(sprintf("none-self reaction with different product (DP)*",rr))
+          if(verbose){message(sprintf("none-self reaction with different product (DN)*",rr))
+            message(sprintf("   Active  is %d: %s",reactions$actno[rr],reactions$actseq[rr]))
+            message(sprintf("   Passive is %d: %s",reactions$pasno[rr],reactions$passeq[rr]))
+          }
           reactions$type[rr]= "DN"
+          next
         }
       }
       if(nrow(dd)>1){
-        if(verbose)message(sprintf("Reaction %d is a pathological non-self replicator (PN)",rr))
+        if(verbose){message(sprintf("Reaction %d is a pathological non-self replicator (PN)",rr))
+          message(sprintf("   Active  is %d: %s",reactions$actno[rr],reactions$actseq[rr]))
+          message(sprintf("   Passive is %d: %s",reactions$pasno[rr],reactions$passeq[rr]))
+        }
         reactions$type[rr]= "PN"
+        next
       }
+    }
+    if(verbose){message(sprintf("OOPS: Reaction %d can't be classified",rr))
+      message(sprintf("   Active  is %d: %s",reactions$actno[rr],reactions$actseq[rr]))
+      message(sprintf("   Passive is %d: %s",reactions$pasno[rr],reactions$passeq[rr]))
     }
   }
 

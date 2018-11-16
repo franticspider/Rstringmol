@@ -6,6 +6,13 @@ splist_stats <- function(fn,tmin=0,verbose=F){
   #read the splist file
   xx <- read.table(fn,stringsAsFactors = F,fill=T,sep=",")
 
+  if(ncol(xx)==5){
+    #TODO: Handle this more elegantly
+    message("RESTART DETECTED - check config file")
+    return(NA)
+  }
+
+
   #get the origin molecule(s)
   origin <- xx[xx[,2]==-1,]
 
@@ -18,7 +25,7 @@ splist_stats <- function(fn,tmin=0,verbose=F){
 
   xx$spp <- as.numeric(xx$spp)
   xx$act <- as.numeric(xx$act)
-  xx$pass <- as.numeric(xx$act)
+  xx$pass <- as.numeric(xx$pass)
   xx$obsn <- as.numeric(xx$obsn)
   xx$obst1 <- as.numeric(xx$obst1)
   xx$n3 <- as.numeric(xx$n3)
