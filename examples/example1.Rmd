@@ -12,8 +12,8 @@ output:
 Set the `froot` variable to the path to the files for these tests:
 
 ```{r}
-froot="D:/sjh/stringmol/out3smsp/"
-#froot="~/Desktop/paulien/confs/out3/"
+#froot="D:/sjh/stringmol/out3smsp/"
+froot="~/Desktop/paulien/sm250r/out3/"
 ```
 
 
