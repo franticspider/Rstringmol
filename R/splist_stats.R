@@ -1,6 +1,11 @@
 
-
-
+##TODO: Rename this function - it simply loads the file...!
+##      - see rconf_stats for better analysis
+#' @param fn the file name of the species list
+#' @param tmin the start time
+#' @param verbose messages or not
+#' @return species list
+#' @export
 splist_stats <- function(fn,tmin=0,verbose=F){
 
   #read the splist file

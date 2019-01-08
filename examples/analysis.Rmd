@@ -1,0 +1,30 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+
+froot="D:/sjh/stringmol/smsp/1705sm250/"
+
+```
+
+Need a function to stitch the popdys together: 
+
+```{r}
+stitch.popdy <- function(froot = "."){
+  fl <- list.files("D:\\sjh/stringmol/smsp/1705sm250/out4/",pattern="popdy*")
+  
+}
+```
+
+
+```{r}
+source("../R/plot_onepop.R")
+
+for(tt in 1:5){
+fn=sprintf("%sout%d/popdy001.dat",froot,tt)
+plot.onepop(fn,sprintf("aexample%dpopdy.pdf",tt),12,12,minpop=100, totpop=T,plotnspp = T,title=sprintf("run %d",tt))
+}
+```
+
