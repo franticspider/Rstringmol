@@ -5,17 +5,54 @@ output: html_notebook
 
 ```{r}
 
-froot="D:/sjh/stringmol/smsp/1705sm250/"
+froot="D:/sjh/stringmol/smsp/1705smsp/"
 
 ```
 
 Need a function to stitch the popdys together: 
 
 ```{r}
-stitch.popdy <- function(froot = "."){
-  fl <- list.files("D:\\sjh/stringmol/smsp/1705sm250/out4/",pattern="popdy*")
-  
+# arguments
+#function:
+stitch.popdy <- function(froot = ".",doplot=F){
+  fl <- list.files(fr,pattern="popdy*",full.names = T)
+  fcols <- rainbow(length(fl))
+  datachunk <- list()
+  maxspp = 0
+  for(ff in 1:length(fl)){
+    #message(sprintf("loading file %d: %s",ff,fl[ff]))
+    datachunk[[ff]]<-read.table(fl[ff],col.names=c("time","spp","pop"),sep=",")
+    maxspp = max(maxspp,max(datachunk[[ff]]$spp))
+  }
+  for(ff in 1:length(fl)){
+    if(ff==1){
+      if(doplot){
+        plot(x=datachunk[[ff]]$time,y=datachunk[[ff]]$spp,col=fcols[ff],pch=19,cex=0.2,xlim=c(0,2000000),ylim=c(0,maxspp),ylab="species number",xlab="time")
+      
+        at <- axTicks(1)
+        axis(3, at=at, labels=sprintf("%d:%02d", (at*83/2000000) %/% 60, at %% 60), las=1)
+      }
+      popdy <- data.frame(datachunk[[ff]])
+    }
+    else{
+      if(doplot){
+        points(x=datachunk[[ff]]$time,y=datachunk[[ff]]$spp,col=fcols[ff],pch=19,cex=0.2)
+      }
+      popdy <- rbind(popdy,data.frame(datachunk[[ff]]))
+    }
+      
+  }
+  popdy <- popdy[order(popdy$time),]
+  return (popdy)
 }
+
+
+
+for(rr in 1:5){
+  fr = sprintf("%sout%d/",froot,rr)
+  pd <- stitch.popdy(fr,doplot=T)
+}
+
 ```
 
 
