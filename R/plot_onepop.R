@@ -1,4 +1,4 @@
-plot.onepop <- function(infn,outfn,w,h, col.fun=rainbow, totpop = F, plotnspp = F, log = "", time.lim= NA, minpop=0,title=NA){
+plot.onepop <- function(infn,outfn,w,h, col.fun=rainbow, totpop = F, plotnspp = F, log = "", minpop=0,title=NA,time.lim=c(0,2000000),ylim=c(0,12000)){
   x	<- read.table(infn,sep=",", col.names=c('time', 'species', 'count'))
 
   #diagnostics
@@ -40,10 +40,10 @@ plot.onepop <- function(infn,outfn,w,h, col.fun=rainbow, totpop = F, plotnspp = 
     #return(nspp)
   }
 
-  y.lim <- c(1, max(x$count,tpmax))#max(x$count))
+  #y.lim <- c(1, max(x$count,tpmax))#max(x$count))
   # pdf(file=outfn, height=h, width=w, title=outfn)
   #  	par(mar=c(5,5, 0.1, 0.1))
-  plot(NA, xlim=time.lim, ylim=y.lim, ann=FALSE, axes=FALSE, log = log )
+  plot(NA, xlim=time.lim,ylim=ylim, ann=FALSE, axes=FALSE, log = log )
   sapply(1:length(valid.species), function(i){
     data <- x[x$species==valid.species[i],]
     if(max(data$count > minpop))
@@ -62,7 +62,7 @@ plot.onepop <- function(infn,outfn,w,h, col.fun=rainbow, totpop = F, plotnspp = 
 
   if(plotnspp){
     par(new = T)
-    plot(x=nspp$time,y=nspp$nspp,axes=F,xlab=NA,ylab=NA,type="l",lty=2,col="green")
+    plot(x=nspp$time,y=nspp$nspp,axes=F,xlab=NA,ylab=NA,type="l",lty=2,col="green", xlim=time.lim, ylim = c(0,2000))
     axis(side=4)
   }
 
