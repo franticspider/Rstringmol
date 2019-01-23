@@ -7,7 +7,7 @@ output:
 
 ```{r}
 
-#froot="D:/sjh/stringmol/smsp/1705smsp/"
+froot="D:/sjh/stringmol/smsp/1705smsp/"
 froot="~/Desktop/paulien/smsp/1705smsp/"
 
 ```

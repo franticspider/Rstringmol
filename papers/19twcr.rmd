@@ -1,0 +1,86 @@
+---
+title: "Emergence in Replicator-Parasite Automata Systems"
+author: "Simon Hickinbotham, Susan Stepney and Paulien Hogeweg"
+date: "21 January 2019"
+output: pdf_document
+classoption: twocolumn
+geometry: margin=0.75cm
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Abstract
+
+
+*Keywords: 'Origin of Life'; 'Automata Chemistries'; 'emergence'; replicator-parasite systems; RNA world*
+
+# Intro
+
+- Artificial Replicator-Parasite (R-P) systems explore the dynamics of evolution in RNA-like replicator systems. 
+- Up until now, R-P systems have been investigated using CAs
+- The function of the entities in these systems are *prescribed*
+    - i) the function is encoded explicitly
+    - ii) binding rates/probs and replication rates are the only variables
+    - iii) this allows tractable analysis of their effects
+
+
+- Cut to Automata Chemistries. Again, replicators and parasites exist, but the differences are 
+    - i) the function is encoded implicitly via a sequence of operators
+    - ii) that pairing/binding is implicit (check this) and 
+    - iii) there are no mathematical analytics
+    
+- both classes of system have merits - but can we combine the (relative) open-endedness of an AChem with the analytical tractability of an R-P model? 
+- Enter Stringmol - an AChem that has sufficiently sophisticated mol-mol binding to allow the mathematical R-P to be implemented. 
+
+
+**R-P dynamics:** How can a system of simple RNA-like replicators increase its
+complexity through evolution? [1] Difficult to test because the mechanics of replication haven't been composable in CA R-P systems. 
+
+
+**Replicator function:**
+- in a CA, the replication is abstracted away and cannot be affected by evolution
+- in an AChem, the replication is encoded in the sequence and can be affected by evolution. Result: the mechanics of replication can be reconstituted. **Question:** how does this recomposition affect the dynamics? Do new behaviours emerge? Any increase in complexity? 
+
+# Methods
+
+- Two issues to deal with to extend stringmol: arena size and initialisation
+- Tried 2 different arenas - squarish and letterbox
+- 2 differnt initialisatoions - randpair and block
+
+
+
+# Results
+
+**General dynamics of RP Systems**
+ - Reactions require one replicator to copy the other - results in competition to 'get copied'. evolutionary pressure to always get copied and exploit copiers.
+ - replicators with high replication rates increase their concentrations - huge pressure to be short - quicker to be copied, but reduces the amount of information it is possible to maintain down the generations.
+ - Parasites emerge, but populations of parasites can't self maintain - exploit obligate replicators
+ - waves of replicators sweep across the arena, with parasites at the trailing edge.
+ - If parasite rep rate >> replicator rep rate -> EXTINCTION
+
+## New behaviours
+
+## New analytics
+
+## Are we at the attractor yet? 
+
+
+# Conclusion
+
+The R-P CA models are a good description of the early phases of evolution of the AChem, where changes in mean population levels reflect the rate parameters of these models as parasites emerge. Out initial hypothesis that given the right configuration these systems are stable indefinitely has proved to be incorrect. One of three outcomes appear to happen:
+
+- The system goes extinct through early swamping by parasites
+- The sytsem establishes an R-P model but then new behaviours emerge which either
+    - drive the system to extinction via 'error catastrophe'
+    - stabilize the system at high population size and high diversity
+
+The latter phenomenon is the exiting result
+
+# Refs 
+
+[1] Evolutionary dynamics of RNA-like replicator systems: A bioinformatic approach to the origin of life
+
+
+
