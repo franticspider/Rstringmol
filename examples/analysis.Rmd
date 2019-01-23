@@ -76,7 +76,7 @@ plot.onepop(fn,sprintf("aexample%dpopdy.pdf",tt),12,12,minpop=100, totpop=T,plot
 
 # Running this for all samples
 
-```{r fig.height=10, fig.width=10}
+```{r fig.height=12, fig.width=12}
 mroot <- "~/Desktop/paulien/smsp/"
 rundirs <- c("1705smsp","1705smspr","1705sm250","1705sm250r","evoevo")
 par(mfrow=c(length(rundirs),5))
@@ -85,13 +85,36 @@ for(ss in 1:length(rundirs)){
     
     fr = sprintf("%s%s/out%d/",mroot,rundirs[ss],rr)
     pd <- stitch.popdy(fr,doplot=T,ylim=c(0,700000))
-    write.csv(pd,file = sprintf("%s%s/out%d/mpopdy.dat",mroot,rundirs[ss],rr),row.names = F, quote = F)
+    write.table(pd,file = sprintf("%s%s/out%d/mpopdy.dat",mroot,rundirs[ss],rr),row.names = F, col.names = F, quote = F,sep=",")
     
   }
 }
 ```
 
+## Popdy stuff
 
+```{r fig.height=4, fig.width=10}
+require(bacollite)
+mroot <- "~/Desktop/paulien/smsp/"
+rundirs <- c("1705smsp","1705smspr","1705sm250","1705sm250r","evoevo")
+par(mfrow=c(length(rundirs),5))
+for(ss in 1:length(rundirs)){
+  for(rr in 1:5){
+    
+    
+    
+    fr = sprintf("%s%s/out%d/",mroot,rundirs[ss],rr)
+    
+    fn=sprintf("%smpopdy.dat",fr)
+    
+    message(sprintf("Processing file %s",fn))
+    
+    plot.onepop(fn,sprintf("aexample%dpopdy.pdf",rr),12,12,minpop=100, totpop=T,plotnspp = T,title=sprintf("run %d",tt))
+    
+    
+  }
+}
+```
 
 
 
