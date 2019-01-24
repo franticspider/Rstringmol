@@ -20,7 +20,7 @@ rconf_stats <- function(fn,spfn,verbose=F){
   #Get the product molecule from the splist:
   for(rr in 1:nrow(reactions)){
 
-    message(sprintf("Reaction %d seen %d times",rr,reactions$count[rr]))
+    if(verbose)message(sprintf("Reaction %d seen %d times",rr,reactions$count[rr]))
 
 
     #NA reactions - this needs debugging....missing data in config file, possibly after a cleave...
@@ -35,7 +35,7 @@ rconf_stats <- function(fn,spfn,verbose=F){
       next
     }
 
-
+    message("\n1\n")
     dd <- spldata[(spldata$act == reactions$actno[rr]) & (spldata$pass == reactions$pasno[rr]), ]
     if(nrow(dd)==0){
       if(verbose){message(sprintf("Reaction %d has no product (NP)",rr))
@@ -46,6 +46,7 @@ rconf_stats <- function(fn,spfn,verbose=F){
       next
     }
 
+    message("\n2\n")
     if(reactions$actno[rr] == reactions$pasno[rr]){
       if(nrow(dd)==1){
         if(dd$spp == reactions$actno[rr]){

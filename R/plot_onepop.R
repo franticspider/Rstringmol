@@ -1,9 +1,9 @@
-plot.onepop <- function(infn,outfn,w,h, col.fun=rainbow, totpop = F, plotnspp = F, log = "", minpop=0,title=NA,time.lim=c(0,2000000),ylim=c(0,12000)){
+plot.onepop <- function(infn,outfn,w,h, col.fun=rainbow, totpop = F, plotnspp = F, ploteachspp = T, log = "", minpop=0,title=NA,time.lim=c(0,2000000),ylim=c(0,12000)){
   x	<- read.table(infn,sep=",", col.names=c('time', 'species', 'count'))
 
   #diagnostics
-  message(sprintf("Reading file %s",infn))
-  message(sprintf("Read %d lines",nrow(x)))
+  #message(sprintf("Reading file %s",infn))
+  #message(sprintf("Read %d lines",nrow(x)))
 
 
   if(is.na(time.lim))
@@ -44,11 +44,13 @@ plot.onepop <- function(infn,outfn,w,h, col.fun=rainbow, totpop = F, plotnspp = 
   # pdf(file=outfn, height=h, width=w, title=outfn)
   #  	par(mar=c(5,5, 0.1, 0.1))
   plot(NA, xlim=time.lim,ylim=ylim, ann=FALSE, axes=FALSE, log = log )
-  sapply(1:length(valid.species), function(i){
-    data <- x[x$species==valid.species[i],]
-    if(max(data$count > minpop))
-      lines(x=data$time, y=data$count + 0.1, col=colours[i])
-  })
+  if(ploteachspp){
+    sapply(1:length(valid.species), function(i){
+      data <- x[x$species==valid.species[i],]
+      if(max(data$count > minpop))
+        lines(x=data$time, y=data$count + 0.1, col=colours[i])
+    })
+  }
 
   if(totpop)
     lines(x=times$time,y=times$pop,lwd=2,col="red")
