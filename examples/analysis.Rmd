@@ -7,7 +7,7 @@ output:
 
 ```{r}
 
-froot="D:/sjh/stringmol/smsp/1705smsp/"
+#froot="D:/sjh/stringmol/smsp/1705smsp/"
 froot="~/Desktop/paulien/smsp/1705smsp/"
 
 ```
@@ -78,7 +78,8 @@ plot.onepop(fn,sprintf("aexample%dpopdy.pdf",tt),12,12,minpop=100, totpop=T,plot
 
 ```{r fig.height=12, fig.width=12}
 mroot <- "~/Desktop/paulien/smsp/"
-rundirs <- c("1705smsp","1705smspr","1705sm250","1705sm250r","evoevo")
+rundirs <-  c("1705smsp",           "1705smspr",         "1705sm250",         "1705sm250r",       "evoevo")
+runtypes <- c("125x100, block init","125x100, rand init","250x50, block init","250x50, rand init","evoevo extension") 
 par(mfrow=c(length(rundirs),5))
 for(ss in 1:length(rundirs)){
   for(rr in 1:5){
@@ -93,7 +94,7 @@ for(ss in 1:length(rundirs)){
 
 ## Popdy stuff
 
-```{r fig.height=4, fig.width=10}
+```{r fig.height=14, fig.width=12}
 require(bacollite)
 mroot <- "~/Desktop/paulien/smsp/"
 rundirs <- c("1705smsp","1705smspr","1705sm250","1705sm250r","evoevo")
@@ -107,9 +108,9 @@ for(ss in 1:length(rundirs)){
     
     fn=sprintf("%smpopdy.dat",fr)
     
-    message(sprintf("Processing file %s",fn))
+    #message(sprintf("Processing file %s",fn))
     
-    plot.onepop(fn,sprintf("aexample%dpopdy.pdf",rr),12,12,minpop=100, totpop=T,plotnspp = T,title=sprintf("run %d",tt))
+    plot.onepop(fn,sprintf("aexample%dpopdy.pdf",rr),12,12,minpop=100, totpop=T,plotnspp = T,ploteachspp=F,title=sprintf("%s: run %d",runtypes[ss],rr))
     
     
   }

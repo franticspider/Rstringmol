@@ -12,8 +12,8 @@ output:
 Set the `froot` variable to the path to the files for these tests:
 
 ```{r}
-froot="D:/sjh/stringmol/out3smsp/"
-#froot="~/Desktop/paulien/sm250r/out3/"
+#froot="D:/sjh/stringmol/out3smsp/"
+froot="~/Desktop/paulien/sm250r/out3/"
 ```
 
 
@@ -193,7 +193,9 @@ source("../R/splist_stats.R")
 Check that we've now got this in a function: 
 
 ```{r}
+source("../R/splist_stats.R")
 source("../R/rconf_stats.R")
+source("../R/rconf_data.R")
 reactions <- rconf_stats(fn = sprintf("%sout1_100000.conf",froot), spfn = sprintf("%ssplist100000.dat",froot))
 ```
 
@@ -238,7 +240,7 @@ while(gotdata ){#&& tt < 320000){
     message(sprintf("\nProcessing Time %d:",tt))
     reactions <- rconf_stats(fn = sprintf("%sout1_%d.conf",froot,tt), spfn = sprintf("%ssplist%d.dat",froot,tt))
     
-    
+    message("\n\nout\n\n")
     if(is.na(reactions)){
     }
     else{
