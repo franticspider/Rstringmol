@@ -47,7 +47,7 @@ plot.onepop <- function(infn,outfn,w,h, col.fun=rainbow, totpop = F, plotnspp = 
   if(ploteachspp){
     sapply(1:length(valid.species), function(i){
       data <- x[x$species==valid.species[i],]
-      if(max(data$count > minpop))
+      if(max(data$count) > minpop)
         lines(x=data$time, y=data$count + 0.1, col=colours[i])
     })
   }
