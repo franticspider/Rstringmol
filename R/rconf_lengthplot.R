@@ -4,7 +4,7 @@
 #fn <- sprintf("%sout1_200000.conf",froot)
 #verbose <- T
 
-rconf_stats <- function(fn,spfn,verbose=F){
+rconf_lengthplot <- function(fn,spfn,verbose=F){
 
   spldata <-  splist_stats(spfn)
 
@@ -13,12 +13,13 @@ rconf_stats <- function(fn,spfn,verbose=F){
     return(NA)
   }
 
-
   if(verbose)message("Loaded spldata using splist_stats")
-
 
   ####Function 'body'
   reactions <- rconf_rdata(fn,verbose)
+
+
+
 
   #Get the product molecule from the splist:
   for(rr in 1:nrow(reactions)){
