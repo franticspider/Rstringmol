@@ -96,6 +96,7 @@ for(ss in 1:length(rundirs)){
 
 ```{r fig.height=14, fig.width=12}
 require(bacollite)
+source("../R/plot_onepop.R")
 mroot <- "~/Desktop/paulien/smsp/"
 rundirs <- c("1705smsp","1705smspr","1705sm250","1705sm250r","evoevo")
 par(mfrow=c(length(rundirs),5))
@@ -110,11 +111,66 @@ for(ss in 1:length(rundirs)){
     
     #message(sprintf("Processing file %s",fn))
     
-    plot.onepop(fn,sprintf("aexample%dpopdy.pdf",rr),12,12,minpop=100, totpop=T,plotnspp = T,ploteachspp=F,title=sprintf("%s: run %d",runtypes[ss],rr))
+    plot.onepop(fn,sprintf("%sexample%dpopdy.pdf",runtypes[ss],rr),12,12,minpop=100, totpop=T,plotnspp = T,ploteachspp=F,title=sprintf("%s: run %d",runtypes[ss],rr))
     
     
   }
 }
+```
+
+
+
+
+
+
+
+# Length Distribution plot
+
+
+There are three states for  molecule: Unbound, active or passive. 
+
+```{r fig.height=14, fig.width=12}
+
+fn1 <- "~/Desktop/paulien/smsp/1705smsp/out3/out1_900000.conf"
+fn2 <- "~/Desktop/paulien/smsp/1705smsp/out3/out1_1900000.conf"
+source("../R/rconf_data.R")
+source("../R/rconf_stats.R")
+require(stringr)
+
+times <- seq(0,2000000,40000)
+ldata <- list()
+agd <- list()
+acd <- list()
+pad <- list()
+
+for(tt in 2:length(times)){
+
+  fn1<-sprintf("~/Desktop/paulien/smsp/1705sm250/out5/out1_%05d.conf",times[tt])
+
+  #message(fn1)
+
+  agents1 <- rconf_agents(fn1)
+  eachr <- rconf_rdata(fn1,summarize = F)
+  al <- c(agents1,as.character(eachr$actseq),as.character(eachr$passeq))
+
+  agd[[tt]] <- str_length(agents1)
+  acd[[tt]] <- str_length(eachr$actseq)
+  pad[[tt]] <- str_length(eachr$passeq)
+  
+  
+  ldata[[tt]] <- str_length(al)
+
+
+}
+par(mfrow=c(4,1))
+boxplot(agd,ylim=c(0,200),pch=19,cex=0.2)
+boxplot(acd,ylim=c(0,200),pch=19,cex=0.2)
+boxplot(pad,ylim=c(0,200),pch=19,cex=0.2)
+boxplot(ldata,ylim=c(0,200),pch=19,cex=0.2)
+
+
+
+
 ```
 
 

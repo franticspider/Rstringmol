@@ -297,13 +297,21 @@ let's look at t=80000 again and make sure we are handling warnings properly.
 ```{r}
 
 source("../R/splist_stats.R")
+source("../R/rconf_data.R")
 source("../R/rconf_stats.R")
 tt <- 80000
 spfn = sprintf("%ssplist%d.dat",froot,tt)
 spldata <-  splist_stats(spfn)
-reactions <- rconf_stats(fn = sprintf("%sout1_%d.conf",froot,tt), spfn, verbose = T)
+
+fn = sprintf("%sout1_%d.conf",froot,tt)
+#rcd <- rconf_rdata(fn,verbose=T)
+
+
+reactions <- rconf_stats(fn, spfn, verbose = T)
 
 ```
+
+http://127.0.0.1:22803/help/library/stringr/html/str_extract.html
 
 ## Changes in community structure over time
 

@@ -1,71 +1,46 @@
 ---
-title: "Emergence in Replicator-Parasite Automata Systems"
+title: "Emergence in a Replicator-Parasite Automata System (R-PAS)"
 author: "Simon Hickinbotham, Susan Stepney and Paulien Hogeweg"
 date: "21 January 2019"
-output: pdf_document
+output: 
+  pdf_document: 
+    keep_tex: yes
 classoption: twocolumn
-geometry: margin=0.75cm
+geometry: margin=0.95cm
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Abstract
+
 
 
 *Keywords: 'Origin of Life'; 'Automata Chemistries'; 'emergence'; replicator-parasite systems; RNA world*
 
-# Intro
-
-- Artificial Replicator-Parasite (R-P) systems explore the dynamics of evolution in RNA-like replicator systems. 
-- Up until now, R-P systems have been investigated using CAs
-- The function of the entities in these systems are *prescribed*
-    - i) the function is encoded explicitly
-    - ii) binding rates/probs and replication rates are the only variables
-    - iii) this allows tractable analysis of their effects
 
 
-- Cut to Automata Chemistries. Again, replicators and parasites exist, but the differences are 
-    - i) the function is encoded implicitly via a sequence of operators
-    - ii) that pairing/binding is implicit (check this) and 
-    - iii) there are no mathematical analytics
-    
-- both classes of system have merits - but can we combine the (relative) open-endedness of an AChem with the analytical tractability of an R-P model? 
-- Enter Stringmol - an AChem that has sufficiently sophisticated mol-mol binding to allow the mathematical R-P to be implemented. 
 
+How can a system of simple RNA-like replicators increase its
+complexity through evolution [1]? Artificial Replicator-Parasite (R-P) systems explore the dynamics of evolution in RNA-world-like replicator systems. If variability in replication is allowed, parasitic entities tend to emerge which threaten to drown the replicating system. These "R-P" systems have three reaction classes where $R$ is a replicator, and $P$ is a parasite. There are three reactions: $R:R$ which produces a new $R$, $R:P$ which produces a new $P$; and $P:P$ in which no new entities are produced. Experiments with these systems have commonly used a 2D Cellular Automaton model (CAR-P) to test the dymanics where the entities exist in cells arranged on a toroidal grid.  The analysis of these systems allows properties regarding binding propensity, replication rates, and arena size to be studied analytically, yielding principles that can be applied to biological RNA-world models among others. 
 
-**R-P dynamics:** How can a system of simple RNA-like replicators increase its
-complexity through evolution? [1] Difficult to test because the mechanics of replication haven't been composable in CA R-P systems. 
+Parallel to this research, work on Automata Chemistries has also documented the emergence of parasites in replicator systems. Here: i) the replication function is encoded explicitly via a sequence of computational operators; ii) that pairing/binding is implicit (check this). These systems have sufficiently sophisticated binding to allow the mathematical R-P to be implemented - thus it is an R-PAS (a Replicator-Parasite Automata System). In an R-AS, the replication is encoded in the sequence and can be affected by evolution. The key advantage of this approach is that the mechanics of replication can be reconstituted through evolution and allow different functions to emerge. This leads us to the question: how does this recomposition affect the replication dynamics? Do new behaviours emerge? Is there any increase in complexity? 
 
-
-**Replicator function:**
-- in a CA, the replication is abstracted away and cannot be affected by evolution
-- in an AChem, the replication is encoded in the sequence and can be affected by evolution. Result: the mechanics of replication can be reconstituted. **Question:** how does this recomposition affect the dynamics? Do new behaviours emerge? Any increase in complexity? 
-
-# Methods
-
-- Two issues to deal with to extend stringmol: arena size and initialisation
-- Tried 2 different arenas - squarish and letterbox
-- 2 differnt initialisatoions - randpair and block
-
+To test this idea we extended the Stringmol AChem to run on a spatial grid, with reactions in the Moore neighborhood of each entity. We ran 25 trials to 2 million timesteps, using five different configurations to counter effects of arena shape and initialisation. 
 
 
 # Results
 
-**General dynamics of RP Systems**
- - Reactions require one replicator to copy the other - results in competition to 'get copied'. evolutionary pressure to always get copied and exploit copiers.
- - replicators with high replication rates increase their concentrations - huge pressure to be short - quicker to be copied, but reduces the amount of information it is possible to maintain down the generations.
- - Parasites emerge, but populations of parasites can't self maintain - exploit obligate replicators
- - waves of replicators sweep across the arena, with parasites at the trailing edge.
- - If parasite rep rate >> replicator rep rate -> EXTINCTION
+**Top level stats** Eleven of the Twenty-Five systems went extinct before 100,000 timesteps, indicating that the parasites swamped the system before the R-P dynamices were established. Only three of the systems that passed this point went extinct.
 
-## New behaviours
+**Trends in the surviving systems:** 1) R-P system establishes itself; 2) resistant replicators emerge, which slow replication of any entity, reducing the advantage parasites have by being small; 3) Complexity emerges, which can take several forms (ranked by level of innovation):
 
-## New analytics
+1. *Hypercycles (binding wars)*- in whch an "Rx:Ry" recation produces a new Rx or Ry - parasites can only exploit one of the partners
+2. *Rate wars* replicators emerge with slower rates of replication to reduce the advantage of being shorter. This gives room in the replicator to evolve new behaviours
+3. *Diversity wars* risking the error catastrophe, some replicators are pathologically diverse
+3. *Rule exploitation* although no movement is allowed in these systems, some reactions emerge where one of the parents destroys itself. this has the effect of creating a sparse distribution of replicators which is harder for the parasites to exploit, but at the risk of individual replicators becoming isolated and unable to reproduce. 
 
-## Are we at the attractor yet? 
-
+The interesting result is that in a system with no parasites, a pure replicator would be more efficient than these emergent phenomena. Unlike the selection pressure to efficient replication, these systems develop a range of strategies. In all of them, new parasites clear out the system 
 
 # Conclusion
 
@@ -84,3 +59,12 @@ The latter phenomenon is the exiting result
 
 
 
+
+
+
+**General dynamics of RP Systems**
+ - Reactions require one replicator to copy the other - results in competition to 'get copied'. evolutionary pressure to always get copied and exploit copiers.
+ - replicators with high replication rates increase their concentrations - huge pressure to be short - quicker to be copied, but reduces the amount of information it is possible to maintain down the generations.
+ - Parasites emerge, but populations of parasites can't self maintain - exploit obligate replicators
+ - waves of replicators sweep across the arena, with parasites at the trailing edge.
+ - If parasite rep rate >> replicator rep rate -> EXTINCTION
