@@ -76,12 +76,12 @@
   \title{Emergence in a Replicator-Parasite Automata System}
   \pretitle{\vspace{\droptitle}\centering\huge}
   \posttitle{\par}
-  \author{Simon Hickinbotham, Susan Stepney and Paulien Hogeweg}
+  \author{Simon Hickinbotham$^1$, Susan Stepney$^1$ and Paulien Hogeweg$^2$\\{\normalsize 1: YCCSA, University of York; 2: Bioinformatics Group, Utrecht University}}
   \preauthor{\centering\large\emph}
   \postauthor{\par}
-  \predate{\centering\large\emph}
-  \postdate{\par}
-  \date{21 January 2019}
+  %\predate{\centering\large\emph}
+  %\postdate{\par}
+  \date{\vspace{-3ex}}
 
 
 
@@ -98,22 +98,26 @@ How can a system of simple RNA-like replicators increase its complexity
 through evolution? Artificial Replicator-Parasite (R-P) systems
 explore the dynamics of evolution in such systems  \cite{ph1}.
 If variability in replication is allowed, parasitic entities tend to
-emerge which threaten to drown the replicating system. These
-systems have three reaction classes where \(R\) is a replicator, and
-\(P\) is a parasite. There are three reactions: \(R:R\) which produces a
-new \(R\), \(R:P\) which produces a new \(P\); and \(P:P\) in which no
+emerge which get copied by replicators but do not do any copying. These
+systems have three reaction classes, where $R$ is a replicator and
+$P$ is a parasite. There are three reactions: $R:R$ which produces a
+new $R$; $R:P$ which produces a new $P$; and $P:P$ in which no
 new entities are produced.
 
-When the rates of these reactions are allowed to evolve, the system will diminish to extinction in a well mixed situation (e.g. as implemented in ordinary differential equations), but can survive in spatial explicit systems such as 2D  CA
+When the rates of these reactions are allowed to evolve, the system 
+will diminish to extinction in a well mixed situation (e.g. as implemented 
+in ordinary differential equations), but can survive in spatially explicit systems 
+such as 2D cellular automaton (CA)
  where the entities exist in cells arranged on a toroidal grid.
 This survival is due to the emergence of spatial patterns.
 
 Parallel to this research, work on Automata Chemistries has also
-documented the emergence of parasites in replicator systems \cite{stringmol}. Here
+documented the emergence of parasites in replicator systems \cite{stringmol}. Here,
 the replication function is encoded explicitly via a sequence of
 computational operators including the act of binding, the rate of which is controlled by sequence alignment between the partners. This binding system is sufficiently sophisticated to allow
-an  R-P like model to be implemented - thus it is an R-PAS (a
-Replicator-Parasite Automata System). The stages of replication are
+an  R-P model to be implemented.
+% - thus it is an R-PAS (a Replicator-Parasite Automata System). 
+The stages of replication are
 encoded in the sequence and can be affected by evolution. The key
 advantage of this approach is that the mechanics of replication can be
 reconstituted through evolution and allow different functions to emerge.
@@ -136,26 +140,31 @@ systems that passed this point went extinct.
 
 %\textbf{Trends in the surviving systems:} 
 The following trends were observed in all of the systems that ran to 2 million timesteps:
-Folowing the initilisation with the seed replicator, parasites emerge quickly, and are replicated faster than the replicators themselves because they are shorter, but the system survives due to the emergence of wave-level selection, as shown in figure \ref{figyt}, left.
-Selection for replication rate leads to shortening of the sequences, but then several mechanisms for resistance to parasites emerge, e.g.  slow replication of any
-entity, reducing the advantage parasites have by being small. Through this complex reaction systems emerge (figure \ref{figyt}, right), which can take several forms:
+Folowing the initilisation with the seed replicator, parasites emerged quickly, and were 
+replicated faster than the replicators themselves because they were shorter, but the system survived 
+due to the emergence of wave-level selection, as shown in figure \ref{figyt}, left.
+Selection for replication rate led to shortening of the sequences, but then several mechanisms for 
+resistance to parasites emerged, e.g. enforcing slow replication of any
+entity, reducing the advantage parasites have by being small. 
+Through this, more complex reaction systems emerged (figure \ref{figyt}, right), 
+which took several forms:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
-  \emph{Binding wars (hypercycles)}- in whch an $R_x:R_y$ recation
+  \emph{Binding wars (hypercycles):} in whch an $R_x:R_y$ recation
   produces a new $R_x$ or $R_y$, and parasites can only exploit one of the
   partners.
 \item
-  \emph{Rate wars} replicators emerge with slower rates of replication
+  \emph{Rate wars:} replicators emerge with slower rates of replication
   to reduce the advantage of being shorter. This permits capacity in the
   replicator sequence to evolve new behaviours
 \item
-  \emph{Diversity wars} risking the error catastrophe, some replicators
+  \emph{Diversity wars:} risking the error catastrophe, some replicators
   are pathologically diverse, with long chains of short repeats in the sequence.
 \item
-  \emph{Rule exploitation} although no movement is allowed in these
+  \emph{Rule wars:} although no movement is allowed in these
   systems, some reactions emerge where one of the parents destroys
   itself. This has the effect of creating a sparse distribution of
   replicators which is more difficult for the parasites to exploit, but at the
@@ -205,9 +214,6 @@ These phenomena present an exciting result, offering new insight into the transi
 
 \bibliographystyle{unsrt}
 \bibliography{bib}
-
-
-
 
 
 \end{document}
