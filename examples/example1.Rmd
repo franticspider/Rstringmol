@@ -13,7 +13,8 @@ Set the `froot` variable to the path to the files for these tests:
 
 ```{r}
 #froot="D:/sjh/stringmol/out3smsp/"
-froot="~/Desktop/paulien/sm250r/out3/"
+froot="D:/sjh/stringmol/smsp/1705smsp/out3/"
+#froot="~/Desktop/paulien/sm250r/out3/"
 ```
 
 
@@ -232,16 +233,20 @@ count <- 0
 sumcount <- 0
 rno<-2
 
-while(gotdata ){#&& tt < 320000){
-  message(sprintf("Processing time %d",tt))
+while(gotdata ){#&& tt < 320000){#
   fn <- sprintf("%ssplist%d.dat",froot,tt)
   spfn <- sprintf("%sout1_%d.dat",froot,tt)
   if(file.exists(fn)){
     message(sprintf("\nProcessing Time %d:",tt))
-    reactions <- rconf_stats(fn = sprintf("%sout1_%d.conf",froot,tt), spfn = sprintf("%ssplist%d.dat",froot,tt))
+    #reactions <- rconf_stats(fn = sprintf("%sout1_%d.conf",froot,tt), 
+    #                         spfn = sprintf("%ssplist%d.dat",froot,tt),verbose=F)
+    reactions <- rconf_stats_nosplist(fn = sprintf("%sout1_%d.conf",froot,tt), 
+                                      #spfn = sprintf("%ssplist%d.dat",froot,tt),
+                                      verbose=T)
     
-    message("\n\nout\n\n")
-    if(is.na(reactions)){
+    #message("\n\nout\n\n")
+    
+    if(is.null(dim(reactions))){#nrow(reactions)==0){
     }
     else{
     
@@ -271,6 +276,7 @@ while(gotdata ){#&& tt < 320000){
     gotdata <- F
   }
   tt = tt+20000
+  #if(tt > 50000)gotdata <- F
 }
 #Now we can plot the change in diversity: 
 #https://www.r-graph-gallery.com/stacked-barplot/
@@ -278,15 +284,28 @@ while(gotdata ){#&& tt < 320000){
 
 
 ```{r fig.height=8, fig.width=10}
-bcols = rainbow(ncol(rcounts[2:9]))
+bcols = rainbow(ncol(rcounts[2:9])) 
+bcols <- bcols[sample(1:length(bcols))]
 par(mfrow=c(2,1))
 barplot(t(rcounts[2:9]),col=bcols,border=bcols,names=rcounts[,1],las=2,main="Reaction Types")
 cn <-colnames(rcounts)
-legend("topleft",legend=rev(cn[2:9]),fill=rev(bcols),border=rev(bcols))
+
+#NB! This is not currently automatically ordered correctly..
+cnlong <- c("Pathological non-self replicator",
+            "Non-self reaction; different product",
+            "Parasitic",
+            "Pathological replicator",
+            "self-self; different product",
+            "self-self; exact replicator",
+            "No Product",
+            "Unclassified")
+
+legend("topleft",legend=sprintf("%s %s",rev(cn[2:9]),cnlong),fill=rev(bcols),border=rev(bcols),cex = 0.5)
 
 barplot(t(rsumcounts[2:9]),col=bcols,border=bcols,names=rcounts[,1],las=2,main="Reaction Counts")
 cn <-colnames(rcounts)
-legend("topleft",legend=rev(cn[2:9]),fill=rev(bcols),border=rev(bcols))
+
+legend("topleft",sprintf("%s %s",rev(cn[2:9]),cnlong),fill=rev(bcols),border=rev(bcols),cex = 0.5)
 #legend("topleft",legend=(cn[2:9]),fill=(bcols),border=(bcols))
 ```
 
@@ -307,7 +326,7 @@ fn = sprintf("%sout1_%d.conf",froot,tt)
 #rcd <- rconf_rdata(fn,verbose=T)
 
 
-reactions <- rconf_stats(fn, spfn, verbose = T)
+reactions <- rconf_stats(fn, spfn, verbose = F)
 
 ```
 

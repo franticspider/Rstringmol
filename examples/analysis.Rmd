@@ -7,8 +7,11 @@ output:
 
 ```{r}
 
-#froot="D:/sjh/stringmol/smsp/1705smsp/"
-froot="~/Desktop/paulien/smsp/1705smsp/"
+froot="D:/sjh/stringmol/smsp/1705smsp/"
+mroot="D:/sjh/stringmol/smsp/"
+
+#froot="~/Desktop/paulien/smsp/1705smsp/"
+#mroot <- "~/Desktop/paulien/smsp/"
 
 ```
 
@@ -77,7 +80,6 @@ plot.onepop(fn,sprintf("aexample%dpopdy.pdf",tt),12,12,minpop=100, totpop=T,plot
 # Running this for all samples
 
 ```{r fig.height=12, fig.width=12}
-mroot <- "~/Desktop/paulien/smsp/"
 rundirs <-  c("1705smsp",           "1705smspr",         "1705sm250",         "1705sm250r",       "evoevo")
 runtypes <- c("125x100, block init","125x100, rand init","250x50, block init","250x50, rand init","evoevo extension") 
 par(mfrow=c(length(rundirs),5))
@@ -97,7 +99,7 @@ for(ss in 1:length(rundirs)){
 ```{r fig.height=14, fig.width=12}
 require(bacollite)
 source("../R/plot_onepop.R")
-mroot <- "~/Desktop/paulien/smsp/"
+#mroot <- "~/Desktop/paulien/smsp/"
 rundirs <- c("1705smsp","1705smspr","1705sm250","1705sm250r","evoevo")
 par(mfrow=c(length(rundirs),5))
 for(ss in 1:length(rundirs)){
@@ -109,7 +111,7 @@ for(ss in 1:length(rundirs)){
     
     fn=sprintf("%smpopdy.dat",fr)
     
-    #message(sprintf("Processing file %s",fn))
+    message(sprintf("Processing file %s",fn))
     
     plot.onepop(fn,sprintf("%sexample%dpopdy.pdf",runtypes[ss],rr),12,12,minpop=100, totpop=T,plotnspp = T,ploteachspp=F,title=sprintf("%s: run %d",runtypes[ss],rr))
     
@@ -120,8 +122,29 @@ for(ss in 1:length(rundirs)){
 
 
 
+# removing spurious popdys.
 
+There were a few glitches in running the trials - one of these is that steps 1710000 and 1750000 were run a few times in 1705sm250 trial 5. 
 
+These can be found using the following code on the original dataset: 
+
+```{r}
+rdir <- "../../stringmol/smsp/1705sm250/out5/"
+fl <- list.files(rdir,pattern="popdy001*")
+for(ff in fl){
+  pd<-read.table(sprintf("%s%s",rdir,ff),stringsAsFactors = F,sep=",")
+  message(sprintf("%s starts at %d",ff,pd[1,1]))
+}
+
+```
+As a result, we can see that it is prudent to prepend the following files with `UNUSED`: 
+
+    popdy001.13.dat
+    popdy001.14.dat
+    popdy001.16.dat
+    
+(Note also that the splist files corresponding to these were overwritten)
+Once this is done, you just have to re-run `stitch.popdy` to get the master popdy file `mpopdy.dat` for each trial. 
 
 
 # Length Distribution plot
@@ -145,7 +168,7 @@ pad <- list()
 
 for(tt in 2:length(times)){
 
-  fn1<-sprintf("~/Desktop/paulien/smsp/1705sm250/out5/out1_%05d.conf",times[tt])
+  fn1<-sprintf("%s/1705sm250/out5/out1_%05d.conf",mroot,times[tt])
 
   #message(fn1)
 
@@ -163,13 +186,10 @@ for(tt in 2:length(times)){
 
 }
 par(mfrow=c(4,1))
-boxplot(agd,ylim=c(0,200),pch=19,cex=0.2)
-boxplot(acd,ylim=c(0,200),pch=19,cex=0.2)
-boxplot(pad,ylim=c(0,200),pch=19,cex=0.2)
-boxplot(ldata,ylim=c(0,200),pch=19,cex=0.2)
-
-
-
+boxplot(agd,ylim=c(0,200),pch=19,cex=0.2,main="Length of All stringmols")
+boxplot(acd,ylim=c(0,200),pch=19,cex=0.2,main="Length of Active partners")
+boxplot(pad,ylim=c(0,200),pch=19,cex=0.2,main="Length of Passive partners")
+boxplot(ldata,ylim=c(0,200),pch=19,cex=0.2,main="Length of all reacting stringmols")
 
 ```
 

@@ -45,7 +45,7 @@ rconf_rdata <- function(fn,verbose = F,summarize=T){
     ##if(is.na(as.integer(words[[1]][3])))message("BOOM")
     ##if(pdebug)message(sprintf("words[[1]][3] = %s",words[[1]][3]))
     ##TODO: we get 'NAs introduced by coercion' when this is e.g. "$OYHOB"
-    pasno[rr] <- as.numeric(words[[1]][3])
+    pasno[rr] <- suppressWarnings(  as.numeric(words[[1]][3]) )
     passeq[rr] <- words[[1]][4]
     #TODO handle bad format better where passive mol is above rpos!!
     if(is.na(pasno[rr])){
