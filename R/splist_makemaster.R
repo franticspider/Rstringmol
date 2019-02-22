@@ -13,15 +13,14 @@ splist_stats <- function(fn,tmin=0,verbose=F){
 
   if(ncol(xx)==5){
     #TODO: Handle this more elegantly
-    message(sprintf("RESTART DETECTED - check file %s",fn))
+    message("RESTART DETECTED - check config file")
 
     colnames(xx) <- c("spp","act","pass","n3","seq")
     xx$spp <- as.numeric(xx$spp)
     xx$act <- as.numeric(xx$act)
     xx$pass <- as.numeric(xx$pass)
     xx$n3 <- as.numeric(xx$n3)
-
-    return(xx)
+    return(NA)
   }
   else{
 

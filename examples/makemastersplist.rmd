@@ -1,0 +1,140 @@
+---
+title: "Creating splist stats master list"
+output: html_notebook
+---
+
+
+We'll try to use splist stats to do this
+
+###Algorithm
+
+    masterfile = load(endfile)
+    for file in endfile-1 to startfile:
+      load(file)
+        for each entry in file
+          If there's not an entry in masterfile
+            entry = handle restart issues (entry)
+            add entry to masterfile
+            
+            
+### Raw code for debugging
+
+Here's the master algorithm - some more investigative code follows this
+
+```{r}
+
+source("../R/splist_stats.R")
+
+#arguments
+start <- 280000
+end <- 1960000
+step <- 20000
+smfroot <- sprintf("%s/out3/",froot)
+#body
+
+ts <- seq(end,start,-step)
+msp <- splist_stats(sprintf("%ssplist%d.dat",smfroot,ts[1]))
+for( tt in 2:length(ts)){
+  message(sprintf("Processing file %d",ts[tt]))  
+  nnewreactions <- 0
+  nnewparents <- 0
+  tsp <- splist_stats(sprintf("%ssplist%d.dat",smfroot,ts[tt]))
+  tsp$addentry <- F
+  restart <-F
+  if(ncol(tsp)==5)restart<-T
+  #NB This could be made more efficient but I want to debug it
+  for(ee in 1:nrow(tsp)){
+    
+    entry<-msp[tsp$spp[ee] == msp$spp,]
+    if(nrow(entry)>0){
+      #message(sprintf("Found %d matches for %s",nrow(entry),tsp$spp[ee]))
+      entry<-entry[(tsp$act[ee] == entry$act) & (tsp$pass[ee] == entry$pass),]
+      if(nrow(entry)>0){
+      }
+      else{
+        
+        #message(sprintf("Found no matches for line %d:  %d,%d,%d"
+        #                ,ee,tsp$spp[ee],
+        #                tsp$act[ee],tsp$pass[ee]))
+        tsp$addentry[ee]<-T
+        nnewparents <- nnewparents+1
+      }
+    }
+    else{
+      #message(sprintf("%d No match for %s",ee,tsp$spp[ee]))
+      tsp$addentry[ee]<-T
+      nnewreactions <- nnewreactions+1
+    }
+  }
+  message(sprintf("found %d new reactions and %d new parents",nnewreactions,nnewparents))
+}
+
+
+#return
+```
+
+- Going back in time, the only time missing entries appear is when we go over a restart
+- The splist that's there at restart has some species in that arent in the subsequent splist. I suspect these are spp that aren't involved in any subsequent reactions
+- This means we can speed up processing by only seeking to add new entries when a restart is found. 
+
+##Detecting the last list before restart
+
+```{r}
+
+source("../R/splist_stats.R")
+#arguments
+start <- 300000
+end <-   340000
+step <-   20000
+smfroot <- sprintf("%s/out3/",froot)
+#body
+
+ts <- seq(end,start,-step)
+msp <- splist_stats(sprintf("%ssplist%d.dat",smfroot,ts[1]))
+restartfound <-F
+for( tt in 2:length(ts)){
+  message(sprintf("Processing file %d",ts[tt])) 
+  fn <- sprintf("%ssplist%d.dat",smfroot,ts[tt])
+  tsp <- splist_stats(fn)
+  if(restartfound){
+    
+    #Add the missing entries from the pre-restart file:
+    
+    mspuniq <- cbind(msp$spp,msp$act,msp$pass,msp$seq)
+    tspuniq <- cbind(tsp$spp,tsp$act,tsp$pass,tsp$seq)
+    
+    hits <- tsp[mspuniq %in% tspuniq,]
+    misses <- tsp[!(mspuniq %in% tspuniq),]
+    
+    
+    
+    
+    
+    
+    #Handle the missing spp in the restart file:
+    
+    message(sprintf("File %s is the last before a restart",fn))
+    restartfound<-F
+    
+    missingsp <- unique(rsp[!(rsp$spp %in% tsp$spp),])
+    message(sprintf("\t%d missing species at restart:",nrow(missingsp)))
+    #for(mm in 1:nrow(missingsp)){
+    #  message(sprintf("\t\r%d of %s",tsp$n3[mm],tsp$seq[mm]))
+    #}
+    missingsp <- unique(missingsp[!(missingsp$spp %in% nsp$spp),])
+    message(sprintf("\t%d missing species in subsequent splist",nrow(missingsp)))
+    for(mm in 1:nrow(missingsp)){
+      message(sprintf("\t\r%d of %s",missingsp$n3[mm],missingsp$seq[mm]))
+    }
+    
+    message(sprintf("\tTotal of %d molecules lost",sum(missingsp$n3)))
+  }
+  if(ncol(tsp)==5){
+    restartfound<-T
+    #This is needed to check that all spp are accounted for (they won't be)
+    rsp <- tsp
+    nsp <- splist_stats(sprintf("%ssplist%d.dat",smfroot,ts[tt-1]))
+  }
+  
+}
+```
