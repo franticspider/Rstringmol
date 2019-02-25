@@ -21,6 +21,8 @@ We'll try to use splist stats to do this
 
 Here's the master algorithm - some more investigative code follows this
 
+WARNING: Takes a looong time to run!
+
 ```{r}
 
 source("../R/splist_stats.R")
@@ -79,6 +81,22 @@ for( tt in 2:length(ts)){
 
 ##Detecting the last list before restart
 
+The section above shows that we only need to modify the list over restart boundaries, which saves a LOT of processing time. Let's try this method now:
+
+- Find restart at time $t$.
+- Set $M$ as splist for time $t+1$
+- Set $R$ as splist for time $t$
+- Set $P$ as splist for time $t-1$
+- Add all unseen spp in $R$ to $P$
+- Update any time info in $P$ (won't be any I don't think)
+- Add all unseen spp/reactions in $P$ to $M$
+- Update any time info in $M$ (will be some I think)
+
+
+
+
+
+
 ```{r}
 
 source("../R/splist_stats.R")
@@ -95,16 +113,16 @@ restartfound <-F
 for( tt in 2:length(ts)){
   message(sprintf("Processing file %d",ts[tt])) 
   fn <- sprintf("%ssplist%d.dat",smfroot,ts[tt])
-  tsp <- splist_stats(fn)
+  Pspl <- splist_stats(fn)
   if(restartfound){
     
     #Add the missing entries from the pre-restart file:
     
     mspuniq <- cbind(msp$spp,msp$act,msp$pass,msp$seq)
-    tspuniq <- cbind(tsp$spp,tsp$act,tsp$pass,tsp$seq)
+    tspuniq <- cbind(Pspl$spp,Pspl$act,Pspl$pass,Pspl$seq)
     
-    hits <- tsp[mspuniq %in% tspuniq,]
-    misses <- tsp[!(mspuniq %in% tspuniq),]
+    hits <- Pspl[mspuniq %in% tspuniq,]
+    misses <- Pspl[!(mspuniq %in% tspuniq),]
     
     
     
@@ -116,12 +134,12 @@ for( tt in 2:length(ts)){
     message(sprintf("File %s is the last before a restart",fn))
     restartfound<-F
     
-    missingsp <- unique(rsp[!(rsp$spp %in% tsp$spp),])
+    missingsp <- unique(Rspl[!(Rspl$spp %in% Pspl$spp),])
     message(sprintf("\t%d missing species at restart:",nrow(missingsp)))
     #for(mm in 1:nrow(missingsp)){
     #  message(sprintf("\t\r%d of %s",tsp$n3[mm],tsp$seq[mm]))
     #}
-    missingsp <- unique(missingsp[!(missingsp$spp %in% nsp$spp),])
+    missingsp <- unique(missingsp[!(missingsp$spp %in% Mspl$spp),])
     message(sprintf("\t%d missing species in subsequent splist",nrow(missingsp)))
     for(mm in 1:nrow(missingsp)){
       message(sprintf("\t\r%d of %s",missingsp$n3[mm],missingsp$seq[mm]))
@@ -129,12 +147,39 @@ for( tt in 2:length(ts)){
     
     message(sprintf("\tTotal of %d molecules lost",sum(missingsp$n3)))
   }
-  if(ncol(tsp)==5){
+  if(ncol(Pspl)==5){
     restartfound<-T
     #This is needed to check that all spp are accounted for (they won't be)
-    rsp <- tsp
-    nsp <- splist_stats(sprintf("%ssplist%d.dat",smfroot,ts[tt-1]))
+    Rspl <- Pspl
+    Mspl <- splist_stats(sprintf("%ssplist%d.dat",smfroot,ts[tt-1]))
   }
   
 }
 ```
+
+# Testing the result
+
+- Load each splist
+- choose 10-100 random entries. 
+- check it against the master list
+
+```{r}
+#make a dummy master file...
+  fn <- sprintf("%ssplist%d.dat",smfroot,360000)
+  Mspl <- splist_stats(fn)
+
+
+nsamps <- 10
+for( tt in 1:length(ts)){
+  message(sprintf("Processing file %d",ts[tt])) 
+  fn <- sprintf("%ssplist%d.dat",smfroot,ts[tt])
+  Pspl <- splist_stats(fn)
+  samps <- sample(1:nrow(Pspl), nsamps, replace=F)
+  for( rr in 1:nsamps){
+    sample <- Pspl[samps[rr],]
+    message(sprintf("Checking spp %d: %s",sample$spp[1],sample$seq))
+  }  
+  break
+}
+```
+

@@ -6,7 +6,7 @@
 #' @param verbose messages or not
 #' @return species list
 #' @export
-splist_stats <- function(fn,tmin=0,verbose=F){
+splist_makemaster <- function(fn,tmin=0,verbose=F){
 
   #read the splist file
   xx <- read.table(fn,stringsAsFactors = F,fill=T,sep=",")
@@ -63,4 +63,13 @@ splist_stats <- function(fn,tmin=0,verbose=F){
 
   }
   return(xx)
+}
+
+
+
+splist_merge <- function(Master, Restart, Pen){
+
+
+
+
 }
