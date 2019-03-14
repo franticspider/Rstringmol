@@ -21,16 +21,16 @@ We'll try to use splist stats to do this
 
 Here's the master algorithm - some more investigative code follows this
 
-WARNING: Takes a looong time to run!
+WARNING: Takes a looong time to run! (quickly fixed by making start and end close to each other)
 
 ```{r}
 
 source("../R/splist_stats.R")
 
 #arguments
-start <- 280000
-end <- 1960000
-step <- 20000
+start <- 1940000
+end   <- 1960000
+step  <- 20000
 smfroot <- sprintf("%s/out3/",froot)
 #body
 
@@ -88,7 +88,7 @@ The section above shows that we only need to modify the list over restart bounda
 - Set $R$ as splist for time $t$
 - Set $P$ as splist for time $t-1$
 - Add all unseen spp in $R$ to $P$
-- Update any time info in $P$ (won't be any I don't think)
+- There isn't any info for hits in $R$ that could be used to update any time info in $P$
 - Add all unseen spp/reactions in $P$ to $M$
 - Update any time info in $M$ (will be some I think)
 
@@ -115,45 +115,96 @@ for( tt in 2:length(ts)){
   fn <- sprintf("%ssplist%d.dat",smfroot,ts[tt])
   Pspl <- splist_stats(fn)
   if(restartfound){
+   
+    #MERGE $R$ WITH $P$:
+     
+    hits <- Rspl[Rspl$spp %in% Pspl$spp,]
+    misses <- Rspl[!(Rspl$spp %in% Pspl$spp),]
     
-    #Add the missing entries from the pre-restart file:
+    #Handle the hits - NO ACTION NEEDED
+    #Handle the misses, add the following columns:
+    # float = 0; obsn = 1; obst1 = ts[tt]
     
-    mspuniq <- cbind(msp$spp,msp$act,msp$pass,msp$seq)
-    tspuniq <- cbind(Pspl$spp,Pspl$act,Pspl$pass,Pspl$seq)
+    misses$float <- 0
+    misses$obsn <- 1
+    misses$obst1 <- Rtime
     
-    hits <- Pspl[mspuniq %in% tspuniq,]
-    misses <- Pspl[!(mspuniq %in% tspuniq),]
+    #first rbind
+    M1 <- rbind(misses,Pspl)
     
+    #Now merge M1 with Mspl
     
+    hits   <- Pspl[Pspl$spp %in% Mspl$spp,]
+    misses <- Pspl[!(Pspl$spp %in% Mspl$spp),]
     
-    
-    
-    
-    #Handle the missing spp in the restart file:
-    
-    message(sprintf("File %s is the last before a restart",fn))
-    restartfound<-F
-    
-    missingsp <- unique(Rspl[!(Rspl$spp %in% Pspl$spp),])
-    message(sprintf("\t%d missing species at restart:",nrow(missingsp)))
-    #for(mm in 1:nrow(missingsp)){
-    #  message(sprintf("\t\r%d of %s",tsp$n3[mm],tsp$seq[mm]))
-    #}
-    missingsp <- unique(missingsp[!(missingsp$spp %in% Mspl$spp),])
-    message(sprintf("\t%d missing species in subsequent splist",nrow(missingsp)))
-    for(mm in 1:nrow(missingsp)){
-      message(sprintf("\t\r%d of %s",missingsp$n3[mm],missingsp$seq[mm]))
+    #Deal with the hits: update obst1 is all we need to do once we've checked spp and seq match
+    sph <- unique(hits$spp)
+    for(x in 1:length(sph)){
+      obs <- unique(hits$obst1[hits$spp == sph[x]])
+      if(length(obs) > 1){
+        message(sprintf("WARNING: l(obs) == %d for spp %d",length(obs),sph[x]))
+      }
+      oldobs <- Mspl$obst1[Mspl$spp == sph[x]]
+      message(sprintf("Replacing obs[1] value of %d with %d from Pspl",oldobs[1],obs[1]))
+      Mspl$obst1[Mspl$spp == sph[x]] <- obs[1]
     }
+
+    #Deal with the misses: 
+    #Sanity check - make sure the seq and spp numbers match
+    seqs <- unique(misses$seq)
+    P_errs <-0
+    M_errs <-0
     
-    message(sprintf("\tTotal of %d molecules lost",sum(missingsp$n3)))
+    #handle the entries that are missing from the master list
+    for(ss in 1:length(seqs)){
+      #this should be 1 unless a sequence has two spp numbers:
+      Pspns <- unique(Pspl$spp[Pspl$seq == seqs[ss]])
+      if(length(Pspns) != 1){
+        #message(sprintf("Warning! Pspns = %d: more than one spp for seq\n\t%s",length(Pspns), seqs[ss]))
+        P_errs = P_errs + 1
+      }
+      
+      #this should be 0 because we are going through the misses,
+      #BUT we want to check there's no duplicate of sequence.
+      Mspns <- unique(Mspl$spp[Mspl$seq == seqs[ss]])
+      if(length(Mspns) != 0){
+        #message(sprintf("Warning! Mspl = %d: more than 0 spp for seq %d\n\t%s",length(Mspns),ss,seqs[ss]))
+        #message(sprintf("\tPspns is %d for the same sequence - fix needed!",Pspns))
+        
+        Mspl$spp[Mspl$spp == Mspns] <- Pspns
+        Mspl$obst1[Mspl$spp == Mspns] <- Pspl$obst1[Pspl$seq == seqs[ss]]
+        
+        Mspl$act[Mspl$act == Mspns] <- Pspns
+        Mspl$pass[Mspl$pass == Mspns] <- Pspns
+        
+        
+        M_errs = M_errs + 1
+      }
+      else{
+        # At this point we know:
+        # - The spp number was Not present in Mspl
+        # - The sequence is not present in Mspl
+        # So we are safe to add this entry to the end
+      }
+    }
+    message(sprintf("Found %d P_errs and %d M_errs",P_errs,M_errs))
+    
+    #Finally, handle the entries that are hits in the master list
+    seqs <- unique(hits$seq)
+    for(ss in length(seqs)){
+      
+      
+      
+    }
   }
   if(ncol(Pspl)==5){
     restartfound<-T
     #This is needed to check that all spp are accounted for (they won't be)
     Rspl <- Pspl
+    Rtime <- ts[tt]
+    #Also grab the splist thats generated *after* the restart: 
     Mspl <- splist_stats(sprintf("%ssplist%d.dat",smfroot,ts[tt-1]))
   }
-  
 }
 ```
 
@@ -176,8 +227,28 @@ for( tt in 1:length(ts)){
   Pspl <- splist_stats(fn)
   samps <- sample(1:nrow(Pspl), nsamps, replace=F)
   for( rr in 1:nsamps){
-    sample <- Pspl[samps[rr],]
+    ss <- samps[rr]
+    sample <- Pspl[ss,]
     message(sprintf("Checking spp %d: %s",sample$spp[1],sample$seq))
+    
+    match <- Mspl[Mspl$spp == sample$spp[1] & 
+                    Mspl$act == sample$act[1] & 
+                    Mspl$pass == sample$pass[1]
+                  , ]
+    
+    ff <- nrow(match)
+    if(ff == 0){
+        message("ERROR: no matches found!")
+        ect = ect + 1
+    }
+    if(ff>0){
+      if(ff>1){
+        message(sprintf("ERROR: %d matches found!",ff))
+        ect = ect + 1
+      }
+      else
+        message("match found")
+    }
   }  
   break
 }
