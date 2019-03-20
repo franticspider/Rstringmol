@@ -1,0 +1,80 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+froot <- "~/Desktop/paulien/smsp/1705smsp/out1/"
+```
+
+
+Let's load the final conf file: 
+
+```{r}
+
+  cf <- read.table(sprintf("%sout1_2000000.conf",froot),as.is = T, fill = T, sep=" ",comment.char="",stringsAsFactors = F)
+```
+
+Now we need to find the most numerous spp - let's write a function to do that: 
+
+```{r}
+get_top_spp <- function(data){
+  
+  boundspp <-  data[data$V1 == "###############",]
+  unboundspp <- data[data$V1 == "AGENT",]
+  
+  spp <- c(boundspp$V4,unboundspp$V3)
+  
+  spd <- data.frame(spp = unique(spp))
+  spd$count <- 0
+  
+  for(ss in 1:nrow(spd)){
+    spss <- spp[spp == spd$spp[ss]]
+    spd$count[ss] = length(spss)
+  }
+  
+  spd <- spd[order(spd$count,decreasing = T),]
+  
+  return(spd)
+  
+}
+
+spp <- get_top_spp(cf)
+
+```
+
+This gives us a ranked list of species. We can then interrogate this list to see how the system is working.
+
+The most numerous species is `P=?>G^B$=?>$BLU%}YH` - if we run this through the web app at http://stringmol.york.ac.uk/webapp/, then we can see that this is not a self-replicator - bind prob is 0.644, runs for 42 steps - so this parasite wastes time binding! The bind site is interesting - it's at `$=?>$`
+
+ `C=?>G^BB$=P?>$BLU%}QYH` copies the parasite above. Does not bind to self - so what copies it? `P=?>G^>B$=?>$ALVO%NY^B` - we have a hypercycle with a rate war!
+ 
+ `P=?>G^>B$=?>$ALVO%NY^B` self-binds, but dissociates with no product after 5 steps. 
+ 
+ 
+ # Run 2: 
+ 
+ Let's try this with another run: 
+ 
+```{r}
+froot <- "~/Desktop/paulien/smsp/1705smsp/out2/"
+cf <- read.table(sprintf("%sout1_2000000.conf",froot),as.is = T, fill = T, sep=" ",comment.char="",stringsAsFactors = F)
+spp <- get_top_spp(cf)
+```
+
+
+`$=?>^AHCL>Q^B>$BLU%G}YH` Self-replicator with rate limit
+ 
+ 
+ 
+ 
+
+
+
+
+
+
+
+
+
