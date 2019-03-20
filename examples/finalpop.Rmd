@@ -6,6 +6,7 @@ output: html_notebook
 
 ```{r}
 froot <- "~/Desktop/paulien/smsp/1705smsp/out1/"
+froot <- "D:/sjh/stringmol/smsp/1705smsp/out1/"
 ```
 
 
@@ -26,7 +27,7 @@ get_top_spp <- function(data){
   
   spp <- c(boundspp$V4,unboundspp$V3)
   
-  spd <- data.frame(spp = unique(spp))
+  spd <- data.frame(spp = unique(spp),stringsAsFactors = F)
   spd$count <- 0
   
   for(ss in 1:nrow(spd)){
@@ -59,14 +60,65 @@ The most numerous species is `P=?>G^B$=?>$BLU%}YH` - if we run this through the 
  
 ```{r}
 froot <- "~/Desktop/paulien/smsp/1705smsp/out2/"
+froot <- "D:/sjh/stringmol/smsp/1705smsp/out3/"
 cf <- read.table(sprintf("%sout1_2000000.conf",froot),as.is = T, fill = T, sep=" ",comment.char="",stringsAsFactors = F)
 spp <- get_top_spp(cf)
+head(spp,n=20)
 ```
 
 
 `$=?>^AHCL>Q^B>$BLU%G}YH` Self-replicator with rate limit
  
- 
+OK. now let's see if we can classify these replicators using the methods in `example.Rmd`
+
+```{r}
+source("../R/splist_stats.R")
+source("../R/rconf_stats.R")
+source("../R/rconf_data.R")
+require(stringr)
+reactions <- rconf_stats(fn = sprintf("%sout1_%d.conf",froot,2000000), 
+                                      spfn = sprintf("%ssplist%d.dat",froot,2000000),
+                                      verbose=F)
+```
+
+
+
+```{r fig.height=6, fig.width=6}
+plot(NA,xlim=c(1,11),ylim=c(1,11),axes=F,xlab="machine",ylab="template",asp = 1)
+colER <- "red"
+colPR <- "pink"
+colPN <- "purple"
+colPA <- "green"
+colNP <- "black"
+colDP <- "orange"
+colDN <- "brown"
+for(mm in 1:10){
+  for(tt in 1:10){
+    rap <- reactions[reactions$actseq==spp$spp[mm] & reactions$passeq == spp$spp[tt],]
+    sqcol <- "white"
+    if(nrow(rap) == 1){
+      if(rap$type == "ER") sqcol <- colER
+      if(rap$type == "PR") sqcol <- colPR
+      if(rap$type == "PN") sqcol <- colPN
+      if(rap$type == "PA") sqcol <- colPA
+      if(rap$type == "NP") sqcol <- colNP
+      if(rap$type == "DP") sqcol <- colPR
+      if(rap$type == "DN") sqcol <- colPR
+    }
+    else{
+     message(sprintf("%d reactions for spp %d and %d!",nrow(rap),mm,tt))
+    }
+    
+    
+    
+    
+    
+    col<-cols[(((mm-1)*10+tt)%%11)+1]
+    rect(xleft = mm,xright=mm+1,ybottom = tt,ytop = tt+1,col=sqcol,border = col)
+  }           
+
+}
+```
  
  
 

@@ -102,7 +102,7 @@ The section above shows that we only need to modify the list over restart bounda
 source("../R/splist_stats.R")
 #arguments
 start <- 0
-end <-   340000
+end <-   100000 #2000000
 step <-   20000
 smfroot <- sprintf("%s/out3/",froot)
 #body
@@ -110,16 +110,26 @@ smfroot <- sprintf("%s/out3/",froot)
 ts <- seq(end,start,-step)
 msp <- splist_stats(sprintf("%ssplist%d.dat",smfroot,ts[1]))
 restartfound <-F
-for( tt in 2:length(ts)){
+
+#This is the 'master' list at the end of the run...
+Mspl <- splist_stats(sprintf("%ssplist%d.dat",smfroot,ts[1]))
+
+for( tt in 1:length(ts)){
   message(sprintf("Processing file %d",ts[tt])) 
   fn <- sprintf("%ssplist%d.dat",smfroot,ts[tt])
   Pspl <- splist_stats(fn)
-  if(restartfound){
+  
+  if(restartfound | ts[tt]==0){
    
     #MERGE $R$ WITH $P$:
-     
-    hits <- Rspl[Rspl$spp %in% Pspl$spp,]
-    misses <- Rspl[!(Rspl$spp %in% Pspl$spp),]
+    if(ts[tt]!=0){
+      hits <- Rspl[Rspl$spp %in% Pspl$spp,]
+      misses <- Rspl[!(Rspl$spp %in% Pspl$spp),]
+    }
+    else{
+      hits <- Pspl
+    }
+    
     
     #Handle the hits - NO ACTION NEEDED
     #Handle the misses, add the following columns:
@@ -130,6 +140,7 @@ for( tt in 2:length(ts)){
     misses$obst1 <- Rtime
     
     #first rbind
+    message("")
     M1 <- rbind(misses,Pspl)
     
     #Now merge M1 with Mspl
@@ -200,17 +211,25 @@ for( tt in 2:length(ts)){
     seqs <- unique(hits$seq)
     for(ss in length(seqs)){
       
-      
-      
+   
     }
+    mastersplist <- Mspl  
+    mastersplist <- mastersplist[order(mastersplist$spp,decreasing = T),]
+    write.csv(mastersplist,file = sprintf("mspl%d.dat",ts[tt]),row.names = F,quote = F)
+    
+    #Reset everything:
+    restartfound<-F
+    rm(Rspl)
   }
+  
+  #Detect the restart...
   if(ncol(Pspl)==5){
     restartfound<-T
     #This is needed to check that all spp are accounted for (they won't be)
     Rspl <- Pspl
     Rtime <- ts[tt]
     #Also grab the splist thats generated *after* the restart: 
-    Mspl <- splist_stats(sprintf("%ssplist%d.dat",smfroot,ts[tt-1]))
+    #Mspl <- splist_stats(sprintf("%ssplist%d.dat",smfroot,ts[tt-1]))
   }
 }
 ```
