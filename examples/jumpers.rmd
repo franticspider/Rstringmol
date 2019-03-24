@@ -1,0 +1,103 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+froot <- "~/Desktop/paulien/smsp/1705smsp/out1/"
+froot <- "D:/sjh/stringmol/smsp/1705smsp/out1/"
+```
+
+
+Let's load the final conf file: 
+
+```{r}
+
+  cf <- read.table(sprintf("%sout1_1500000.conf",froot),as.is = T, fill = T, sep=" ",comment.char="",stringsAsFactors = F)
+```
+
+Now we need to find the most numerous spp - let's write a function to do that: 
+
+
+
+```{r}
+get_pos_plot <- function(cf,t,box=NA){
+  
+  ub <- cf[cf$V1=="GRIDPOS",]
+  ub$V4 <- as.numeric(ub$V4)
+  ub$V3 <- as.numeric(ub$V3)
+  
+  aa <- cf[cf$V3=="grid:",]
+  aa$V4 <- as.numeric(aa$V4)
+  aa$V5 <- as.numeric(aa$V5)
+
+  ap <- cf[cf$V4=="grid:",]
+  bpy <- cf[(which(cf$V4=="grid:"))+1,]
+  ap <- data.frame(ap,yy=bpy$V1,stringsAsFactors = F)
+  ap$V5 <- as.numeric(ap$V5)
+  ap$yy <- as.numeric(ap$yy)
+  
+  plot(NA,xlim=c(0,100),ylim=c(0,125),asp=1,main=sprintf("%d",t))
+  rect(xleft = 0,xright = 100,ybottom = 0,ytop = 125,col="black")
+  
+  xl <- ub$V4-1
+  rect(xleft=xl,xright = ub$V4,   ybottom=125-ub$V3,ytop=125-ub$V3+1,col="white",border = "white",lwd=0)
+  rect(xleft=aa$V5-1,xright=aa$V5,ybottom=125-aa$V4,ytop=125-aa$V4+1,col="red",border="blue",lwd=0)
+  rect(xleft=ap$yy-1,xright=ap$yy,ybottom=125-ap$V5,ytop=125-ap$V5+1,col="green",border="green",lwd=0)
+
+  if(!is.na(box)){
+    segments(x0=box[1],y0=box[3],y1=box[4],col="red")
+    segments(x0=box[2],y0=box[3],y1=box[4],col="red")
+  
+    segments(x0=box[1],x1=box[2],y0=box[3],col="red")
+    segments(x0=box[1],x1=box[2],y0=box[4],col="red")
+  
+    hits <- ub[(ub$V4>box[1] & ub$V4<box[2] &  (125-ub$V3) > box[3] & (125-ub$V3) < box[4]),]
+    if(nrow(hits)>0){
+    #  message("Found %d hits\n",nrow(hits))
+      #for(hh in 1:nrow(hits)){
+        #message(sprintf("Found ub at %d %d (y,x) order\n",hits$V3,hits$V4))   
+        rect(xleft=hits$V4-1,xright = hits$V4,   ybottom=125-hits$V3,ytop=125-hits$V3+1,col="red",border = "red",lwd=0)
+
+      #}
+    }
+    return(hits)
+  }
+  
+}
+```
+
+```{r}
+for(t in seq(1000000,2000000,20000)){
+
+  cf <- read.table(sprintf("%sout1_%d.conf",froot,t),as.is = T, fill = T, sep=" ",comment.char="",stringsAsFactors = F)
+get_pos_plot(cf,t)
+}
+```
+
+
+OK, it's looking like t=1540000 has jumpers. We'll extend the gridplot function to isolate a region
+
+```{r}
+  cf <- read.table(sprintf("%sout1_%d.conf",froot,1540000),as.is = T, fill = T, sep=" ",comment.char="",stringsAsFactors = F)
+hits <- get_pos_plot(cf,1540000,c(50,75,50,60))
+```
+
+    P=?>G^C>B$=?>$A?UO%}PYHHGGP 67,58 
+    P=?>G^C>C$=?>$A?UO%}PYHHGGPC>B$=?V>$AL=OH}PYH 67,63 (splits itself in half after $=?>$)
+    P=?>G^C>B$=?>$A?UO%}PYHHPPP 67,72
+    PYHHPPP 68,69
+    
+    P=?>G^C>B$=?>$A?UO%}PYHHPPP
+    C=?PPC=?QP^C>B$=?P>$ALVOHPP
+    P=?>G^C>B$=?>$A?UO%}PYHHQPPP
+    P=?>G^C>B$=?>$A?UO%}PYHHPPP
+    P=?>G^C>B$=?>$A?UO%}PYHHGGP
+
+
+
+`C=?>G^BC$=P?>$BLU%PYH` and `P=?>G^BC$=P?>$BLU%PYH` form a hypercycle. Identical apart from 1st character, but this difference allows a bind site to form. This one is really efficient because there's nowhere else for a bind to form
+
+`P=?PP^C>B$=?V>$ALUOG}PYHH` binds to `C=?PP^C>B$=?V>$ALUOG}PYHH` and converts it back to `P=?PP^C>B$=?V>$ALUOG}PYHH` by overwriting - there is no cleave
+
