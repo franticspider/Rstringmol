@@ -51,6 +51,7 @@ rconf_stats <- function(fn,spfn,verbose=F){
     }
 
     if(verbose)message("\n2\n")
+    #if identical species in the reaction
     if(reactions$actno[rr] == reactions$pasno[rr]){
       if(nrow(dd)==1){
         if(dd$spp == reactions$actno[rr]){
