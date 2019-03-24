@@ -5,8 +5,8 @@ output: html_notebook
 
 
 ```{r}
-froot <- "~/Desktop/paulien/smsp/1705smsp/out1/"
-froot <- "D:/sjh/stringmol/smsp/1705smsp/out1/"
+froot <- "~/Desktop/paulien/smsp/1705smsp/out3/"
+#froot <- "D:/sjh/stringmol/smsp/1705smsp/out3/"
 ```
 
 
@@ -43,7 +43,7 @@ get_pos_plot <- function(cf,t,box=NA){
   
   xl <- ub$V4-1
   rect(xleft=xl,xright = ub$V4,   ybottom=125-ub$V3,ytop=125-ub$V3+1,col="white",border = "white",lwd=0)
-  rect(xleft=aa$V5-1,xright=aa$V5,ybottom=125-aa$V4,ytop=125-aa$V4+1,col="red",border="blue",lwd=0)
+  rect(xleft=aa$V5-1,xright=aa$V5,ybottom=125-aa$V4,ytop=125-aa$V4+1,col="blue",border="blue",lwd=0)
   rect(xleft=ap$yy-1,xright=ap$yy,ybottom=125-ap$V5,ytop=125-ap$V5+1,col="green",border="green",lwd=0)
 
   if(!is.na(box)){
@@ -79,10 +79,19 @@ get_pos_plot(cf,t)
 
 OK, it's looking like t=1540000 has jumpers. We'll extend the gridplot function to isolate a region
 
-```{r}
-  cf <- read.table(sprintf("%sout1_%d.conf",froot,1540000),as.is = T, fill = T, sep=" ",comment.char="",stringsAsFactors = F)
-hits <- get_pos_plot(cf,1540000,c(50,75,50,60))
+```{r fig.height=10, fig.width=10}
+  cf <- read.table(sprintf("%sout1_%d.conf",froot,1420000),as.is = T, fill = T, sep=" ",comment.char="",stringsAsFactors = F)
+hits <- get_pos_plot(cf,1420000,c(70,80,35,40))
 ```
+
+
+`$=?>CAVBO%}HOB$` is an example of a 'jumper'
+
+
+
+
+
+## Notes from run 1
 
     P=?>G^C>B$=?>$A?UO%}PYHHGGP 67,58 
     P=?>G^C>C$=?>$A?UO%}PYHHGGPC>B$=?V>$AL=OH}PYH 67,63 (splits itself in half after $=?>$)
