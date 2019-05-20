@@ -20,7 +20,7 @@ Need a function to stitch the popdys together:
 ```{r}
 # arguments
 #function:
-stitch.popdy <- function(froot = ".",doplot=F,ylim=c(0,1000000)){
+stitch.popdy <- function(froot = ".",doplot=F,ylim=c(0,1000000),title=""){
   fl <- list.files(fr,pattern="^popdy*",full.names = T)
   fcols <- rainbow(length(fl))
   datachunk <- list()
@@ -37,7 +37,7 @@ stitch.popdy <- function(froot = ".",doplot=F,ylim=c(0,1000000)){
     #message(sprintf("plotting file %s",fl[ff]))
     if(ff==1){
       if(doplot){
-        plot(x=datachunk[[ff]]$time,y=datachunk[[ff]]$spp,col=fcols[ff],pch=19,cex=0.2,xlim=c(0,2000000),ylim=ylim,ylab="species number",xlab="time")
+        plot(x=datachunk[[ff]]$time,y=datachunk[[ff]]$spp,col=fcols[ff],pch=19,cex=0.2,xlim=c(0,2000000),ylim=ylim,ylab="species number",xlab="time",main=title)
       
         at <- axTicks(1)
         axis(3, at=at, labels=sprintf("%d:%02d", (at*83/2000000) %/% 60, at %% 60), las=1)
@@ -61,7 +61,7 @@ stitch.popdy <- function(froot = ".",doplot=F,ylim=c(0,1000000)){
 
 for(rr in 1:5){
   fr = sprintf("%sout%d/",froot,rr)
-  pd <- stitch.popdy(fr,doplot=T)
+  pd <- stitch.popdy(fr,doplot=T,title = sprintf("run %d",rr))
 }
 
 ```
