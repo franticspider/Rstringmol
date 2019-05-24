@@ -1,9 +1,9 @@
 ---
 title: "Stringmol run analysis"
 output:
+  html_notebook: default
   html_document:
     df_print: paged
-  html_notebook: default
   pdf_document: default
 ---
 
@@ -13,7 +13,7 @@ Set the `froot` variable to the path to the files for these tests:
 
 ```{r}
 #froot="D:/sjh/stringmol/out3smsp/"
-froot="D:/sjh/stringmol/smsp/1705smsp/out3/"
+froot="D:/sjh/stringmol/smsp/1705smsp/out5/"
 #froot="~/Desktop/paulien/sm250r/out3/"
 ```
 
@@ -42,31 +42,36 @@ Concerns:
 
 ### Stats from `splist` files
 
-Theres a function called `splist_stats` that generates these - let's check it out: 
+Theres a function called `splist_stats` that grabs the data from the files - let's check it out: 
 
 ```{r}
 source("../R/splist_stats.R")
 sps <- splist_stats(sprintf("%ssplist100000.dat",froot),tmin=90000)
 ```
+This gives us a data frame holding every reaction seen until this point (assuming no restarts). 
 
 That works, so let's see if we can do an iteration: 
 
 ```{r}
 gotdata<- T
-tt <- 10000
+tstep <- 20000 #sometimes its 10000
+tt <- tstep
+sps <- list()
+nsps <- 1
 while(gotdata){
   fn <- sprintf("%ssplist%d.dat",froot,tt)
   if(file.exists(fn)){
     message(sprintf("\nProcessing Time %d:",tt))
-    splist_stats(fn,tmin=(tt-10000))
+    sps[[nsps]] <- splist_stats(fn,tmin=(tt-10000))
+    nsps <- nsps + 1
   }
   else
     gotdata <- F
   
-  tt = tt+10000
+  tt = tt+tstep
 }
 ```
-That works as far as it goes, but we aren't seeing the *dominant* reaction that we are looking for, just the "most common reaction that first occured withing 10000 time steps". 
+That works as far as it goes, but we aren't seeing the *dominant* reaction that we are looking for, just the "most common reaction that first occured within 20000 time steps". 
 
 ### Stats from `.conf` files
 
@@ -90,6 +95,8 @@ Each entry for a reaction in the current state of the system looks like this:
     GRIDPOS  189 29
 
 
+Let's try some code that looks at these records to try to build a picture of what's going on at any particular time.
+First, we'll get each reaction: 
 ```{r}
 require (stringr)
 
@@ -112,8 +119,12 @@ source("../R/splist_stats.R")
   actseq <- vector(length = nr)
   pasno <- vector(length = nr)
   passeq <- vector(length = nr)
-  
+```
+
+
+```{r}
   #build the data for each reaction - similar to the splist analysis
+  #This introduces NAs by coercion sometimes
   for(rr in 1:nr){
     words <-strsplit(cf[rpos[rr]+2,1],split=" ")
     actno[rr] <- as.numeric(words[[1]][3])
@@ -126,10 +137,10 @@ source("../R/splist_stats.R")
   }
   
   eachreaction<-data.frame(actno,actseq,pasno,passeq)
-  
+
+  #summarize each reaction with the active and passive reactants (note we aren't assuming a different product...)
   reactions <- unique(eachreaction)
   reactions$type = "<unknown>"
-  
   for(rr in 1:nrow(reactions)){
     ca <- eachreaction[eachreaction$actno == reactions$actno[rr] & eachreaction$pasno == reactions$pasno[rr],]
     reactions$count[rr] = nrow(ca)
@@ -139,6 +150,7 @@ source("../R/splist_stats.R")
   #Get the product molecule from the splist: 
   for(rr in 1:nrow(reactions)){
     
+    #Check for NAs in the species numbers: 
     if(is.na(reactions$actno[rr]) || is.na(reactions$pasno[rr])){
       
         #message(sprintf("Reaction %d has NAs  (NA)",rr))
@@ -146,7 +158,7 @@ source("../R/splist_stats.R")
         next
     }
     
-    
+    #Get all reactions with the same active and passive spp
     dd <- spldata[(spldata$act == reactions$actno[rr]) & (spldata$pass == reactions$pasno[rr]), ]
     if(nrow(dd)==0){
       #message(sprintf("Reaction %d has no product (NP)",rr))
@@ -207,12 +219,14 @@ Now we can count the different reaction types:
 
 ```{r}
 
+reactions <- rconf_stats(fn = sprintf("%sout1_400000.conf",froot), spfn = sprintf("%ssplist400000.dat",froot))
 rclass <- c("NA","NP","ER","DP","PR","PA","DN","PN")
 rcounts <- data.frame(rclass)
 for(rr in 1:length(rclass)){
   dd <- reactions[reactions$type == rclass[rr],]
   rcounts$count[rr] = nrow(dd)
 }
+rcounts
 
 ```
 
@@ -283,7 +297,21 @@ while(gotdata ){#&& tt < 320000){#
 ```
 
 
-```{r fig.height=8, fig.width=10}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r fig.height=12, fig.width=15}
 bcols = rainbow(ncol(rcounts[2:9])) 
 bcols <- bcols[sample(1:length(bcols))]
 par(mfrow=c(2,1))

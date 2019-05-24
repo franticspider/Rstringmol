@@ -87,7 +87,7 @@ for(ss in 1:length(rundirs)){
   for(rr in 1:5){
     
     fr = sprintf("%s%s/out%d/",mroot,rundirs[ss],rr)
-    pd <- stitch.popdy(fr,doplot=T,ylim=c(0,700000))
+    pd <- stitch.popdy(fr,doplot=T,ylim=c(0,700000), title = sprintf("%s, run %d",runtypes[ss],rr))
     write.table(pd,file = sprintf("%s%s/out%d/mpopdy.dat",mroot,rundirs[ss],rr),row.names = F, col.names = F, quote = F,sep=",")
     
   }
@@ -186,7 +186,7 @@ for(tt in 2:length(times)){
 
 }
 par(mfrow=c(4,1))
-boxplot(agd,ylim=c(0,200),pch=19,cex=0.2,main="Length of All stringmols")
+boxplot(agd,ylim=c(0,200),pch=19,cex=0.2,main="Length of Unbound stringmols")
 boxplot(acd,ylim=c(0,200),pch=19,cex=0.2,main="Length of Active partners")
 boxplot(pad,ylim=c(0,200),pch=19,cex=0.2,main="Length of Passive partners")
 boxplot(ldata,ylim=c(0,200),pch=19,cex=0.2,main="Length of all reacting stringmols")

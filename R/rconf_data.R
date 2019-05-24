@@ -6,8 +6,9 @@ rconf_agents<- function(fn){
   cf <- read.table(fn,as.is = T, fill = T, sep="\n",comment.char="",stringsAsFactors = F)
 
   agents <- cf[str_sub(cf[,1],1,5)=="AGENT",]
-  agstr <- str_sub(agents,7,str_length(agents)-4)
+  agstr <- str_sub(agents,8,str_length(agents)-4)
   #ag_strlen <- str_length(agstr)
+
 
   return(agstr)
 
@@ -40,6 +41,8 @@ rconf_rdata <- function(fn,verbose = F,summarize=T){
     words <-strsplit(cf[rpos[rr]+2,1],split=" ")
     actno[rr] <- as.numeric(words[[1]][3])
     actseq[rr] <- words[[1]][4]
+
+
     words <-strsplit(cf[rpos[rr]+6,1],split=" ")
 
     ##if(is.na(as.integer(words[[1]][3])))message("BOOM")
@@ -47,6 +50,7 @@ rconf_rdata <- function(fn,verbose = F,summarize=T){
     ##TODO: we get 'NAs introduced by coercion' when this is e.g. "$OYHOB"
     pasno[rr] <- suppressWarnings(  as.numeric(words[[1]][3]) )
     passeq[rr] <- words[[1]][4]
+
     #TODO handle bad format better where passive mol is above rpos!!
     if(is.na(pasno[rr])){
       words <-strsplit(cf[rpos[rr]-1,1],split=" ")
@@ -59,7 +63,7 @@ rconf_rdata <- function(fn,verbose = F,summarize=T){
     #message(sprintf("Passive molecule %s seq %s",actno[rr],actseq[rr]))
   }
 
-  eachreaction<-data.frame(actno,actseq,pasno,passeq)
+  eachreaction<-data.frame(actno,actseq,pasno,passeq,stringsAsFactors = F)
 
   if(summarize){
     reactions <- unique(eachreaction)
