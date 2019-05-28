@@ -1,0 +1,282 @@
+---
+title: "Creating splist stats master list"
+output: html_notebook
+---
+
+
+We'll try to use splist stats to do this
+
+###Algorithm
+
+    masterfile = load(endfile)
+    for file in endfile-1 to startfile:
+      load(file)
+        for each entry in file
+          If there's not an entry in masterfile
+            entry = handle restart issues (entry)
+            add entry to masterfile
+            
+            
+### Raw code for debugging
+
+Here's the master algorithm - some more investigative code follows this
+
+WARNING: Takes a looong time to run! (quickly fixed by making start and end close to each other)
+
+```{r}
+
+source("../R/splist_stats.R")
+
+#arguments
+start <- 1940000
+end   <- 1960000
+step  <- 20000
+smfroot <- sprintf("%s/out3/",froot)
+#body
+
+ts <- seq(end,start,-step)
+msp <- splist_stats(sprintf("%ssplist%d.dat",smfroot,ts[1]))
+for( tt in 2:length(ts)){
+  message(sprintf("Processing file %d",ts[tt]))  
+  nnewreactions <- 0
+  nnewparents <- 0
+  tsp <- splist_stats(sprintf("%ssplist%d.dat",smfroot,ts[tt]))
+  tsp$addentry <- F
+  restart <-F
+  if(ncol(tsp)==5)restart<-T
+  #NB This could be made more efficient but I want to debug it
+  for(ee in 1:nrow(tsp)){
+    
+    entry<-msp[tsp$spp[ee] == msp$spp,]
+    if(nrow(entry)>0){
+      #message(sprintf("Found %d matches for %s",nrow(entry),tsp$spp[ee]))
+      entry<-entry[(tsp$act[ee] == entry$act) & (tsp$pass[ee] == entry$pass),]
+      if(nrow(entry)>0){
+      }
+      else{
+        
+        #message(sprintf("Found no matches for line %d:  %d,%d,%d"
+        #                ,ee,tsp$spp[ee],
+        #                tsp$act[ee],tsp$pass[ee]))
+        tsp$addentry[ee]<-T
+        nnewparents <- nnewparents+1
+      }
+    }
+    else{
+      #message(sprintf("%d No match for %s",ee,tsp$spp[ee]))
+      tsp$addentry[ee]<-T
+      nnewreactions <- nnewreactions+1
+    }
+  }
+  message(sprintf("found %d new reactions and %d new parents",nnewreactions,nnewparents))
+}
+
+
+#return
+```
+
+- Going back in time, the only time missing entries appear is when we go over a restart
+- The splist that's there at restart has some species in that arent in the subsequent splist. I suspect these are spp that aren't involved in any subsequent reactions
+- This means we can speed up processing by only seeking to add new entries when a restart is found. 
+
+##Detecting the last list before restart
+
+The section above shows that we only need to modify the list over restart boundaries, which saves a LOT of processing time. Let's try this method now:
+
+- Find restart at time $t$.
+- Set $M$ as splist for time $t+1$
+- Set $R$ as splist for time $t$
+- Set $P$ as splist for time $t-1$
+- Add all unseen spp in $R$ to $P$
+- There isn't any info for hits in $R$ that could be used to update any time info in $P$
+- Add all unseen spp/reactions in $P$ to $M$
+- Update any time info in $M$ (will be some I think)
+
+
+
+
+
+
+```{r}
+
+source("../R/splist_stats.R")
+#arguments
+start <- 0
+end <-   100000 #2000000
+step <-   20000
+smfroot <- sprintf("%s/out3/",froot)
+#body
+
+ts <- seq(end,start,-step)
+msp <- splist_stats(sprintf("%ssplist%d.dat",smfroot,ts[1]))
+restartfound <-F
+
+#This is the 'master' list at the end of the run...
+Mspl <- splist_stats(sprintf("%ssplist%d.dat",smfroot,ts[1]))
+
+for( tt in 1:length(ts)){
+  message(sprintf("Processing file %d",ts[tt])) 
+  fn <- sprintf("%ssplist%d.dat",smfroot,ts[tt])
+  Pspl <- splist_stats(fn)
+  
+  if(restartfound | ts[tt]==0){
+   
+    #MERGE $R$ WITH $P$:
+    if(ts[tt]!=0){
+      hits <- Rspl[Rspl$spp %in% Pspl$spp,]
+      misses <- Rspl[!(Rspl$spp %in% Pspl$spp),]
+    }
+    else{
+      hits <- Pspl
+    }
+    
+    
+    #Handle the hits - NO ACTION NEEDED
+    #Handle the misses, add the following columns:
+    # float = 0; obsn = 1; obst1 = ts[tt]
+    
+    misses$float <- 0
+    misses$obsn <- 1
+    misses$obst1 <- Rtime
+    
+    #first rbind
+    message("")
+    M1 <- rbind(misses,Pspl)
+    
+    #Now merge M1 with Mspl
+    
+    hits   <- Pspl[Pspl$spp %in% Mspl$spp,]
+    misses <- Pspl[!(Pspl$spp %in% Mspl$spp),]
+    
+    #Deal with the hits: update obst1 is all we need to do once we've checked spp and seq match
+    sph <- unique(hits$spp)
+    message(sprintf("Found %d matches between Pspl and Mspl",length(sph)))
+    for(x in 1:length(sph)){
+      obs <- unique(hits$obst1[hits$spp == sph[x]])
+      if(length(obs) > 1){
+        message(sprintf("WARNING: l(obs) == %d for spp %d",length(obs),sph[x]))
+      }
+      oldobs <- Mspl$obst1[Mspl$spp == sph[x]]
+      #message(sprintf("Replacing obs[1] value of %d with %d from Pspl",oldobs[1],obs[1]))
+      Mspl$obst1[Mspl$spp == sph[x]] <- obs[1]
+    }
+
+    #Deal with the misses: 
+    #Sanity check - make sure the seq and spp numbers match
+    seqs <- unique(misses$seq)
+    P_errs <-0
+    M_errs <-0
+    M_adds <- 0
+    
+    message(sprintf("Found %d sequences in Pspl that aren't in Mspl",length(seqs)))
+    
+    #handle the entries that are missing from the master list
+    # Do this by seq not spp so we can check if there are any seqs with >1 spp number, and fix
+    for(ss in 1:length(seqs)){
+      #this should be 1 unless a sequence has two spp numbers:
+      Pspns <- unique(Pspl$spp[Pspl$seq == seqs[ss]])
+      if(length(Pspns) != 1){
+        #message(sprintf("Warning! Pspns = %d: more than one spp for seq\n\t%s",length(Pspns), seqs[ss]))
+        P_errs = P_errs + 1
+      }
+      
+      #this should be 0 because we are going through the misses,
+      #BUT we want to check there's no duplicate of sequence.
+      Mspns <- unique(Mspl$spp[Mspl$seq == seqs[ss]])
+      if(length(Mspns) != 0){
+        #message(sprintf("Warning! Mspl = %d: more than 0 spp for seq %d\n\t%s",length(Mspns),ss,seqs[ss]))
+        #message(sprintf("\tPspns is %d for the same sequence - fix needed!",Pspns))
+        
+        Mspl$spp[Mspl$spp == Mspns] <- Pspns
+        Mspl$obst1[Mspl$spp == Mspns] <- Pspl$obst1[Pspl$seq == seqs[ss]]
+        
+        Mspl$act[Mspl$act == Mspns] <- Pspns
+        Mspl$pass[Mspl$pass == Mspns] <- Pspns
+        
+        
+        M_errs = M_errs + 1
+      }
+      else{
+        # At this point we know:
+        # - The spp number was Not present in Mspl
+        # - The sequence is not present in Mspl
+        # So we are safe to add this entry to the end
+        rbind(Mspl,misses[misses$seq == seqs[ss],])
+        m_adds = M_adds + 1
+      }
+    }
+    message(sprintf("Found %d P_errs and %d M_errs and %d M_adds",P_errs,M_errs,M_adds))
+    
+    #Finally, handle the entries that are hits in the master list
+    seqs <- unique(hits$seq)
+    for(ss in length(seqs)){
+      
+   
+    }
+    mastersplist <- Mspl  
+    mastersplist <- mastersplist[order(mastersplist$spp,decreasing = T),]
+    write.csv(mastersplist,file = sprintf("mspl%d.dat",ts[tt]),row.names = F,quote = F)
+    
+    #Reset everything:
+    restartfound<-F
+    rm(Rspl)
+  }
+  
+  #Detect the restart...
+  if(ncol(Pspl)==5){
+    restartfound<-T
+    #This is needed to check that all spp are accounted for (they won't be)
+    Rspl <- Pspl
+    Rtime <- ts[tt]
+    #Also grab the splist thats generated *after* the restart: 
+    #Mspl <- splist_stats(sprintf("%ssplist%d.dat",smfroot,ts[tt-1]))
+  }
+}
+```
+
+# Testing the result
+
+- Load each splist
+- choose 10-100 random entries. 
+- check it against the master list
+
+```{r}
+#make a dummy master file...
+  fn <- sprintf("%ssplist%d.dat",smfroot,360000)
+  Mspl <- splist_stats(fn)
+
+
+nsamps <- 10
+for( tt in 1:length(ts)){
+  message(sprintf("Processing file %d",ts[tt])) 
+  fn <- sprintf("%ssplist%d.dat",smfroot,ts[tt])
+  Pspl <- splist_stats(fn)
+  samps <- sample(1:nrow(Pspl), nsamps, replace=F)
+  for( rr in 1:nsamps){
+    ss <- samps[rr]
+    sample <- Pspl[ss,]
+    message(sprintf("Checking spp %d: %s",sample$spp[1],sample$seq))
+    
+    match <- Mspl[Mspl$spp == sample$spp[1] & 
+                    Mspl$act == sample$act[1] & 
+                    Mspl$pass == sample$pass[1]
+                  , ]
+    
+    ff <- nrow(match)
+    if(ff == 0){
+        message("ERROR: no matches found!")
+        ect = ect + 1
+    }
+    if(ff>0){
+      if(ff>1){
+        message(sprintf("ERROR: %d matches found!",ff))
+        ect = ect + 1
+      }
+      else
+        message("match found")
+    }
+  }  
+  break
+}
+```
+
