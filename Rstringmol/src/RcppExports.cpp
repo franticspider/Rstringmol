@@ -17,7 +17,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // doReaction
-int doReaction(Rcpp::StringVector seqVector);
+Rcpp::List doReaction(Rcpp::StringVector seqVector);
 RcppExport SEXP _Rstringmol_doReaction(SEXP seqVectorSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
