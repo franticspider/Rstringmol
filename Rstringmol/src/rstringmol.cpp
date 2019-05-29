@@ -28,12 +28,26 @@ Procedure: doReaction
 //'
 //' @param seqVector the sequence of the two strings, active first, then passive.
 // [[Rcpp::export]]
-int doReaction(Rcpp::StringVector seqVector) {
+Rcpp::List doReaction(Rcpp::StringVector seqVector) {
 
   s_ag *m1,*m2;
 
+ //create the agents from the strings
 
-  return 0;
+
+ //run get_sw() to get bind prob - see stringPM::testbind()
+ //bprob = get_sw(pag,bag,&sw);
+
+
+  //use set_exec to determine the active and passive strings
+
+
+
+
+
+  Rcpp::List Lresult = Rcpp::List::create(Rcpp::Named("product") = "empty");
+
+  return Lresult;
 }
 
 
