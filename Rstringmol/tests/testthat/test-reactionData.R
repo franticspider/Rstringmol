@@ -9,7 +9,11 @@ test_that("multiplication works", {
 
 
 
+test_that("doReaction fails gracefully",{
+  result <- doReaction("")
+  expect_match(result$status,"bad number of input strings")
 
+})
 
 
 

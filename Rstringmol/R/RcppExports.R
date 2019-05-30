@@ -8,6 +8,7 @@ timesTwelve <- function(x) {
 #' React 2 stringmols together - determine whether the run is deterministic or not
 #'
 #' @param seqVector the sequence of the two strings, active first, then passive.
+#' @export
 doReaction <- function(seqVector) {
     .Call(`_Rstringmol_doReaction`, seqVector)
 }
