@@ -11,11 +11,19 @@ using namespace Rcpp;
 
 #include "stringmanip.h"
 #include "alignment.h"
+#include "instructions.h"
 
 #include "SMspp.h" //Contains the definition of s_ag - the basic species unit
 
 //set in stringPM.cpp
-unsigned int maxl0 = 2001;
+const unsigned int maxl = 2000;
+const unsigned int maxl0 = maxl+1;
+const int granular_1 = 0; //Whether we are doing granular stringmol or not
+
+//function headers for things we've borrowed from stringPM
+int hcopy(s_ag *act);
+int cleave(s_ag *act);
+s_ag * make_ag(int alab, int agct = 0);
 
 
 
@@ -32,6 +40,249 @@ unsigned int maxl0 = 2001;
 NumericVector timesTwelve(NumericVector x) {
   return x * 12;
 }
+
+
+
+//int stringPM::hcopy(s_ag *act){
+int hcopy(s_ag *act){
+
+  //s_ag *pass;
+  //pass = act->pass;
+  int cidx;
+  float rno;
+  int safe = 1;// this gets set to zero if any of the tests fail..
+
+  //MUTATION RATES:
+  //THESE ARE HARD-CODED FOR NOW - THEY SHOULD BE DERIVED FROM THE BLOSUM SOMEHOW...
+  //const float indelrate = 0.0005,		subrate=0.375;//0.0749/2
+  //const float indelrate = 0.0000306125,	subrate=0.01;//0.02
+  //const float indelrate = 0.00006125,	subrate=0.05;//0.02
+  //const float indelrate = 0.000125,		subrate=0.1;//0.02
+  //const float indelrate = 0.000005,		subrate=0.0375;//0.0749/2
+  //const float indelrate = 0., 			subrate = 0.;
+
+  //Not needed in Rstringmol (there is no mutation atm)
+  //if(!domut){
+  //  indelrate = subrate =0;
+  //}
+
+  act->len = strlen(act->S);
+  act->pass->len = strlen(act->pass->S);
+
+  int p;
+  if( (p = h_pos(act,'w'))>=(int) maxl){
+
+    //#ifdef DODEBUG
+    //		printf("Write head out of bounds: %d\n",p);
+    //#endif
+
+    //just to make sure no damage is done:
+    if(act->wt)
+      act->S[maxl]='\0';
+    else
+      act->pass->S[maxl]='\0';
+
+    act->i[act->it]++;
+
+    safe = 0;
+    return -1;
+  }
+  if(h_pos(act,'r')>=(int) maxl){
+    printf("Read head out of bounds\n");
+
+    act->i[act->it]++;
+
+    safe = 0;
+    return -2;
+  }
+
+
+
+/* MUTATION: (NOT NEEDED IN RSTRINGMOL ATM)
+  if(*(act->r[act->rt]) == 0){
+    //possibly return a negative value and initiate a b
+    safe = 0;
+    //return -3;
+  }
+  //if(h_pos(act,'w')>=maxl){
+  //	//We are at the end of a copy...
+  //	//...so just increment *R
+  //	act->r[act->rt]++;
+  //	safe = 0;
+  //}
+
+  if(safe){
+    rno=rand0to1();
+    if(rno<indelrate){//INDEL
+
+      //should follow the blosum table for this....
+      rno=rand0to1();
+      if(rno<0.5){//insert
+        //first do a straight copy..
+        *(act->w[act->wt])=*(act->r[act->rt]);
+
+        //no need to test for granular here since we are inserting...
+        act->w[act->wt]++;
+
+        //Then pick a random instruction:
+        cidx = (float) rand0to1() * blosum->N;
+
+        //insert the random instruction
+        *(act->w[act->wt])=blosum->key[cidx];
+        if(granular_1==0){
+          act->w[act->wt]++;
+        }
+      }
+      else{//delete
+        act->i[act->it]++;
+      }
+
+      if(granular_1==0){
+        act->r[act->rt]++;
+      }
+
+    }
+    else{
+      if(rno<subrate+indelrate){//INCREMENTAL MUTATION
+        cidx = sym_from_adj(*(act->r[act->rt]),blosum);
+        *(act->w[act->wt])=cidx;
+      }
+      else{//NO MUTATION
+        *(act->w[act->wt])=*(act->r[act->rt]);
+      }
+      if(granular_1==0){
+        act->w[act->wt]++;
+        act->r[act->rt]++;
+      }
+    }
+  }
+  //update lengths
+  act->len = strlen(act->S);
+  act->pass->len = strlen(act->pass->S);
+  */
+
+  //Increment the instruction pointer
+  act->i[act->it]++;
+
+
+#ifdef VERBOSE
+  if(mut)
+    printf("Mutant event %d. new string is:\n%s\n\n",mut,act->wt?act->S:act->pass->S);
+#endif
+  act->biomass++;
+  ///biomass++;
+  return 0;
+}
+
+
+
+
+//int stringPM::cleave(s_ag *act){
+int cleave(s_ag *act){
+
+  int dac = 0,cpy;
+  s_ag *c,*pass,*csite;
+
+  pass = act->pass;
+
+  //pick the mol containing the cleave site:
+  csite = act->ft?act:pass;
+
+  if(act->f[act->ft]-csite->S < csite->len){
+
+    //1: MAKE THE NEW MOLECULE FROM THE CLEAVE POINT
+
+    //Can't really say what the label is easily - for ECAL, it's always pass
+    c = make_ag(pass->label);//,1);
+
+    //Copy the cleaved string to the agent
+    char *cs;
+
+    c->S =(char *) malloc(maxl0*sizeof(char));
+    memset(c->S,0,maxl0*sizeof(char));
+
+    cs = csite->S;
+    cpy = strlen(cs);
+    //Check that we aren't creating a zero-length molecule:
+    if(!cpy){
+      printf("WARNING: Zero length molecule being created!\n");
+    }
+
+    //Make the parent structure: ALL DONE NOW IN update_lineage
+    //c->pp = splist->make_parents(act->spp,pass->spp);
+
+    cpy -= act->f[act->ft]-cs;
+
+    strncpy(c->S,act->f[act->ft],cpy);
+    c->len = strlen(c->S);
+#ifdef VERBOSE
+    printf("String %d created:\n%s\n",c->idx,c->S);
+#endif
+
+    //ALL DONE NOW IN update_lineage
+    //Fill in the birth certificate:
+    //Parents now set in update_lineage
+    //c->paspp = act->spp;
+    //c->ppspp = pass->spp;
+
+    //Check the lineage
+    update_lineage(c,'C',1,act->spp,pass->spp,act->biomass);
+    act->biomass=0; //reset this; we might continue to make stuff!
+
+    //append the agent to nexthead
+    append_ag(&nexthead,c);
+
+    //2: HEAL THE PARENT
+
+    memset(act->f[act->ft],0,cpy*sizeof(char));
+
+    csite->len = strlen(csite->S);
+
+    if((dac = check_ptrs(act))){
+      switch(dac){
+      case 1://Destroy active - only append passive
+        unbind_ag(pass,'P',1,act->spp,pass->spp);
+        append_ag(&nexthead,pass);
+        free_ag(act);
+        break;
+      case 2://Destroy passive - only append active
+        unbind_ag(act,'A',1,act->spp,pass->spp);
+        append_ag(&nexthead,act);
+        free_ag(pass);
+        break;
+      case 3://Destroy both
+        printf("This should never happen\n");
+        unbind_ag(act,'A',1,act->spp,pass->spp);
+        unbind_ag(pass,'P',1,act->spp,pass->spp);
+        free_ag(act);
+        free_ag(pass);
+        break;
+      default://This can't be right can it?
+        if(act->ft == act->it){
+          act->i[act->it]--;
+        }
+        break;
+      }
+    }
+  }
+  if(!dac){
+    act->i[act->it]++;
+    //dac=-1;
+  }
+
+  return dac;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 /* TODO: Move this outside stringPM..
@@ -120,17 +371,16 @@ float get_bprob(align *sw){
 
 
 //float stringPM::get_sw(s_ag *a1, s_ag *a2, align *sw){
-float get_sw(s_ag *a1, s_ag *a2, align *sw){//}, s_sw *swlist){
+float             get_sw(s_ag *a1, s_ag *a2, align *sw, swt *blosum){//}, s_sw *swlist){
 
   float bprob;
   char *comp;
   s_sw *swa;
-  swt	*blosum;
-
-  blosum =  default_table();
 
   //SUGGEST: pass in pointer to the species - not its index
-  swa = read_sw(swlist,a1->spp->spp,a2->spp->spp);
+  //this attempts to load a cached sw alignment - which won't happen here!
+  //swa = read_sw(swlist,a1->spp->spp,a2->spp->spp);
+  swa = NULL;
 
   if(swa==NULL){
 
@@ -147,7 +397,7 @@ float get_sw(s_ag *a1, s_ag *a2, align *sw){//}, s_sw *swlist){
     bprob = SmithWatermanV2(a1->S,a2->S,&sw2,blosum,0);
 
     //TODO: SUGGEST: pass in pointer to the species - not its index
-    store_sw(&swlist,sw,a1->spp->spp,a2->spp->spp);
+    //store_sw(&swlist,sw,a1->spp->spp,a2->spp->spp);
   }
   else{
     load_sw(swa,sw);
@@ -161,6 +411,271 @@ float get_sw(s_ag *a1, s_ag *a2, align *sw){//}, s_sw *swlist){
 
   return bprob;
 }
+
+
+//void stringPM::set_exec(s_ag *A, s_ag *B, align *sw){
+void set_exec(s_ag *A, s_ag *B, align *sw){
+
+  s_ag *active,*passive;
+  int active_idx,passive_idx;
+
+  if(sw->s1>=sw->s2){
+    active = A;
+    passive = B;
+    active_idx = sw->s1;
+    passive_idx = sw->s2;
+  }
+  else{
+    active = B;
+    passive = A;
+    active_idx = sw->s2;
+    passive_idx = sw->s1;
+  }
+
+  active->status = B_ACTIVE;
+  active->exec = NULL;
+  active->pass = passive;
+
+  active->biomass = 0;
+
+  passive->status = B_PASSIVE;
+  passive->exec = active;
+  passive->pass = NULL;
+
+
+
+  active->f[0] = active->i[0] = active->r[0] = active->w[0] = &(passive->S[passive_idx]);//&(passive->S[sw->s1]);
+  active->f[1] = active->i[1] = active->r[1] = active->w[1] = &(active->S[active_idx]);//&(active->S[sw->s2]);
+  active->ft   = active->it   = active->rt   = active->wt = 1;
+
+
+  passive->f[0] = passive->i[0] = passive->r[0] = passive->w[0] = 0;
+  passive->f[1] = passive->i[1] = passive->r[1] = passive->w[1] = 0;
+  passive->ft   = passive->it   = passive->rt   = passive->wt = 0;
+
+#ifdef V_VERBOSE
+  printf("Bind finished - looks like:\n");
+  print_exec(stdout,active,passive);
+#endif
+}
+
+//int stringPM::unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp *pp){
+int             unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp *pp){
+
+  int found=0;
+  int mass=0;
+
+  if(pag->status==B_ACTIVE){
+    mass = pag->biomass;
+    pag->biomass = 0;
+  }
+
+
+  pag->status = B_UNBOUND;
+  pag->pass = NULL;
+  pag->exec = NULL;
+
+  pag->ect=0;
+
+  pag->f[0] = pag->i[0] = pag->r[0] = pag->w[0] = 0;
+  pag->f[1] = pag->i[1] = pag->r[1] = pag->w[1] = 0;
+  pag->ft   = pag->it   = pag->rt   = pag->wt = 0;
+
+  //Not needed in Rstringmol!:
+  //found = update_lineage(pag,sptype,update,pa,pp,mass);
+  return found;
+}
+
+
+//int stringPM::exec_step(s_ag *act, s_ag *pass){
+int             exec_step(s_ag *act, s_ag *pass, swt *blosum){
+
+  char *tmp;
+  int dac=0;
+  int safe_append=1;
+
+  switch(*(act->i[act->it])){//*iptr[it]){
+
+  case '$'://h-search
+    //act->ft = act->it;
+    char *cs;
+    if(act->ft)
+      cs = act->S;
+    else
+      cs = act->pass->S;
+    tmp = HSearch(act->i[act->it],cs,blosum,&(act->it),&(act->ft),maxl);
+    act->f[act->ft] = tmp;
+    act->i[act->it]++;
+    break;
+
+    /*
+    //put the active flow head on the string where the active ip is:
+    act->ft = act->it;
+    char *cs;
+    if(act->it)
+    cs = act->S;
+    else
+    cs = act->pass->S;
+    act->f[act->ft] = HSearch(act->i[act->it],cs,blosum);
+    act->i[act->it]++;
+    break;
+    */
+
+    /*************
+    *   P_MOVE  *
+    *************/
+  case '>':
+    tmp=act->i[act->it];
+    tmp++;
+    switch(*tmp){
+    case 'A':
+      act->it = act->ft;
+      act->i[act->it] = act->f[act->ft];
+      act->i[act->it]++;
+      break;
+    case 'B':
+      act->rt = act->ft;
+      act->r[act->rt] = act->f[act->ft];
+      act->i[act->it]++;
+      break;
+    case 'C':
+      act->wt = act->ft;
+      act->w[act->wt] = act->f[act->ft];
+      act->i[act->it]++;
+      break;
+    default:
+      act->it = act->ft;
+    act->i[act->it] = act->f[act->ft];
+    act->i[act->it]++;
+    break;
+    }
+    break;
+
+
+    /************
+    *   HCOPY  *
+    ************/
+  case '='://h-copy
+    if(hcopy(act)<0){
+      unbind_ag(act,'A',1,act->spp,pass->spp);
+      unbind_ag(pass,'P',1,act->spp,pass->spp);
+    }
+    break;
+
+
+    /************
+    *   INC_R  *
+    ************/
+  case '+'://h-copy
+    if(granular_1==1){
+      //printf("Incrementing read \n");
+      /* Select the modifier */
+      tmp=act->i[act->it];
+      tmp++;
+      switch(*tmp){
+      case 'A':
+        act->i[act->it]++;
+        break;
+      case 'B':
+        act->r[act->rt]++;
+        break;
+      case 'C':
+        act->w[act->wt]++;
+        break;
+      default:
+        act->f[act->ft]++;
+      break;
+      }
+    }
+    act->i[act->it]++;
+    break;
+
+
+
+    /************
+    *  TOGGLE  *
+    ************/
+  case '^'://p-toggle: toggle active pointer
+    tmp=act->i[act->it];
+    tmp++;
+    switch(*tmp){
+    case 'A':
+      act->it = 1-act->it;
+      break;
+    case 'B':
+      act->rt = 1-act->rt;
+      break;
+    case 'C':
+      act->wt = 1-act->wt;
+      break;
+    default:
+      act->ft = 1-act->ft;
+    break;
+    }
+    act->i[act->it]++;
+    break;
+
+    /************
+    *  IFLABEL *
+    ************/
+  case '?'://If-label
+    act->i[act->it]=IfLabel(act->i[act->it],act->r[act->rt],act->S,blosum,maxl);
+    break;
+
+
+    /************
+    *  CLEAVE  *
+    ************/
+  case '%':
+    if((dac = cleave(act))){
+
+      safe_append=0;	//extract_ag(&nowhead,p);
+    }
+    break;
+
+    /**************
+     *  TERMINATE *
+     **************/
+  case 0:
+  case '}'://ex-end - finish execution
+
+#ifdef V_VERBOSE
+    printf("Unbinding...\n");
+#endif
+    unbind_ag(act,'A',1,act->spp,pass->spp);
+    unbind_ag(pass,'P',1,act->spp,pass->spp);
+
+    break;
+
+  default://Just increment the i-pointer
+    act->i[act->it]++;
+  break;
+  }
+#ifdef V_VERBOSE
+  printf("Exec step - looks like:\n");
+  print_exec(stdout,act,pass);
+#endif
+
+/*Not needed in Rstringmol (but vital in stringPM):
+  if(safe_append){
+    act->ect++;
+    append_ag(&nexthead,act);
+    append_ag(&nexthead,pass);
+  }
+  energy--;
+*/
+
+  return 1;
+
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -180,8 +695,14 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector) {
 
   s_ag *m0,*m1;
   align sw;
+  swt	*blosum;
 
-  Rcpp::List Lresult = Rcpp::List::create(Rcpp::Named("product") = "empty", _["status"] = "none", _["errcode"] = 0);
+  blosum =  default_table();
+
+  Rcpp::List Lresult = Rcpp::List::create(Rcpp::Named("product") = "empty",
+                                          _["status"] = "none",
+                                          _["bprob"] = 0.0,
+                                          _["errcode"] = 0);
   if(seqVector.length() != 2){
     Rprintf("ERROR: 2 stringmols required, %d given\n",seqVector.length());
     Lresult["status"] = "bad number of input strings";
@@ -205,9 +726,12 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector) {
   Rprintf("Mol 0 has seq %s and length %d\n",m0->S,m0->len);
   Rprintf("Mol 1 has seq %s and length %d\n",m1->S,m1->len);
 
- //run get_sw() to get bind prob - see stringPM::testbind()
- //Carries out the Smith-Waterman alignment and gets the binding probability
- float bprob = get_sw(m0,m1,&sw);
+  //run get_sw() to get bind prob - see stringPM::testbind()
+  //Carries out the Smith-Waterman alignment and gets the binding probability
+  float bprob = get_sw(m0,m1,&sw,blosum);
+  Rprintf("Bind probability for these molecules is %f\n",bprob);
+  Lresult["bprob"] = bprob;
+
 
 
   //use set_exec to determine the active and passive strings
