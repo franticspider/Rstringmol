@@ -91,9 +91,36 @@ s_ag * make_mol(std::string seq){
 
 
 
+
+
+
+
+//float stringPM::get_bprob(align *sw){
+float get_bprob(align *sw){
+  float bprob = 0.;
+  //This is the old bind prob, with a modifier for short strings:
+
+  int l = sw->e1-sw->s1 < sw->e2-sw->s2 ? sw->e1-sw->s1 : sw->e2-sw->s2;
+  if(l<=2)
+    bprob=0;
+  else{
+    //bprob = pow(sw->score,l)/pow(l,l);
+    //BRUTAL HACK:
+    float s = sw->score<l-1.124? sw->score : l-1.124;
+    bprob = s/(l-1.124);
+  }
+
+  return bprob;
+}
+
+
+
+
+
+
+
 //float stringPM::get_sw(s_ag *a1, s_ag *a2, align *sw){
-float get_sw(s_ag *a1, s_ag *a2, align *sw,
-             s_sw *swlist){
+float get_sw(s_ag *a1, s_ag *a2, align *sw){//}, s_sw *swlist){
 
   float bprob;
   char *comp;
@@ -101,8 +128,6 @@ float get_sw(s_ag *a1, s_ag *a2, align *sw,
   swt	*blosum;
 
   blosum =  default_table();
-
-
 
   //SUGGEST: pass in pointer to the species - not its index
   swa = read_sw(swlist,a1->spp->spp,a2->spp->spp);
@@ -136,6 +161,8 @@ float get_sw(s_ag *a1, s_ag *a2, align *sw,
 
   return bprob;
 }
+
+
 
 
 
