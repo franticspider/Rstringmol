@@ -4,6 +4,11 @@ using namespace Rcpp;
 //Error codes
 #define SM_ERR_BADNSTRINGS  1
 
+//Struct to hold list of bind probabilities
+
+
+
+
 //These header files were for .c files, renamed to .cpp in Rstringmol!
 #include "memoryutil.h"
 #include "mt19937-2.h"
@@ -21,9 +26,23 @@ const unsigned int maxl0 = maxl+1;
 const int granular_1 = 0; //Whether we are doing granular stringmol or not
 
 //function headers for things we've borrowed from stringPM
-int hcopy(s_ag *act);
-int cleave(s_ag *act);
-s_ag * make_ag(int alab, int agct = 0);
+
+int     append_ag(s_ag **list, s_ag *ag);
+int     rewind_bad_ptrs(s_ag* act);
+int     check_ptrs(s_ag* act);
+int     h_pos(s_ag *pag, char head);
+int     hcopy(s_ag *act);
+int     cleave(s_ag *act,s_ag **nexthead);
+s_ag *  make_ag(int alab, int agct = 0);
+s_ag *  make_mol(std::string seq);
+float   get_bprob(align *sw);
+float   get_sw(s_ag *a1, s_ag *a2, align *sw, swt *blosum);
+void    set_exec(s_ag *A, s_ag *B, align *sw);
+int     unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp *pp);
+int     exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead);
+void    print_ptr_offset(FILE *fp, char *S, char *p,int F, char c);
+void    print_exec(FILE *fp, s_ag *act);
+
 
 
 
@@ -41,6 +60,196 @@ NumericVector timesTwelve(NumericVector x) {
   return x * 12;
 }
 
+////////////////////////////////////////////////////////////////////////
+
+//int stringPM::append_ag(s_ag **list, s_ag *ag){
+int             append_ag(s_ag **list, s_ag *ag){
+  s_ag *pag;
+
+  //printf("appending: list = %p, ag = %p\n",*list,ag);
+  if(*list==NULL){
+    *list=ag;
+    //printf("appended: list = %p, ag = %p\n",*list,ag);
+  }
+  else{
+    pag = *list;
+    while(pag->next != NULL){
+      pag = pag->next;
+    }
+    pag->next = ag;
+    ag->prev = pag;
+  }
+
+  return 0;
+}
+
+
+
+//int stringPM::rewind_bad_ptrs(s_ag* act){
+int             rewind_bad_ptrs(s_ag* act){
+
+  int plen,alen,pdist;
+  char *ps;
+
+  //PUT DANGLING POINTERS AT THE *END* OF THE STRINGS:
+  //DO THE PASSIVE POINTERS FIRST:
+  plen = strlen(act->pass->S);
+  if(plen){
+    ps = act->pass->S;
+
+    pdist = act->i[0]-ps;
+    if(pdist>plen || pdist<0)
+      act->i[0]=ps+plen;
+
+    pdist = act->r[0]-ps;
+    if(pdist>plen || pdist<0)
+      act->r[0]=ps+plen;
+
+    pdist = act->w[0]-ps;
+    if(pdist>plen || pdist<0)
+      act->w[0]=ps+plen;
+
+    pdist = act->f[0]-ps;
+    if(pdist>plen || pdist<0)
+      act->f[0]=ps+plen;
+  }
+  else{//Toggle everything off this string...
+    act->i[0]=act->pass->S;
+    act->r[0]=act->pass->S;
+    act->w[0]=act->pass->S;
+    act->f[0]=act->pass->S;
+
+    act->it=1;
+    act->rt=1;
+    act->wt=1;
+    act->ft=1;
+  }
+
+
+  //DO THE ACTIVE POINTERS NOW
+  alen = strlen(act->S);
+  ps = act->S;
+
+  if(alen){
+    pdist = act->i[1]-ps;
+    if(pdist>alen || pdist<0)
+      act->i[1]=ps+alen;
+
+    pdist = act->r[1]-ps;
+    if(pdist>alen || pdist<0)
+      act->r[1]=ps+alen;
+
+    pdist = act->w[1]-ps;
+    if(pdist>alen || pdist<0)
+      act->w[1]=ps+alen;
+
+    pdist = act->f[1]-ps;
+    if(pdist>alen || pdist<0)
+      act->f[1]=ps+alen;
+  }
+  else{//Toggle everything off this string...
+    act->i[1]=act->S;
+    act->r[1]=act->S;
+    act->w[1]=act->S;
+    act->f[1]=act->S;
+
+    if(plen){
+      act->it=0;
+      act->rt=0;
+      act->wt=0;
+      act->ft=0;
+    }
+  }
+
+  //TODO: error checking on this!
+  return 0;
+}
+
+
+
+//int stringPM::check_ptrs(s_ag* act){
+int             check_ptrs(s_ag* act){
+
+#ifdef VERBOSE
+  print_exec(stdout,act,act->pass);
+#endif
+  //int len,pdist;
+  //char *ps;
+
+  //Sort pointers out first - even if there's going to be an error!
+  rewind_bad_ptrs(act);
+
+  //Step 1: make sure act and pass *have* strings...
+  if(!strlen(act->S)){
+#ifdef VERBOSE
+    printf("Zero length active string - dissoc\n");
+#endif
+    return 1;
+  }
+  if(!strlen(act->pass->S)){
+#ifdef VERBOSE
+    printf("Zero length passive string - dissoc\n");
+#endif
+    return 2;
+  }
+#ifdef VERBOSE
+  print_exec(stdout,act,act->pass);
+#endif
+
+  return 0;
+
+}
+
+
+
+
+
+
+//int stringPM::h_pos(s_ag *pag, char head){
+int h_pos(s_ag *pag, char head){
+
+  char *ph;
+  char *ps;
+
+  if(pag->status != B_ACTIVE)
+    printf("ERROR: attempting head position for inactive string");
+
+  switch(head){
+  case 'w':
+    ph = pag->w[pag->wt];
+    if(pag->wt)
+      ps = pag->S;
+    else
+      ps = pag->pass->S;
+    break;
+  case 'f':
+    ph = pag->f[pag->ft];
+    if(pag->ft)
+      ps = pag->S;
+    else
+      ps = pag->pass->S;
+    break;
+  case 'i':
+    ph = pag->i[pag->it];
+    if(pag->it)
+      ps = pag->S;
+    else
+      ps = pag->pass->S;
+    break;
+  case 'r':
+    ph = pag->r[pag->rt];
+    if(pag->rt)
+      ps = pag->S;
+    else
+      ps = pag->pass->S;
+    break;
+  }
+
+  return ph-ps;
+
+}
+
+
 
 
 //int stringPM::hcopy(s_ag *act){
@@ -52,20 +261,6 @@ int hcopy(s_ag *act){
   float rno;
   int safe = 1;// this gets set to zero if any of the tests fail..
 
-  //MUTATION RATES:
-  //THESE ARE HARD-CODED FOR NOW - THEY SHOULD BE DERIVED FROM THE BLOSUM SOMEHOW...
-  //const float indelrate = 0.0005,		subrate=0.375;//0.0749/2
-  //const float indelrate = 0.0000306125,	subrate=0.01;//0.02
-  //const float indelrate = 0.00006125,	subrate=0.05;//0.02
-  //const float indelrate = 0.000125,		subrate=0.1;//0.02
-  //const float indelrate = 0.000005,		subrate=0.0375;//0.0749/2
-  //const float indelrate = 0., 			subrate = 0.;
-
-  //Not needed in Rstringmol (there is no mutation atm)
-  //if(!domut){
-  //  indelrate = subrate =0;
-  //}
-
   act->len = strlen(act->S);
   act->pass->len = strlen(act->pass->S);
 
@@ -73,7 +268,7 @@ int hcopy(s_ag *act){
   if( (p = h_pos(act,'w'))>=(int) maxl){
 
     //#ifdef DODEBUG
-    //		printf("Write head out of bounds: %d\n",p);
+    Rprintf("Write head out of bounds: %d\n",p);
     //#endif
 
     //just to make sure no damage is done:
@@ -88,7 +283,7 @@ int hcopy(s_ag *act){
     return -1;
   }
   if(h_pos(act,'r')>=(int) maxl){
-    printf("Read head out of bounds\n");
+    Rprintf("Read head out of bounds\n");
 
     act->i[act->it]++;
 
@@ -161,6 +356,13 @@ int hcopy(s_ag *act){
   act->pass->len = strlen(act->pass->S);
   */
 
+
+  //If no mutation, it's easy:
+  *(act->w[act->wt])=*(act->r[act->rt]);
+  act->w[act->wt]++;
+  act->r[act->rt]++;
+
+
   //Increment the instruction pointer
   act->i[act->it]++;
 
@@ -178,7 +380,7 @@ int hcopy(s_ag *act){
 
 
 //int stringPM::cleave(s_ag *act){
-int cleave(s_ag *act){
+int             cleave(s_ag *act,s_ag **nexthead){
 
   int dac = 0,cpy;
   s_ag *c,*pass,*csite;
@@ -226,11 +428,11 @@ int cleave(s_ag *act){
     //c->ppspp = pass->spp;
 
     //Check the lineage
-    update_lineage(c,'C',1,act->spp,pass->spp,act->biomass);
+    //update_lineage(c,'C',1,act->spp,pass->spp,act->biomass);
     act->biomass=0; //reset this; we might continue to make stuff!
 
     //append the agent to nexthead
-    append_ag(&nexthead,c);
+    append_ag(nexthead,c);
 
     //2: HEAL THE PARENT
 
@@ -242,20 +444,20 @@ int cleave(s_ag *act){
       switch(dac){
       case 1://Destroy active - only append passive
         unbind_ag(pass,'P',1,act->spp,pass->spp);
-        append_ag(&nexthead,pass);
-        free_ag(act);
+        //append_ag(&nexthead,pass);
+        //free_ag(act);
         break;
       case 2://Destroy passive - only append active
         unbind_ag(act,'A',1,act->spp,pass->spp);
-        append_ag(&nexthead,act);
-        free_ag(pass);
+        //append_ag(&nexthead,act);
+        //free_ag(pass);
         break;
       case 3://Destroy both
-        printf("This should never happen\n");
+        Rprintf("destroying both molecules - This should never happen\n");
         unbind_ag(act,'A',1,act->spp,pass->spp);
         unbind_ag(pass,'P',1,act->spp,pass->spp);
-        free_ag(act);
-        free_ag(pass);
+        //free_ag(act);
+        //free_ag(pass);
         break;
       default://This can't be right can it?
         if(act->ft == act->it){
@@ -299,7 +501,7 @@ int cleave(s_ag *act){
  *
  *  extra program arguments have been added to remove the need to use the stringPM class
  */
-s_ag * make_ag(int alab, int agct = 0){
+s_ag * make_ag(int alab, int agct){
 
   s_ag *ag;
 
@@ -329,7 +531,7 @@ s_ag * make_ag(int alab, int agct = 0){
   }
 }
 
-//This is a common way to create molecules, e.g. in stringPM::load_agents()
+//This is a common way to create molecules, e.g. in stringPM::load_agents(), although there isn't a function with this name
 s_ag * make_mol(std::string seq){
   s_ag * pag;
   pag = make_ag('X');
@@ -459,6 +661,9 @@ void set_exec(s_ag *A, s_ag *B, align *sw){
 #endif
 }
 
+
+
+
 //int stringPM::unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp *pp){
 int             unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp *pp){
 
@@ -488,11 +693,11 @@ int             unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp 
 
 
 //int stringPM::exec_step(s_ag *act, s_ag *pass){
-int             exec_step(s_ag *act, s_ag *pass, swt *blosum){
+int             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
 
-  char *tmp;
-  int dac=0;
-  int safe_append=1;
+  char  *tmp;
+  int   dac=0;
+  int   safe_append=1;
 
   switch(*(act->i[act->it])){//*iptr[it]){
 
@@ -556,6 +761,7 @@ int             exec_step(s_ag *act, s_ag *pass, swt *blosum){
     *   HCOPY  *
     ************/
   case '='://h-copy
+    //Rprintf("executing h-copy\n");
     if(hcopy(act)<0){
       unbind_ag(act,'A',1,act->spp,pass->spp);
       unbind_ag(pass,'P',1,act->spp,pass->spp);
@@ -627,7 +833,7 @@ int             exec_step(s_ag *act, s_ag *pass, swt *blosum){
     *  CLEAVE  *
     ************/
   case '%':
-    if((dac = cleave(act))){
+    if((dac = cleave(act,nexthead))){
 
       safe_append=0;	//extract_ag(&nowhead,p);
     }
@@ -639,9 +845,10 @@ int             exec_step(s_ag *act, s_ag *pass, swt *blosum){
   case 0:
   case '}'://ex-end - finish execution
 
-#ifdef V_VERBOSE
+//#ifdef V_VERBOSE
     printf("Unbinding...\n");
-#endif
+    fflush(stdout);
+//#endif
     unbind_ag(act,'A',1,act->spp,pass->spp);
     unbind_ag(pass,'P',1,act->spp,pass->spp);
 
@@ -673,6 +880,73 @@ int             exec_step(s_ag *act, s_ag *pass, swt *blosum){
 
 
 
+//void stringPM::print_ptr_offset(FILE *fp, char *S, char *p,int F, char c){
+void             print_ptr_offset(FILE *fp, char *S, char *p,int F, char c){
+  int i,n=p-S;
+  if(n<0){
+    Rprintf("Problem calculating pointer location\n");
+    fflush(stdout);
+  }
+  for(i=0;i<n;i++)
+    Rprintf(" ");
+  Rprintf("%c\n",F?c-32:c);
+}
+
+
+
+
+
+
+//void stringPM::print_exec(FILE *fp, s_ag *act, s_ag *pas){
+void             print_exec(FILE *fp, s_ag *act){
+
+  s_ag *pas = act->pass;
+
+  //Diagnostics to screen for active:
+  if(act->status == B_ACTIVE){
+    //Diagnostics to screen for passive:
+    if(pas != NULL){
+      if(!strlen(pas->S))
+        Rprintf("Zero length passive string\n");
+      Rprintf("%6d:\n%s\n",pas->idx,pas->S);
+      print_ptr_offset(fp,pas->S,act->i[0],1-act->it,'i');
+      print_ptr_offset(fp,pas->S,act->f[0],1-act->ft,'f');
+      print_ptr_offset(fp,pas->S,act->r[0],1-act->rt,'r');
+      print_ptr_offset(fp,pas->S,act->w[0],1-act->wt,'w');
+    }
+
+    if(!strlen(act->S))
+      Rprintf("Zero length active string\n");
+    Rprintf("%6d:\n%s\n",act->idx,act->S);
+    print_ptr_offset(fp,act->S,act->i[1],act->it,'i');
+    print_ptr_offset(fp,act->S,act->f[1],act->ft,'f');
+    print_ptr_offset(fp,act->S,act->r[1],act->rt,'r');
+    print_ptr_offset(fp,act->S,act->w[1],act->wt,'w');
+  }
+  else{
+    Rprintf("\"Active\" molecule isn't Active!\n");
+  }
+
+/*
+  act->len = strlen(act->S);
+  pas->len = strlen(pas->S);
+
+
+  if(pas->len<=(int) maxl){
+    //printf("Passive string length = %d\n",pas->len);
+  }
+  else
+    Rprintf("Passive string length = %d - TOO LONG\n",pas->len);
+
+  if(act->len<=(int) maxl){
+    //printf("Active  string length = %d\n",act->len);
+  }
+  else
+    Rprintf("Active  string length = %d - TOO LONG\n",act->len);
+*/
+
+}
+
 
 
 
@@ -691,17 +965,26 @@ Procedure: doReaction
 //' @param seqVector the sequence of the two strings, active first, then passive.
 //' @export
 // [[Rcpp::export]]
-Rcpp::List doReaction(Rcpp::StringVector seqVector) {
+Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
 
   s_ag *m0,*m1;
+
+  s_ag *product; //This is used to hold any new molecules that are produced.. it's called 'nexthead' in the functions because that's what it's called in stringPM
+  product = NULL;
+
   align sw;
   swt	*blosum;
 
   blosum =  default_table();
 
-  Rcpp::List Lresult = Rcpp::List::create(Rcpp::Named("product") = "empty",
+  Rcpp::List Lresult = Rcpp::List::create(_["m0"] = "notset",
+                                          _["m1"] = "notset",
+                                          _["product"] = "empty",
                                           _["status"] = "none",
                                           _["bprob"] = 0.0,
+                                          _["count"] = 0,
+                                          _["m0status"] = -1,
+                                          _["m1status"] = -1,
                                           _["errcode"] = 0);
   if(seqVector.length() != 2){
     Rprintf("ERROR: 2 stringmols required, %d given\n",seqVector.length());
@@ -726,20 +1009,57 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector) {
   Rprintf("Mol 0 has seq %s and length %d\n",m0->S,m0->len);
   Rprintf("Mol 1 has seq %s and length %d\n",m1->S,m1->len);
 
+
+  //Do the equivalent of stringPM::testbind():
   //run get_sw() to get bind prob - see stringPM::testbind()
   //Carries out the Smith-Waterman alignment and gets the binding probability
   float bprob = get_sw(m0,m1,&sw,blosum);
   Rprintf("Bind probability for these molecules is %f\n",bprob);
+
   Lresult["bprob"] = bprob;
 
-
+  //
 
   //use set_exec to determine the active and passive strings
+  set_exec(m0,m1,&sw);
 
+  Lresult["m0status"] = (int) m0->status;
+  Lresult["m1status"] = (int) m1->status;
 
+  int count = 0;
+  const int climit = 1000;
+  //run exec_setp until the reactants dissassociate
+
+  while( count <= climit){
+    if(verbose)Rprintf("\n========== STEP %d ==========\n",count);
+    if(m0->status == B_ACTIVE){
+      exec_step(m0,m0->pass,blosum,&product);
+      if(verbose)print_exec(stdout,m0);
+    }
+
+    if(m1->status == B_ACTIVE){
+      exec_step(m1,m1->pass,blosum,&product);
+      if(verbose)print_exec(stdout,m1);
+    }
+
+    if(m0->status == B_UNBOUND || m1->status == B_UNBOUND ){
+      Rprintf("Reaction has ended\n");
+      break;
+    }
+
+    count++;
+  }
+
+  Lresult["m0"] = (String) m0->S;
+  Lresult["m1"] = (String) m1->S;
+  if(product != NULL){
+    Lresult["product"] = (String) product->S;
+  }
+  Lresult["count"] = count;
+  Lresult["m0status"] = (int) m0->status;
+  Lresult["m1status"] = (int) m1->status;
 
   Lresult["status"] = "finished";
-
 
   return Lresult;
 }

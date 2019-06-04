@@ -112,14 +112,19 @@ char * HSearch(char *iptr, char *sp, swt *T, int *itog, int *ftog,const int maxl
 	if(A.match)
 #else
 	int l = A.e1-A.s1 < A.e2-A.s2 ? A.e1-A.s1 : A.e2-A.s2;
-	if(l<=2)
+	if(l<=2){
+	  printf("l<=2, so bprob = 0\n");
 		bprob=0;
-	else
+	}
+	else{
+	  printf("A.score = %f; l = %d\n",A.score,l);
 		bprob = pow(A.score,l)/pow(l,l);
-
+	}
 
 	float s = A.score<l-1.124? A.score : l-1.124;
 	bprob = s/(l-1.124);
+
+	printf("Hsearch: s = %f;  bprob = %f\n",s,bprob);
 
 	float rno = rand0to1();
 	if(rno<bprob)//search success!

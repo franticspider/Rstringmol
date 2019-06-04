@@ -9,7 +9,7 @@ timesTwelve <- function(x) {
 #'
 #' @param seqVector the sequence of the two strings, active first, then passive.
 #' @export
-doReaction <- function(seqVector) {
-    .Call(`_Rstringmol_doReaction`, seqVector)
+doReaction <- function(seqVector, verbose = FALSE) {
+    .Call(`_Rstringmol_doReaction`, seqVector, verbose)
 }
 
