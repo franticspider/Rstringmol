@@ -23,21 +23,28 @@ test_that("replicator replicates",{
 
 test_that("inexact execution is inexact",{
 
-  esult = data.frame()
-  for(i in 1:200){
-    rr <- doReaction(c("OOGEOLHHHRLUEUOBBBRBXUUUDYGRHBLROORE$BBBBBBBBBB^B>C$=?>$$BBBBBBBBB%}OOOONNOOOO",
-                       "OOGEOLHHHRLUEUOBBBRBXUUUDYGRHBLROORE$BBBBBBBBBB^B>C$=?>$$BBBBBBBBB%}OOOONNOOOO"))
-    esult[i,1] <- rr$product
-    }
-
-  rang <- unique(esult)
-
-
-
 
   result <- doReaction(c("OOGEOLHHHRLUEUOBBBRBXUUUDYGRHBLROORE$BBBBBBBBBB^B>C$=?>$$BBBBBBBBB%}OOOONNOOOO","OOGEOLHHHRLUEUOBBBRBXUUUDYGRHBLROORE$BBBBBBBBBB^B>C$=?>$$BBBBBBBBB%}OOOONNOOOO"))
   expect_equal(result$bprob, 0.576381, tolerance=1e-6)
-  expect_equal(nrow(rang), 3)
+
+})
+
+
+
+
+
+test_that("inexact execution paths can be counted",{
+
+  results = data.frame()
+  for(i in 1:200){
+    rr <- doReaction(c("OOGEOLHHHRLUEUOBBBRBXUUUDYGRHBLROORE$BBBBBBBBBB^B>C$=?>$$BBBBBBBBB%}OOOONNOOOO",
+                       "OOGEOLHHHRLUEUOBBBRBXUUUDYGRHBLROORE$BBBBBBBBBB^B>C$=?>$$BBBBBBBBB%}OOOONNOOOO"))
+    results[i,1] <- rr$product
+  }
+
+  outputs <- unique(results)
+
+  expect_equal(nrow(outputs), 3)
 
 })
 
