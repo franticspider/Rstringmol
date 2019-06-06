@@ -23,7 +23,8 @@ froot="D:/sjh/stringmol/smsp/1705smsp/out5/"
 First thing we want is overall pop size in a file. This function is in `14.04/home/sjh/Desktop/sjh/stringmol/R/plotpopdy.R`
 
 ```{r}
-source("../R/plot_onepop.R")
+library(Rstringmol)
+#source("../R/plot_onepop.R")
 
 plot.onepop(sprintf("%spopdy001.dat",froot),"example1popdy.pdf",12,12,minpop=100, totpop=T,plotnspp = T)
 segments(x0=100000,y0=0,y1=1200,col="blue")
@@ -45,7 +46,7 @@ Concerns:
 Theres a function called `splist_stats` that grabs the data from the files - let's check it out: 
 
 ```{r}
-source("../R/splist_stats.R")
+#source("../R/splist_stats.R")
 sps <- splist_stats(sprintf("%ssplist100000.dat",froot),tmin=90000)
 ```
 This gives us a data frame holding every reaction seen until this point (assuming no restarts). 
@@ -100,7 +101,7 @@ First, we'll get each reaction:
 ```{r}
 require (stringr)
 
-source("../R/splist_stats.R")
+#source("../R/splist_stats.R")
 
 ####Function 'arguments'
   fn <- sprintf("%sout1_100000.conf",froot)
@@ -206,9 +207,9 @@ source("../R/splist_stats.R")
 Check that we've now got this in a function: 
 
 ```{r}
-source("../R/splist_stats.R")
-source("../R/rconf_stats.R")
-source("../R/rconf_data.R")
+#source("../R/splist_stats.R")
+#source("../R/rconf_stats.R")
+#source("../R/rconf_data.R")
 reactions <- rconf_stats(fn = sprintf("%sout1_100000.conf",froot), spfn = sprintf("%ssplist100000.dat",froot))
 ```
 
@@ -233,8 +234,8 @@ rcounts
 That works, so let's see if we can do an iteration: 
 
 ```{r}
-source("../R/splist_stats.R")
-source("../R/rconf_stats.R")
+#source("../R/splist_stats.R")
+#source("../R/rconf_stats.R")
 
 gotdata<- T
 tt <- 20000

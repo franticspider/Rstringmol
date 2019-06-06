@@ -16,6 +16,11 @@ rconf_agents<- function(fn){
 
 
 
+#' Load the data from a stringmol .conf file
+#' fn is the file name
+#' verbose whether to run quietly or not
+#' summarize whether to compress the data into a summary of each species
+#' @export
 rconf_rdata <- function(fn,verbose = F,summarize=T){
 
   pdebug <- T
@@ -51,7 +56,7 @@ rconf_rdata <- function(fn,verbose = F,summarize=T){
     pasno[rr] <- suppressWarnings(  as.numeric(words[[1]][3]) )
     passeq[rr] <- words[[1]][4]
 
-    #TODO handle bad format better where passive mol is above rpos!!
+    #TODO handle bad format better where passive mol is above rpos!! (and find out how this happens...)
     if(is.na(pasno[rr])){
       words <-strsplit(cf[rpos[rr]-1,1],split=" ")
       pasno[rr] <- as.numeric(words[[1]][3])
