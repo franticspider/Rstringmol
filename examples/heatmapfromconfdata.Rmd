@@ -1,0 +1,21 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+- load a .conf file
+- get the x and y limits
+- paint the background black
+- parse the conf file for molecules.
+- plot them 
+
+
+```{r}
+xdim = 100
+ydim = 125
+plot(NA, xlim = c(0,xdim),ylim=c(0,ydim),asp = 1)
+rect(xleft = 0,xright = xdim,ybottom = 0,ytop=ydim,col="black")
+```
+

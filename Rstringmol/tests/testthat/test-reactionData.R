@@ -17,6 +17,12 @@ test_that("replicator replicates",{
   expect_equal(result$bprob, 0.576381, tolerance=1e-6)
   expect_true(result$product == "OOGEOLHHHRLUEUOBBBRBXUUUDYGRHBLROORE$BLUBO^B>C$=?>$$BLUBO%}OYHOB")
 
+  #Here's a different replicator that doesn't appear to work:
+
+  result <- doReaction(c("$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYH","$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYH"))
+  expect_equal(result$bprob, 0.695410, tolerance=1e-6)
+  expect_true(result$product == "$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYH")
+
 })
 
 
@@ -49,18 +55,18 @@ test_that("inexact execution paths can be counted",{
 })
 
 
-
-
-
-
 test_that("TOGGLE '^' toggles and COPY '=' copies",{
 
   result <- doReaction(c("AAA^B=","NNN"))
 
   #NB - using 'expect_true' here because 'expect_match' doesn't handle '^' vs '\^' properly
-  expect_true(result$m0 == "NAA^B=")
-  expect_true(result$m1 == "NNN")
+  expect_true(result$mActive == "NAA^B=")
+  expect_true(result$mPassive == "NNN")
   expect_equal(result$count,6)
 
 })
+
+
+
+
 
