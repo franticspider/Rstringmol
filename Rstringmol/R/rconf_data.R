@@ -25,7 +25,7 @@ rconf_rdata <- function(fn,verbose = F,summarize=T){
 
   pdebug <- T
 
-  cf <- read.table(fn,as.is = T, fill = T, sep="\n",comment.char="",stringsAsFactors = F)
+  cf <- read.table(fn,as.is = T, fill = T, sep="\n",comment.char="",stringsAsFactors = F,blank.lines.skip = F)
 
   #get the row number of the start of each reaction entry
   rpos <- which(str_sub(cf[,1],1,12)=="%%% REACTION")
@@ -35,8 +35,12 @@ rconf_rdata <- function(fn,verbose = F,summarize=T){
   nr <- length(rpos)
   actno <- vector(length = nr)
   actseq <- vector(length = nr)
+  actx <- vector(length = nr)
+  acty <- vector(length = nr)
   pasno <- vector(length = nr)
   passeq <- vector(length = nr)
+  passx <- vector(length = nr)
+  passy <- vector(length = nr)
 
   if(verbose)message(sprintf("Found %d reactions", nr))
   count_bad_format = 0
@@ -47,8 +51,12 @@ rconf_rdata <- function(fn,verbose = F,summarize=T){
     actno[rr] <- as.numeric(words[[1]][3])
     actseq[rr] <- words[[1]][4]
 
+    words <-strsplit(cf[rpos[rr]+3,1],split=" ")
+    actx[rr] <- as.numeric(words[[1]][19])
+    acty[rr] <- as.numeric(words[[1]][20])
 
-    words <-strsplit(cf[rpos[rr]+6,1],split=" ")
+
+    words <-strsplit(cf[rpos[rr]+7,1],split=" ")
 
     ##if(is.na(as.integer(words[[1]][3])))message("BOOM")
     ##if(pdebug)message(sprintf("words[[1]][3] = %s",words[[1]][3]))
@@ -56,19 +64,26 @@ rconf_rdata <- function(fn,verbose = F,summarize=T){
     pasno[rr] <- suppressWarnings(  as.numeric(words[[1]][3]) )
     passeq[rr] <- words[[1]][4]
 
+
+    words <-strsplit(cf[rpos[rr]+6,1],split=" ")
+    passx[rr] <- as.numeric(words[[1]][5])
+    passy[rr] <- as.numeric(words[[1]][6])
+
     #TODO handle bad format better where passive mol is above rpos!! (and find out how this happens...)
     if(is.na(pasno[rr])){
       words <-strsplit(cf[rpos[rr]-1,1],split=" ")
       pasno[rr] <- as.numeric(words[[1]][3])
       passeq[rr] <- words[[1]][4]
+      passx[rr] <- as.numeric(words[[1]][6])
+      passy[rr] <- as.numeric(words[[1]][7])
       count_bad_format <- count_bad_format + 1
-      if(verbose)message(sprintf("Bad format number %d encountered", count_bad_format))
+      if(verbose)message(sprintf("Bad format number %d encountered, rpos[rr] is %d, rr is %d, no is %d ax,ay = %d,%d", count_bad_format, rpos[rr], rr, pasno[rr],actx[rr],acty[rr]))
     }
     #message(sprintf("Active  molecule %s seq %s",actno[rr],actseq[rr]))
     #message(sprintf("Passive molecule %s seq %s",actno[rr],actseq[rr]))
   }
 
-  eachreaction<-data.frame(actno,actseq,pasno,passeq,stringsAsFactors = F)
+  eachreaction<-data.frame(actno,actseq,actx,acty,pasno,passeq,passx,passy,stringsAsFactors = F)
 
   if(summarize){
     reactions <- unique(eachreaction)

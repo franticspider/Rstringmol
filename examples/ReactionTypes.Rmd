@@ -1,0 +1,25 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+We're going to try and figure out reaction classes based *solely* on the .conf file (and not the splist file)
+
+```{r}
+
+  datafile <- system.file("extdata", "out1_880000.conf", package = "Rstringmol")
+  data <- rconf_rdata(datafile)
+
+  actset <- unique(data$actseq)
+  for(aa in 1:length(actset)){
+    passet <- unique(data$passeq[data$actseq == actset[aa]])
+    for(pp in 1:length(passet)){
+      ty <- reaction_type(actset[aa],passet[pp])
+      data$type[data$actseq == actset[aa] & data$passeq == passet[pp]] = ty$rtype
+    }
+  }
+  
+```
+

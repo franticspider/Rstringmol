@@ -39,7 +39,7 @@ float   get_bprob(align *sw);
 float   get_sw(s_ag *a1, s_ag *a2, align *sw, swt *blosum);
 void    set_exec(s_ag *A, s_ag *B, align *sw);
 int     unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp *pp);
-int     exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead);
+float   exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead);
 void    print_ptr_offset(FILE *fp, char *S, char *p,int F, char c);
 void    print_exec(FILE *fp, s_ag *act);
 
@@ -293,12 +293,12 @@ int hcopy(s_ag *act){
 
 
 
-/* MUTATION: (NOT NEEDED IN RSTRINGMOL ATM)
   if(*(act->r[act->rt]) == 0){
     //possibly return a negative value and initiate a b
     safe = 0;
     //return -3;
   }
+
   //if(h_pos(act,'w')>=maxl){
   //	//We are at the end of a copy...
   //	//...so just increment *R
@@ -307,6 +307,8 @@ int hcopy(s_ag *act){
   //}
 
   if(safe){
+    //MUTATION: (NOT NEEDED IN RSTRINGMOL ATM)
+    /*
     rno=rand0to1();
     if(rno<indelrate){//INDEL
 
@@ -350,17 +352,22 @@ int hcopy(s_ag *act){
         act->r[act->rt]++;
       }
     }
+     */
+
+
+    //If no mutation, it's easy:
+    *(act->w[act->wt])=*(act->r[act->rt]);
+    act->w[act->wt]++;
+    act->r[act->rt]++;
+
+
+
   }
   //update lengths
   act->len = strlen(act->S);
   act->pass->len = strlen(act->pass->S);
-  */
 
 
-  //If no mutation, it's easy:
-  *(act->w[act->wt])=*(act->r[act->rt]);
-  act->w[act->wt]++;
-  act->r[act->rt]++;
 
 
   //Increment the instruction pointer
@@ -693,14 +700,19 @@ int             unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp 
 
 
 //int stringPM::exec_step(s_ag *act, s_ag *pass){
-int             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
+float             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
 
   char  *tmp;
   int   dac=0;
   int   safe_append=1;
+  float pbprob=1;
 
   switch(*(act->i[act->it])){//*iptr[it]){
 
+
+  /*************
+   *   H_SEARCH  *
+   *************/
   case '$'://h-search
     //act->ft = act->it;
     char *cs;
@@ -708,7 +720,7 @@ int             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
       cs = act->S;
     else
       cs = act->pass->S;
-    tmp = HSearch(act->i[act->it],cs,blosum,&(act->it),&(act->ft),maxl);
+    tmp = HSearch(act->i[act->it],cs,blosum,&(act->it),&(act->ft),maxl,&pbprob);
     act->f[act->ft] = tmp;
     act->i[act->it]++;
     break;
@@ -770,7 +782,7 @@ int             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
 
 
     /************
-    *   INC_R  *
+    *   INC_R  * GRANULAR STRINGMOL ONLY!
     ************/
   case '+'://h-copy
     if(granular_1==1){
@@ -825,7 +837,7 @@ int             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
     *  IFLABEL *
     ************/
   case '?'://If-label
-    act->i[act->it]=IfLabel(act->i[act->it],act->r[act->rt],act->S,blosum,maxl);
+    act->i[act->it]=IfLabel(act->i[act->it],act->r[act->rt],act->S,blosum,maxl,&pbprob);
     break;
 
 
@@ -834,7 +846,6 @@ int             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
     ************/
   case '%':
     if((dac = cleave(act,nexthead))){
-
       safe_append=0;	//extract_ag(&nowhead,p);
     }
     break;
@@ -846,8 +857,8 @@ int             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
   case '}'://ex-end - finish execution
 
 //#ifdef V_VERBOSE
-    printf("Unbinding...\n");
-    fflush(stdout);
+    //printf("Unbinding...\n");
+    //fflush(stdout);
 //#endif
     unbind_ag(act,'A',1,act->spp,pass->spp);
     unbind_ag(pass,'P',1,act->spp,pass->spp);
@@ -872,7 +883,7 @@ int             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
   energy--;
 */
 
-  return 1;
+  return pbprob;
 
 }
 
@@ -977,9 +988,7 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
 
   blosum =  default_table();
 
-  Rcpp::List Lresult = Rcpp::List::create(_["m0"] = "notset",
-                                          _["m1"] = "notset",
-                                          _["product"] = "empty",
+  Rcpp::List Lresult = Rcpp::List::create(_["product"] = "empty",
                                           _["status"] = "none",
                                           _["bprob"] = 0.0,
                                           _["count"] = 0,
@@ -1002,19 +1011,20 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
   * However, this function should be moved!
   * So for now, we'll copy the function into the code and just give a warning
   */
-  Rprintf("REMINDER: make_ag function is a member of stringPM but shouldn't be!\n");
   m0 = make_mol(string0.c_str());
   m1 = make_mol(string1.c_str());
 
-  Rprintf("Mol 0 has seq %s and length %d\n",m0->S,m0->len);
-  Rprintf("Mol 1 has seq %s and length %d\n",m1->S,m1->len);
-
+  if(verbose){
+    Rprintf("Mol 0 has seq %s and length %d\n",m0->S,m0->len);
+    Rprintf("Mol 1 has seq %s and length %d\n",m1->S,m1->len);
+  }
 
   //Do the equivalent of stringPM::testbind():
   //run get_sw() to get bind prob - see stringPM::testbind()
   //Carries out the Smith-Waterman alignment and gets the binding probability
   float bprob = get_sw(m0,m1,&sw,blosum);
-  Rprintf("Bind probability for these molecules is %f\n",bprob);
+  if(verbose)
+    Rprintf("Bind probability for these molecules is %f\n",bprob);
 
   Lresult["bprob"] = bprob;
 
@@ -1035,23 +1045,25 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
     if(m0->status == B_ACTIVE){
       exec_step(m0,m0->pass,blosum,&product);
       if(verbose)print_exec(stdout,m0);
+      Lresult["mActive"]  = (String) m0->S;
+      Lresult["mPassive"] = (String) m1->S;
     }
 
     if(m1->status == B_ACTIVE){
       exec_step(m1,m1->pass,blosum,&product);
       if(verbose)print_exec(stdout,m1);
+      Lresult["mActive"]  = (String) m1->S;
+      Lresult["mPassive"] = (String) m0->S;
     }
 
     if(m0->status == B_UNBOUND || m1->status == B_UNBOUND ){
-      Rprintf("Reaction has ended\n");
+      if(verbose)Rprintf("Reaction has ended\n");
       break;
     }
 
     count++;
   }
 
-  Lresult["m0"] = (String) m0->S;
-  Lresult["m1"] = (String) m1->S;
   if(product != NULL){
     Lresult["product"] = (String) product->S;
   }
