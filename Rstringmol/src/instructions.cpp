@@ -55,7 +55,7 @@ int LabLength(char *ip, const int maxl){
 ////////////////////
 // $: H-Search    //
 ////////////////////
-char * HSearch(char *iptr, char *sp, swt *T, int *itog, int *ftog,const int maxl){
+char * HSearch(char *iptr, char *sp, swt *T, int *itog, int *ftog,const int maxl, float *pbprob){
 
 	char *ip,*tp,tmp[maxl];
 	ip = iptr;
@@ -113,18 +113,18 @@ char * HSearch(char *iptr, char *sp, swt *T, int *itog, int *ftog,const int maxl
 #else
 	int l = A.e1-A.s1 < A.e2-A.s2 ? A.e1-A.s1 : A.e2-A.s2;
 	if(l<=2){
-	  printf("l<=2, so bprob = 0\n");
+	  //printf("l<=2, so bprob = 0\n");
 		bprob=0;
 	}
 	else{
-	  printf("A.score = %f; l = %d\n",A.score,l);
+	  //printf("A.score = %f; l = %d\n",A.score,l);
 		bprob = pow(A.score,l)/pow(l,l);
 	}
 
 	float s = A.score<l-1.124? A.score : l-1.124;
 	bprob = s/(l-1.124);
 
-	printf("Hsearch: s = %f;  bprob = %f\n",s,bprob);
+	//printf("Hsearch: s = %f;  bprob = %f\n",s,bprob);
 
 	float rno = rand0to1();
 	if(rno<bprob)//search success!
@@ -141,7 +141,7 @@ char * HSearch(char *iptr, char *sp, swt *T, int *itog, int *ftog,const int maxl
 ////////////////////
 // ?: If-Label    //
 ////////////////////
-char * IfLabel(char *ip, char *rp, char *sp, swt *T, const int maxl){
+char * IfLabel(char *ip, char *rp, char *sp, swt *T, const int maxl, float *iprob){
 
 	char tmp[maxl],tmp2[maxl];
 	int i,len = LabLength(ip, maxl);
@@ -164,7 +164,7 @@ char * IfLabel(char *ip, char *rp, char *sp, swt *T, const int maxl){
 		return ip+len;
 		break;
 
-	default:
+	default: //use an alignment to move the pointers
 
 		memset(tmp ,0,maxl*sizeof(char));
 		memset(tmp2,0,maxl*sizeof(char));
@@ -178,9 +178,16 @@ char * IfLabel(char *ip, char *rp, char *sp, swt *T, const int maxl){
 		//SmithWaterman(tmp,tmp2,&A,T,0);
 		SmithWatermanV2(tmp,tmp2,&A,T,0);
 
-		if(align_event(&A,len))
-			return ip+len+1;
-		return ip+len;
+		bool ae = align_event(&A,len);
+    *iprob = A.prob;
+		if(ae)
+		  return ip+len+1;
+		else
+		  return ip+len;
+		//original formulation:
+		//if(align_event(&A,len))
+		//	return ip+len+1;
+		//return ip+len;
 		break;
 	}
 
