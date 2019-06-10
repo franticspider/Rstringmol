@@ -37,7 +37,7 @@ s_ag *  make_ag(int alab, int agct = 0);
 s_ag *  make_mol(std::string seq);
 float   get_bprob(align *sw);
 float   get_sw(s_ag *a1, s_ag *a2, align *sw, swt *blosum);
-void    set_exec(s_ag *A, s_ag *B, align *sw);
+bool    set_exec(s_ag *A, s_ag *B, align *sw);
 int     unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp *pp);
 float   exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead);
 void    print_ptr_offset(FILE *fp, char *S, char *p,int F, char c);
@@ -623,11 +623,25 @@ float             get_sw(s_ag *a1, s_ag *a2, align *sw, swt *blosum){//}, s_sw *
 
 
 //void stringPM::set_exec(s_ag *A, s_ag *B, align *sw){
-void set_exec(s_ag *A, s_ag *B, align *sw){
+bool set_exec(s_ag *A, s_ag *B, align *sw){
 
   s_ag *active,*passive;
   int active_idx,passive_idx;
 
+
+  bool deterministic = true;
+  if(sw->s1 == sw->s2)
+    deterministic = false;
+
+  /*
+   * The following if statement shows that assignment of
+   * active and passive roles is deterministic within this function
+   *
+   * The only way asssignment can be 'random' is if sw->s1 == sw->s2
+   * in this case, whichever molecule is 'A' will be the active one,
+   * so if A is picked randomly from the current list, that's where
+   * the randomness in the assignment comes from
+   */
   if(sw->s1>=sw->s2){
     active = A;
     passive = B;
@@ -666,6 +680,9 @@ void set_exec(s_ag *A, s_ag *B, align *sw){
   printf("Bind finished - looks like:\n");
   print_exec(stdout,active,passive);
 #endif
+
+  return deterministic;
+
 }
 
 
@@ -1031,7 +1048,7 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
   //
 
   //use set_exec to determine the active and passive strings
-  set_exec(m0,m1,&sw);
+  Lresult["deterministicBind"] = set_exec(m0,m1,&sw);
 
   Lresult["m0status"] = (int) m0->status;
   Lresult["m1status"] = (int) m1->status;
