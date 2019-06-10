@@ -8,7 +8,7 @@ output: html_notebook
 We're going to try and figure out reaction classes based *solely* on the .conf file (and not the splist file)
 
 ```{r}
-
+  require(stringr)
   datafile <- system.file("extdata", "out1_880000.conf", package = "Rstringmol")
   data <- rconf_rdata(datafile)
 

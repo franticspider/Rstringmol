@@ -37,6 +37,19 @@ test_that("inexact execution is inexact",{
 
 
 
+test_that("non-deterministic bind is detected",{
+
+
+  result <- doReaction(c("$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYH","$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYH"))
+  expect_false(result$deterministicBind)
+
+})
+
+
+
+
+
+
 
 
 test_that("inexact execution paths can be counted",{
