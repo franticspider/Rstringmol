@@ -13,6 +13,7 @@ RoxygenNote: 6.1.1
 LinkingTo: 
     Rcpp
 Imports: 
-    Rcpp
+    Rcpp,
+    stringr
 Suggests: 
     testthat (>= 2.1.0)

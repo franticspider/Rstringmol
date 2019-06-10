@@ -1,5 +1,13 @@
 
 
+# List of reaction types - not sure this is the best place for them...
+rtypes = c("SelfSelfNoProduct",
+           "SelfSelfReplicator",
+           "SelfSelfDifferentProduct",
+           "NonSelfNoProduct",
+           "NonSelfReplicator",
+           "NonSelfDifferentProduct")
+
 
 #' Determine the type of stringmol reacion
 #'
@@ -26,12 +34,18 @@ reaction_type <- function(act,pas){
     }
   }
   else{
+    conv <- doReaction(c(pas,act))
+
     if(pro$product == "empty"){
       pro$rtype = "NonSelfNoProduct"
     }
     else{
       if(pro$product == pro$mPassive){
-        pro$rtype = "NonSelfReplicator"
+        #TODO: We need to know if the assignment to active/passive is a coin toss!
+        if(conv$product == "empty")
+          pro$rtype = "Parasite"
+        else
+          pro$rtype = "NonSelfReplicator"
       }
       else{
         pro$rtype = "NonSelfDifferentProduct"
