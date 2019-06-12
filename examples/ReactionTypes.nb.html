@@ -247,21 +247,11 @@ $(document).ready(function () {
 <p>We’re going to try and figure out reaction classes based <em>solely</em> on the .conf file (and not the splist file)</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuICByZXF1aXJlKHN0cmluZ3IpXG5gYGAifQ== -->
-<pre class="r"><code>  require(stringr)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiTG9hZGluZyByZXF1aXJlZCBwYWNrYWdlOiBzdHJpbmdyXG5cbkF0dGFjaGluZyBwYWNrYWdlOiDjpLzjuLFzdHJpbmdy46S847iyXG5cblRoZSBmb2xsb3dpbmcgb2JqZWN0IGlzIG1hc2tlZCBfYnlfIOOkvOO4sS5HbG9iYWxFbnbjpLzjuLI6XG5cbiAgICB3b3Jkc1xuIn0= -->
-<pre><code>Loading required package: stringr
-
-Attaching package: 㤼㸱stringr㤼㸲
-
-The following object is masked _by_ 㤼㸱.GlobalEnv㤼㸲:
-
-    words</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuICBkYXRhZmlsZSA8LSBzeXN0ZW0uZmlsZShcImV4dGRhdGFcIiwgXCJvdXQxXzg4MDAwMC5jb25mXCIsIHBhY2thZ2UgPSBcIlJzdHJpbmdtb2xcIilcbiAgZGF0YSA8LSByY29uZl9yZGF0YShkYXRhZmlsZSlcbiAgYWN0c2V0IDwtIHVuaXF1ZShkYXRhJGFjdHNlcSlcbiAgZm9yKGFhIGluIDE6bGVuZ3RoKGFjdHNldCkpe1xuICAgIHBhc3NldCA8LSB1bmlxdWUoZGF0YSRwYXNzZXFbZGF0YSRhY3RzZXEgPT0gYWN0c2V0W2FhXV0pXG4gICAgZm9yKHBwIGluIDE6bGVuZ3RoKHBhc3NldCkpe1xuICAgICAgdHkgPC0gcmVhY3Rpb25fdHlwZShhY3RzZXRbYWFdLHBhc3NldFtwcF0pXG4gICAgICBkYXRhJHR5cGVbZGF0YSRhY3RzZXEgPT0gYWN0c2V0W2FhXSAmIGRhdGEkcGFzc2VxID09IHBhc3NldFtwcF1dID0gdHkkcnR5cGVcbiAgICB9XG4gIH1cbiAgXG5gYGAifQ== -->
-<pre class="r"><code>  datafile &lt;- system.file(&quot;extdata&quot;, &quot;out1_880000.conf&quot;, package = &quot;Rstringmol&quot;)
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuICByZXF1aXJlKHN0cmluZ3IpXG4gIGRhdGFmaWxlIDwtIHN5c3RlbS5maWxlKFwiZXh0ZGF0YVwiLCBcIm91dDFfODgwMDAwLmNvbmZcIiwgcGFja2FnZSA9IFwiUnN0cmluZ21vbFwiKVxuICBkYXRhIDwtIHJjb25mX3JkYXRhKGRhdGFmaWxlKVxuXG4gIGFjdHNldCA8LSB1bmlxdWUoZGF0YSRhY3RzZXEpXG4gIGZvcihhYSBpbiAxOmxlbmd0aChhY3RzZXQpKXtcbiAgICBwYXNzZXQgPC0gdW5pcXVlKGRhdGEkcGFzc2VxW2RhdGEkYWN0c2VxID09IGFjdHNldFthYV1dKVxuICAgIGZvcihwcCBpbiAxOmxlbmd0aChwYXNzZXQpKXtcbiAgICAgIHR5IDwtIHJlYWN0aW9uX3R5cGUoYWN0c2V0W2FhXSxwYXNzZXRbcHBdKVxuICAgICAgZGF0YSR0eXBlW2RhdGEkYWN0c2VxID09IGFjdHNldFthYV0gJiBkYXRhJHBhc3NlcSA9PSBwYXNzZXRbcHBdXSA9IHR5JHJ0eXBlXG4gICAgfVxuICB9XG4gIFxuYGBgIn0= -->
+<pre class="r"><code>  require(stringr)
+  datafile &lt;- system.file(&quot;extdata&quot;, &quot;out1_880000.conf&quot;, package = &quot;Rstringmol&quot;)
   data &lt;- rconf_rdata(datafile)
+
   actset &lt;- unique(data$actseq)
   for(aa in 1:length(actset)){
     passet &lt;- unique(data$passeq[data$actseq == actset[aa]])
