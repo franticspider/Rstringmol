@@ -4,6 +4,12 @@ using namespace Rcpp;
 //Error codes
 #define SM_ERR_BADNSTRINGS  1
 
+//Threshold on classifying an exec_step as deterministic
+//0.001 means if exec is the same in 999/1000 times, then we can say it's deterministic
+#define EXEC_DET_THR (0.001)
+
+
+
 //Struct to hold list of bind probabilities
 
 
@@ -39,7 +45,7 @@ float   get_bprob(align *sw);
 float   get_sw(s_ag *a1, s_ag *a2, align *sw, swt *blosum);
 bool    set_exec(s_ag *A, s_ag *B, align *sw);
 int     unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp *pp);
-float   exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead);
+bool    exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead);
 void    print_ptr_offset(FILE *fp, char *S, char *p,int F, char c);
 void    print_exec(FILE *fp, s_ag *act);
 
@@ -717,12 +723,12 @@ int             unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp 
 
 
 //int stringPM::exec_step(s_ag *act, s_ag *pass){
-float             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
+bool             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
 
   char  *tmp;
   int   dac=0;
   int   safe_append=1;
-  float pbprob=1;
+  float pbprob=1.0;
 
   switch(*(act->i[act->it])){//*iptr[it]){
 
@@ -900,7 +906,10 @@ float             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead)
   energy--;
 */
 
-  return pbprob;
+  if(pbprob > EXEC_DET_THR && pbprob < (1.0-EXEC_DET_THR))
+    return true; //step was nondeterministic
+  else
+    return false;//step was deterministic
 
 }
 
@@ -1057,17 +1066,19 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
   const int climit = 1000;
   //run exec_setp until the reactants dissassociate
 
+  bool NDStep = false;
+  Lresult["deterministicExec"] = true;
   while( count <= climit){
     if(verbose)Rprintf("\n========== STEP %d ==========\n",count);
     if(m0->status == B_ACTIVE){
-      exec_step(m0,m0->pass,blosum,&product);
+      NDStep = exec_step(m0,m0->pass,blosum,&product);
       if(verbose)print_exec(stdout,m0);
       Lresult["mActive"]  = (String) m0->S;
       Lresult["mPassive"] = (String) m1->S;
     }
 
     if(m1->status == B_ACTIVE){
-      exec_step(m1,m1->pass,blosum,&product);
+      NDStep = exec_step(m1,m1->pass,blosum,&product);
       if(verbose)print_exec(stdout,m1);
       Lresult["mActive"]  = (String) m1->S;
       Lresult["mPassive"] = (String) m0->S;
@@ -1077,6 +1088,9 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
       if(verbose)Rprintf("Reaction has ended\n");
       break;
     }
+
+    if(NDStep)
+      Lresult["deterministicExec"] = false;
 
     count++;
   }

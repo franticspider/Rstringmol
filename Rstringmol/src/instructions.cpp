@@ -123,7 +123,7 @@ char * HSearch(char *iptr, char *sp, swt *T, int *itog, int *ftog,const int maxl
 
 	float s = A.score<l-1.124? A.score : l-1.124;
 	bprob = s/(l-1.124);
-
+	*pbprob = bprob;
 	//printf("Hsearch: s = %f;  bprob = %f\n",s,bprob);
 
 	float rno = rand0to1();
