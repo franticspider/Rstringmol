@@ -46,11 +46,13 @@ test_that("non-deterministic bind is detected",{
 })
 
 
+test_that("inexact execution paths can be detected",{
 
+  rr <- doReaction(c("AAA$BBBBBBXXXOOPPO","NNN"))
 
+  expect_false(rr$deterministicExec)
 
-
-
+})
 
 test_that("inexact execution paths can be counted",{
 
