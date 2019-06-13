@@ -1,6 +1,5 @@
 
 
-<<<<<<< HEAD
 # List of reaction types - not sure this is the best place for them...
 rtypes = c("SelfSelfNoProduct",
            "SelfSelfReplicator",
@@ -9,8 +8,6 @@ rtypes = c("SelfSelfNoProduct",
            "NonSelfReplicator",
            "NonSelfDifferentProduct")
 
-=======
->>>>>>> 55fa3fc3aa87d90092f4aed9213c4f4343abe97f
 
 #' Determine the type of stringmol reacion
 #'
