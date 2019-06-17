@@ -41,12 +41,18 @@ int devrandomseed(){
 
 	int randomData = open("/dev/random", O_RDONLY);
 	int sjhRandomInteger;
-	read(randomData, &sjhRandomInteger, sizeof sjhRandomInteger);
-	// you now have a random integer!
-	close(randomData);
+	if(read(randomData, &sjhRandomInteger, sizeof sjhRandomInteger)){
+  	// you now have a random integer!
+  	close(randomData);
 
-	printf("in devrandomseed, seed is %d (%u)\n",sjhRandomInteger,sjhRandomInteger);
-	return sjhRandomInteger;
+  	printf("in devrandomseed, seed is %d (%u)\n",sjhRandomInteger,sjhRandomInteger);
+  	return sjhRandomInteger;
+	}
+	else{
+	  close(randomData);
+	  printf("Problem reading from /dev/random in devrandomseed; reurning 1\n");
+	  return 1;
+	}
 }
 
 
@@ -83,12 +89,18 @@ unsigned long longdevrandomseed(){
 
 	int randomData = open("/dev/random", O_RDONLY);
 	long sjhRandomInteger;
-	read(randomData, &sjhRandomInteger, sizeof sjhRandomInteger);
-	// you now have a random integer!
-	close(randomData);
+	if((read(randomData, &sjhRandomInteger, sizeof sjhRandomInteger))>0){;
+  	// you now have a random integer!
+  	close(randomData);
 
-	printf("in devrandomseed, seed is %ld (%lu)\n",sjhRandomInteger,(unsigned long int) sjhRandomInteger);
-	return sjhRandomInteger;
+  	printf("in devrandomseed, seed is %ld (%lu)\n",sjhRandomInteger,(unsigned long int) sjhRandomInteger);
+  	return sjhRandomInteger;
+	}
+	else{
+	  close(randomData);
+	  printf("Problem reading from /dev/random in longdevrandomseed; reurning 1\n");
+	  return 1;
+	}
 }
 
 
