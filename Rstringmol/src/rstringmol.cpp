@@ -723,20 +723,12 @@ int             unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp 
 
 
 //int stringPM::exec_step(s_ag *act, s_ag *pass){
-<<<<<<< HEAD
 bool             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
-=======
-float             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
->>>>>>> 55fa3fc3aa87d90092f4aed9213c4f4343abe97f
 
   char  *tmp;
   int   dac=0;
   int   safe_append=1;
-<<<<<<< HEAD
   float pbprob=1.0;
-=======
-  float pbprob=1;
->>>>>>> 55fa3fc3aa87d90092f4aed9213c4f4343abe97f
 
   switch(*(act->i[act->it])){//*iptr[it]){
 
@@ -914,15 +906,10 @@ float             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead)
   energy--;
 */
 
-<<<<<<< HEAD
   if(pbprob > EXEC_DET_THR && pbprob < (1.0-EXEC_DET_THR))
     return true; //step was nondeterministic
   else
     return false;//step was deterministic
-=======
-  return pbprob;
->>>>>>> 55fa3fc3aa87d90092f4aed9213c4f4343abe97f
-
 }
 
 
