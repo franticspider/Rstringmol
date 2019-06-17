@@ -1,6 +1,8 @@
 ---
 title: "R Notebook"
-output: html_notebook
+output:
+  pdf_document: default
+  html_notebook: default
 ---
 
 
@@ -10,7 +12,7 @@ We're going to try and figure out reaction classes based *solely* on the .conf f
 ```{r}
   require(stringr)
   datafile <- system.file("extdata", "out1_880000.conf", package = "Rstringmol")
-  data <- rconf_rdata(datafile)
+  data <- rconf_rdata(datafile,summarize = F)
 
   actset <- unique(data$actseq)
   for(aa in 1:length(actset)){
@@ -18,8 +20,46 @@ We're going to try and figure out reaction classes based *solely* on the .conf f
     for(pp in 1:length(passet)){
       ty <- reaction_type(actset[aa],passet[pp])
       data$type[data$actseq == actset[aa] & data$passeq == passet[pp]] = ty$rtype
+      data$detBind[data$actseq == actset[aa] & data$passeq == passet[pp]] = ty$deterministicBind
+      data$detExec[data$actseq == actset[aa] & data$passeq == passet[pp]] = ty$deterministicExec
+      
     }
   }
   
+  tt <- table(data$type)
+  tt <- tt[rtypes]
+  
+  par(mar=c(10,6,1,0))
+  barplot(tt,las=2,col=rcols)
+  
 ```
+
+OK, that seemed to work. Let's now try and make a grid of this: 
+
+```{r fig.height=8, fig.width=12}
+ps <- rconf_params(datafile)
+
+plot(NA,xlim=c(0,ps$gridx+50),ylim=c(0,ps$gridy),asp=1)
+rect(xleft = 0,xright=ps$gridx,ybottom = 0,ytop=ps$gridy,col="black",lty = "blank")
+
+for(mm in 1:nrow(data)){
+ xx <- data$actx[mm]
+ yy <- data$acty[mm]
+ rc <- rcols[which(rtypes == data$type[mm])]
+ rect(xleft = xx,xright = xx+1,ybottom = yy,ytop=yy+1,col=rc,lty = "blank")
+ xx <- data$passx[mm]
+ yy <- data$passy[mm]
+ rect(xleft = xx,xright = xx+1,ybottom = yy,ytop=yy+1,col=rc,lty = "blank")
+ legend("topright",pch=15,col = rcols,legend=rtypes)
+  
+}
+
+
+
+```
+
+
+
+
+
 
