@@ -4,9 +4,18 @@
 rtypes = c("SelfSelfNoProduct",
            "SelfSelfReplicator",
            "SelfSelfDifferentProduct",
+           "Parasite",
            "NonSelfNoProduct",
            "NonSelfReplicator",
            "NonSelfDifferentProduct")
+
+rcols = c("grey",
+          "blue",
+          "pink",
+          "red",
+          "yellow",
+          "green",
+          "orange")
 
 
 #' Determine the type of stringmol reacion

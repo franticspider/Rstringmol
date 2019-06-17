@@ -910,7 +910,6 @@ bool             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
     return true; //step was nondeterministic
   else
     return false;//step was deterministic
-
 }
 
 
