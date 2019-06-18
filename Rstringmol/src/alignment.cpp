@@ -48,41 +48,6 @@ s_sw * read_sw(s_sw *swlist, int sp1, int sp2){
 
 
 
-//store_sw(&swlist,sw);
-
-int store_sw(s_sw **head, align *sw, int sp1, int sp2){
-
-	//idea is to bung new alignments at the front of the list, since they are more likely to be used..
-
-	s_sw *p;
-	s_sw *old;
-
-
-	old = *head;
-
-	p=(s_sw *) malloc(sizeof(s_sw));
-
-	p->next = old;
-	p->sp1 = sp1;
-	p->sp2 = sp2;
-
-	p->match = sw->match;		// the number of matching characters.
-	p->score = sw->score; 		// the score of the match
-	p->prob =  sw->prob;		// the probability of the match - used for determining events based on the score/match
-	p->s1 =    sw->s1;			// start of the match in string 1
-	p->e1 =    sw->e1;			// end of the match in string 1
-	p->s2 =    sw->s2;			// start of the match in string 2
-	p->e2 =    sw->e2;			// end of the match in string 2
-
-	*head = p;
-
-
-
-
-	//if(*head!=NULL)
-	return 0;
-}
-
 
 //load_sw(swa,sw);
 int load_sw(s_sw *b, align *sw){
@@ -113,82 +78,6 @@ void free_swlist(s_sw **head){
 
 
 ////////////////////////////////////////////////////////////////////////////////////
-
-
-//public
-int LongestCommonSubsequence(char *s1, char *s2)
-{
-	int l1,l2;
-	int i,j;
-
-	//if either string is empty, the length must be 0
-	if ((l1=strlen(s1))==0 || (l2=strlen(s2))==0)
-		return 0;
-
-	int **num;
-	num = (int **) malloc(l1*sizeof(int *));// new int[s1.Length, s2.Length];  //2D array
-	for(i=0;i<l1;i++){
-		num[i]=(int *) malloc(l2*sizeof(int));
-		memset(num[i],0,l2*sizeof(int));
-	}
-
-
-	char letter1;
-	char letter2;
-
-	//Actual algorithm
-	for(i=0;i<l1;i++){
-		letter1 = s1[i];
-		for(j=0;j<l2;j++){
-			letter2 = s2[j];
-
-			if(letter1 == letter2)
-			{
-				if((i == 0) || (j == 0))
-					num[i][j] = 1;
-				else
-					num[i][j] = 1 + num[i-1][j-1];
-			}
-			else
-			{
-				if ((i == 0) && (j == 0))
-					num[i][j] = 0;
-				else if ((i == 0) && !(j == 0))   //First ith element
-					num[i][j] = 0>num[i][j - 1]?0:num[i][j - 1];
-				else if (!(i == 0) && (j == 0))   //First jth element
-					num[i][j] = 0>num[i-1][j]?0:num[i-1][j];
-				else // if (!(i == 0) && !(j == 0))
-					num[i][j] = num[i-1][j]>num[i][j-1]?num[i-1][j]:num[i][j-1];
-			}
-		}//end j
-	}//end i
-
-	//let's printout the sequences and look at the numbers...
-
-	void align_prob(align *A);
-
-	//printf("\t");
-	printf(" ");
-	for(i=0;i<l1;i++)
-		printf("%c",s1[i]);
-	printf("\n");
-	for(j=0;j<l2;j++){
-		printf("%c",s2[j]);
-		for(i=0;i<l1;i++){
-			printf("%d",num[i][j]);
-		}
-		printf("\n");
-	}
-
-	//ok - now let's try and find where the best match is now...
-
-
-	//We know where the first matching character is in the sequence, but is is possible that there may be a match closer down...
-
-
-	return num[l1-1][l2-1];
-} //end LongestCommonSubsequence
-//Usage: LongestCommonSubsequence("computer", "boathouse")
 
 
 

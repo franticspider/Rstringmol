@@ -48,7 +48,8 @@ int     unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp *pp);
 bool    exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead);
 void    print_ptr_offset(FILE *fp, char *S, char *p,int F, char c);
 void    print_exec(FILE *fp, s_ag *act);
-
+int     free_ag(s_ag *pag);
+void    free_swt(swt *table);
 
 
 
@@ -494,6 +495,20 @@ int             cleave(s_ag *act,s_ag **nexthead){
 
 
 
+
+//int stringPM::free_ag(s_ag *pag){
+int free_ag(s_ag *pag){
+
+  if(pag->S != NULL){
+    //printf("destroying agent %d, code = %s\n",pag->idx,pag->S);
+    free(pag->S);
+  }
+
+  free(pag);
+  pag = NULL;
+
+  return 0;
+}
 
 
 
@@ -987,7 +1002,27 @@ void             print_exec(FILE *fp, s_ag *act){
 
 
 
+void free_swt(swt *table){
+  //commented bits are reverse order allocations from default table..
+  int i;
 
+  if(table != NULL){
+
+    for(i=0;i<table->N;i++){
+      free(table->adj[i]);
+    }
+    free(table->adj);
+
+    for(i=0;i<table->N+1;i++){
+      free(table->T[i]);
+    }
+    free(table->T);
+
+    free(table->key);
+
+    free(table);
+  }
+}
 
 
 
@@ -1010,6 +1045,7 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
 
   align sw;
   swt	*blosum;
+  blosum = NULL;
 
   blosum =  default_table();
 
@@ -1102,6 +1138,16 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
   Lresult["m1status"] = (int) m1->status;
 
   Lresult["status"] = "finished";
+
+  //Tidy up the memory:
+  free_ag(m0);
+  free_ag(m1);
+  if(product != NULL)free_ag(product);
+
+  //align sw; (no pointers in this, so assume it doesn't need deallocating
+  //swt	*blosum;
+  free_swt(blosum);
+
 
   return Lresult;
 }
