@@ -77,7 +77,6 @@ typedef struct s_swt{
 //Linked list stuff
 
 s_sw * 	read_sw(s_sw *swlist, int sp1, int sp2);
-int 	store_sw(s_sw **swlist, align * sw,int sp1, int sp2);
 int		load_sw(s_sw *b, align *sw);
 void 	free_swlist(s_sw **head);
 
