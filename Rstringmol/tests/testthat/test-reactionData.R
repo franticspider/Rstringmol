@@ -6,7 +6,7 @@ context("molecule-molecule interactions")
 test_that("doReaction fails gracefully",{
   result <- doReaction("")
   expect_match(result$status,"bad number of input strings")
-
+  rm(result)
 })
 
 
@@ -23,6 +23,7 @@ test_that("replicator replicates",{
   expect_equal(result$bprob, 0.695410, tolerance=1e-6)
   expect_true(result$product == "$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYH")
 
+  rm(result)
 })
 
 
@@ -33,6 +34,7 @@ test_that("inexact execution is inexact",{
   result <- doReaction(c("OOGEOLHHHRLUEUOBBBRBXUUUDYGRHBLROORE$BBBBBBBBBB^B>C$=?>$$BBBBBBBBB%}OOOONNOOOO","OOGEOLHHHRLUEUOBBBRBXUUUDYGRHBLROORE$BBBBBBBBBB^B>C$=?>$$BBBBBBBBB%}OOOONNOOOO"))
   expect_equal(result$bprob, 0.576381, tolerance=1e-6)
 
+  rm(result)
 })
 
 
@@ -43,6 +45,7 @@ test_that("non-deterministic bind is detected",{
   result <- doReaction(c("$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYH","$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYH"))
   expect_false(result$deterministicBind)
 
+  rm(result)
 })
 
 
@@ -52,6 +55,7 @@ test_that("inexact execution paths can be detected",{
 
   expect_false(rr$deterministicExec)
 
+  rm(result)
 })
 
 test_that("inexact execution paths can be counted",{
@@ -67,6 +71,8 @@ test_that("inexact execution paths can be counted",{
 
   expect_equal(nrow(outputs), 3)
 
+  rm(result)
+  rm(outputs)
 })
 
 
@@ -79,6 +85,7 @@ test_that("TOGGLE '^' toggles and COPY '=' copies",{
   expect_true(result$mPassive == "NNN")
   expect_equal(result$count,6)
 
+  rm(result)
 })
 
 

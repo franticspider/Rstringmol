@@ -17,4 +17,5 @@ test_that("reactions are classified correctly",{
 
   typ <- reaction_type(result$mActive,result$mPassive)
 
+  rm(result)
 })
