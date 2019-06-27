@@ -2,21 +2,37 @@
 title: "R Notebook"
 output:
   pdf_document: default
-  word_document: default
   html_notebook: default
 ---
 
 
+Before going straight for the reaction classes, we might want to look at the distribution of deterministic binding and execution in a conf file. So let's do that now: 
+
+
 ```{r}
-  library(stringr)
-  library(Rstringmol)
-  source("../Rstringmol/R/rconf_data.R")
-  source("../Rstringmol/R/rconf_params.R")
-  source("../Rstringmol/R/reaction_type.R")
+
+  datafile <- system.file("extdata", "out1_880000.conf", package = "Rstringmol")
+  data <- rconf_rdata(datafile)
+
+  actset <- unique(data$actseq)
+  for(aa in 1:length(actset)){
+  
+    
+    
+  }
+
+
+
 ```
 
 
-Before going straight for the reaction classes, we might want to look at the distribution of deterministic binding and execution in a conf file. So let's do that now: 
+
+
+
+
+
+
+
 
 We're going to try and figure out reaction classes based *solely* on the .conf file (and not the splist file)
 
@@ -79,8 +95,8 @@ Set the `froot` variable to the path to the files for these tests:
 
 ```{r}
 #froot="D:/sjh/stringmol/out3smsp/"
-froot="D:/sjh/stringmol/smsp/1705smsp/out5/"
-#froot="~/Desktop/paulien/sm250r/out3/"
+#froot="D:/sjh/stringmol/smsp/1705smsp/out5/"
+froot="~/Desktop/paulien/smsp/1705smsp/out3/"
 ```
 
 
@@ -127,15 +143,13 @@ while(gotdata){
      xx <- data$passx[mm]
      yy <- data$passy[mm]
      rect(xleft = xx,xright = xx+1,ybottom = yy,ytop=yy+1,col=rc,lty = "blank")
+     legend("topright",pch=15,col = rcols,legend=rtypes)
       
     }
-    legend("topright",pch=15,col = rcols,legend=rtypes)
-    title(sprintf("t = %d",tt))
   }
   else{
     gotdata<-F
   }
-  if(tt>1800000) gotdata<- F
   
   tt <- tt+tstep
 }

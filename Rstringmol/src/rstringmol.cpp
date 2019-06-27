@@ -1047,7 +1047,6 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
   swt	*blosum;
   blosum = NULL;
 
-  blosum =  default_table();
 
   Rcpp::List Lresult = Rcpp::List::create(_["product"] = "empty",
                                           _["status"] = "none",
@@ -1055,13 +1054,18 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
                                           _["count"] = 0,
                                           _["m0status"] = -1,
                                           _["m1status"] = -1,
+                                          _["mActive"] = "unset",
+                                          _["mPassive"] = "unset",
                                           _["errcode"] = 0);
   if(seqVector.length() != 2){
     Rprintf("ERROR: 2 stringmols required, %d given\n",seqVector.length());
     Lresult["status"] = "bad number of input strings";
     Lresult["errcode"] = SM_ERR_BADNSTRINGS;
+
     return Lresult;
   }
+
+  blosum =  default_table();
 
   std::string string0 = Rcpp::as<std::string>(seqVector[0]);
   std::string string1 = Rcpp::as<std::string>(seqVector[1]);
@@ -1087,15 +1091,15 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
   if(verbose)
     Rprintf("Bind probability for these molecules is %f\n",bprob);
 
-  Lresult["bprob"] = bprob;
+  Lresult["bprob"] = (bprob);
 
   //
 
   //use set_exec to determine the active and passive strings
   Lresult["deterministicBind"] = set_exec(m0,m1,&sw);
 
-  Lresult["m0status"] = (int) m0->status;
-  Lresult["m1status"] = (int) m1->status;
+  Lresult["m0status"] = ((int) m0->status);
+  Lresult["m1status"] = ((int) m1->status);
 
   int count = 0;
   const int climit = 1000;
@@ -1108,15 +1112,15 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
     if(m0->status == B_ACTIVE){
       NDStep = exec_step(m0,m0->pass,blosum,&product);
       if(verbose)print_exec(stdout,m0);
-      Lresult["mActive"]  = (String) m0->S;
-      Lresult["mPassive"] = (String) m1->S;
+      Lresult["mActive"]  = ((String) m0->S);
+      Lresult["mPassive"] = ((String) m1->S);
     }
 
     if(m1->status == B_ACTIVE){
       NDStep = exec_step(m1,m1->pass,blosum,&product);
       if(verbose)print_exec(stdout,m1);
-      Lresult["mActive"]  = (String) m1->S;
-      Lresult["mPassive"] = (String) m0->S;
+      Lresult["mActive"]  = ((String) m1->S);
+      Lresult["mPassive"] = ((String) m0->S);
     }
 
     if(m0->status == B_UNBOUND || m1->status == B_UNBOUND ){
@@ -1131,11 +1135,11 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
   }
 
   if(product != NULL){
-    Lresult["product"] = (String) product->S;
+    Lresult["product"] = ((String) product->S);
   }
   Lresult["count"] = count;
-  Lresult["m0status"] = (int) m0->status;
-  Lresult["m1status"] = (int) m1->status;
+  Lresult["m0status"] = ((int) m0->status);
+  Lresult["m1status"] = ((int) m1->status);
 
   Lresult["status"] = "finished";
 
@@ -1151,6 +1155,180 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
 
   return Lresult;
 }
+
+
+
+//////////////////////
+// ALTERNATIVE APPROACH: WRITE OUTPUT TO FILE - LOAD IT IN R
+//////////////////////
+
+/****************************************
+ Procedure: doReaction
+ *****************************************/
+//' React 2 stringmols together - determine whether the run is deterministic or not - write to a file
+//'
+//' @param seqVector the sequence of the two strings, active first, then passive.
+//' @export
+// [[Rcpp::export]]
+void doReactionFP(Rcpp::StringVector seqVector, bool verbose = false) {
+
+  s_ag *m0,*m1;
+
+  s_ag *product; //This is used to hold any new molecules that are produced.. it's called 'nexthead' in the functions because that's what it's called in stringPM
+  product = NULL;
+
+  align sw;
+  swt	*blosum;
+  blosum = NULL;
+
+  /*
+  Rcpp::List Lresult = Rcpp::List::create(_["product"] = "empty",
+                                          _["status"] = "none",
+                                          _["bprob"] = 0.0,
+                                          _["count"] = 0,
+                                          _["m0status"] = -1,
+                                          _["m1status"] = -1,
+                                          _["mActive"] = "unset",
+                                          _["mPassive"] = "unset",
+                                          _["errcode"] = 0);
+  if(seqVector.length() != 2){
+    Rprintf("ERROR: 2 stringmols required, %d given\n",seqVector.length());
+    Lresult["status"] = "bad number of input strings";
+    Lresult["errcode"] = SM_ERR_BADNSTRINGS;
+
+    return Lresult;
+  }
+  */
+
+  blosum =  default_table();
+
+  std::string string0 = Rcpp::as<std::string>(seqVector[0]);
+  std::string string1 = Rcpp::as<std::string>(seqVector[1]);
+
+
+  //create the agents from the strings
+  /* To Do this, we need to call 'make_ag' which is a function of the StringPM class
+  * However, this function should be moved!
+  * So for now, we'll copy the function into the code and just give a warning
+  */
+  m0 = make_mol(string0.c_str());
+  m1 = make_mol(string1.c_str());
+
+  if(verbose){
+    Rprintf("Mol 0 has seq %s and length %d\n",m0->S,m0->len);
+    Rprintf("Mol 1 has seq %s and length %d\n",m1->S,m1->len);
+  }
+
+  //Do the equivalent of stringPM::testbind():
+  //run get_sw() to get bind prob - see stringPM::testbind()
+  //Carries out the Smith-Waterman alignment and gets the binding probability
+  float bprob = get_sw(m0,m1,&sw,blosum);
+  if(verbose)
+    Rprintf("Bind probability for these molecules is %f\n",bprob);
+
+  /*
+  Lresult["bprob"] = (bprob);
+
+
+  //use set_exec to determine the active and passive strings
+  Lresult["deterministicBind"] = set_exec(m0,m1,&sw);
+
+  Lresult["m0status"] = ((int) m0->status);
+  Lresult["m1status"] = ((int) m1->status);
+
+  Lresult["deterministicExec"] = true;
+  */
+
+  int count = 0;
+  const int climit = 1000;
+  //run exec_setp until the reactants dissassociate
+
+  bool NDStep = false;
+  while( count <= climit){
+    if(verbose)Rprintf("\n========== STEP %d ==========\n",count);
+    if(m0->status == B_ACTIVE){
+      NDStep = exec_step(m0,m0->pass,blosum,&product);
+      if(verbose)print_exec(stdout,m0);
+      //Lresult["mActive"]  = ((String) m0->S);
+      //Lresult["mPassive"] = ((String) m1->S);
+    }
+
+    if(m1->status == B_ACTIVE){
+      NDStep = exec_step(m1,m1->pass,blosum,&product);
+      if(verbose)print_exec(stdout,m1);
+      //Lresult["mActive"]  = ((String) m1->S);
+      //Lresult["mPassive"] = ((String) m0->S);
+    }
+
+    if(m0->status == B_UNBOUND || m1->status == B_UNBOUND ){
+      if(verbose)Rprintf("Reaction has ended\n");
+      break;
+    }
+
+    //if(NDStep)
+    //  Lresult["deterministicExec"] = false;
+
+    count++;
+  }
+
+  /*
+  if(product != NULL){
+    Lresult["product"] = ((String) product->S);
+  }
+  Lresult["count"] = count;
+  Lresult["m0status"] = ((int) m0->status);
+  Lresult["m1status"] = ((int) m1->status);
+
+  Lresult["status"] = "finished";
+  */
+
+
+  //Tidy up the memory:
+  free_ag(m0);
+  free_ag(m1);
+  if(product != NULL)free_ag(product);
+
+  //align sw; (no pointers in this, so assume it doesn't need deallocating
+  //swt	*blosum;
+  free_swt(blosum);
+
+
+  //return Lresult;
+
+
+
+}
+
+
+
+
+
+//////////////////////
+// EXPERIMENTAL MODULE
+//////////////////////
+
+
+class Foo {
+public:
+  Foo(double x_, double y_, double z_ ):
+  x(x_), y(y_), z(z_) {}
+  double x;
+  double y;
+  double get_z() { return z; }
+  void set_z( double z_ ) { z = z_; }
+private:
+  double z;
+};
+
+RCPP_MODULE(mod_foo) {
+  class_<Foo>( "Foo" )
+  .constructor<double,double,double>()
+  .field( "x", &Foo::x )
+  .field_readonly( "y", &Foo::y )
+  .property( "z", &Foo::get_z, &Foo::set_z )
+  ;
+}
+
 
 
 
