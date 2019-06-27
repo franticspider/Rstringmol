@@ -264,8 +264,8 @@ int hcopy(s_ag *act){
 
   //s_ag *pass;
   //pass = act->pass;
-  int cidx;
-  float rno;
+  //int cidx;
+  //float rno;
   int safe = 1;// this gets set to zero if any of the tests fail..
 
   act->len = strlen(act->S);
@@ -713,10 +713,10 @@ bool set_exec(s_ag *A, s_ag *B, align *sw){
 int             unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp *pp){
 
   int found=0;
-  int mass=0;
+  //int mass=0;
 
   if(pag->status==B_ACTIVE){
-    mass = pag->biomass;
+    //mass = pag->biomass;
     pag->biomass = 0;
   }
 
@@ -742,7 +742,7 @@ bool             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
 
   char  *tmp;
   int   dac=0;
-  int   safe_append=1;
+  //int   safe_append=1;
   float pbprob=1.0;
 
   switch(*(act->i[act->it])){//*iptr[it]){
@@ -884,7 +884,7 @@ bool             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
     ************/
   case '%':
     if((dac = cleave(act,nexthead))){
-      safe_append=0;	//extract_ag(&nowhead,p);
+      //safe_append=0;	//extract_ag(&nowhead,p);
     }
     break;
 

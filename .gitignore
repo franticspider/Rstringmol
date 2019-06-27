@@ -41,3 +41,7 @@ vignettes/*.pdf
 # Shiny token, see https://shiny.rstudio.com/articles/shinyapps.html
 rsconnect/
 
+# html files in examples folder
+examples/*.html
+examples/*.pdf
+
