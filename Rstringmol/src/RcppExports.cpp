@@ -29,9 +29,12 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP _rcpp_module_boot_mod_foo();
+
 static const R_CallMethodDef CallEntries[] = {
     {"_Rstringmol_timesTwelve", (DL_FUNC) &_Rstringmol_timesTwelve, 1},
     {"_Rstringmol_doReaction", (DL_FUNC) &_Rstringmol_doReaction, 2},
+    {"_rcpp_module_boot_mod_foo", (DL_FUNC) &_rcpp_module_boot_mod_foo, 0},
     {NULL, NULL, 0}
 };
 
