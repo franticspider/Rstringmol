@@ -84,17 +84,21 @@ froot="D:/sjh/stringmol/smsp/1705smsp/out5/"
 ```
 
 
-ok, that worked! So let's try it for a whole run...
+ok, that worked! So let's try it for a whole run...write it to a pdf
 
 ```{r}
 
+#pdf(file = "D:/sjh/stringmol/smsp5types.pdf",width = 10,height = 10)
+
 tstep <- 100000 #sometimes its 10000
-tt <- tstep
+tt <- 1500000 + tstep
 sps <- list()
 nsps <- 1
 gotdata<-T
 while(gotdata){
   fn <- sprintf("%sout1_%d.conf",froot,tt)
+  
+  message(sprintf("Working on file %s",fn))
   
   if(file.exists(fn)){
   
@@ -139,5 +143,8 @@ while(gotdata){
   
   tt <- tt+tstep
 }
+
+dev.off()
+
 ```
 
