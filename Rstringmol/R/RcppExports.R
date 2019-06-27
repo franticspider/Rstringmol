@@ -13,3 +13,11 @@ doReaction <- function(seqVector, verbose = FALSE) {
     .Call(`_Rstringmol_doReaction`, seqVector, verbose)
 }
 
+#' React 2 stringmols together - determine whether the run is deterministic or not - write to a file
+#'
+#' @param seqVector the sequence of the two strings, active first, then passive.
+#' @export
+doReactionFP <- function(seqVector, verbose = FALSE) {
+    invisible(.Call(`_Rstringmol_doReactionFP`, seqVector, verbose))
+}
+
