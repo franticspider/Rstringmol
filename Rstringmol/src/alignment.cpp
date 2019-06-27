@@ -955,6 +955,8 @@ swt * default_table(){
 		}
 		free(TData[i]);
 	}
+	//Don't forget to free the extra TData row!
+	free(TData[33]);
 
 	free(TData);
 
