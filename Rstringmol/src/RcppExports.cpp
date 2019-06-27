@@ -28,12 +28,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// doReactionFP
+void doReactionFP(Rcpp::StringVector seqVector, bool verbose);
+RcppExport SEXP _Rstringmol_doReactionFP(SEXP seqVectorSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::StringVector >::type seqVector(seqVectorSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    doReactionFP(seqVector, verbose);
+    return R_NilValue;
+END_RCPP
+}
 
 RcppExport SEXP _rcpp_module_boot_mod_foo();
 
 static const R_CallMethodDef CallEntries[] = {
     {"_Rstringmol_timesTwelve", (DL_FUNC) &_Rstringmol_timesTwelve, 1},
     {"_Rstringmol_doReaction", (DL_FUNC) &_Rstringmol_doReaction, 2},
+    {"_Rstringmol_doReactionFP", (DL_FUNC) &_Rstringmol_doReactionFP, 2},
     {"_rcpp_module_boot_mod_foo", (DL_FUNC) &_rcpp_module_boot_mod_foo, 0},
     {NULL, NULL, 0}
 };
