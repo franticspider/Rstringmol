@@ -9,12 +9,6 @@ using namespace Rcpp;
 #define EXEC_DET_THR (0.001)
 
 
-
-//Struct to hold list of bind probabilities
-
-
-
-
 //These header files were for .c files, renamed to .cpp in Rstringmol!
 #include "memoryutil.h"
 #include "mt19937-2.h"
@@ -25,6 +19,9 @@ using namespace Rcpp;
 #include "instructions.h"
 
 #include "SMspp.h" //Contains the definition of s_ag - the basic species unit
+
+#include "rsmData.h"
+
 
 //set in stringPM.cpp
 const unsigned int maxl = 2000;
@@ -1170,7 +1167,7 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
 //' @param seqVector the sequence of the two strings, active first, then passive.
 //' @export
 // [[Rcpp::export]]
-void doReactionFP(Rcpp::StringVector seqVector, bool verbose = false) {
+void doReactionFP(Rcpp::StringVector seqVector,  Rcpp::StringVector fnVector, bool verbose = false) {
 
   s_ag *m0,*m1;
 
@@ -1180,6 +1177,38 @@ void doReactionFP(Rcpp::StringVector seqVector, bool verbose = false) {
   align sw;
   swt	*blosum;
   blosum = NULL;
+
+  rsmData result;
+  FILE *fin;
+
+  Rprintf("Testing fnVector stuff\n");
+
+
+  Rprintf("fnVector size is %d:\n",fnVector.size());
+
+  for(int ff=0;ff<fnVector.size();ff++){
+    std::string fileName = Rcpp::as<std::string>(fnVector[ff]);
+    Rprintf("fnVector[%d] is %s\n",ff,fileName.c_str());
+  }
+
+  if(fnVector.size()!=1){
+    Rprintf("ERROR: Too many tmpfiles, exiting doReactionFP\n");
+    return;
+  }
+
+
+  std::string fileName = Rcpp::as<std::string>(fnVector[0]);
+
+  FILE * fp;
+  if((fp=fopen(fileName.c_str(),"w")) == NULL){
+
+    Rprintf("ERROR: unable to open file %s, exiting doReactionFP\n", fileName.c_str());
+    return;
+
+  }
+
+  Rprintf("Writing reaction data to file %s \n",fileName.c_str());
+
 
   /*
   Rcpp::List Lresult = Rcpp::List::create(_["product"] = "empty",
@@ -1205,6 +1234,10 @@ void doReactionFP(Rcpp::StringVector seqVector, bool verbose = false) {
   std::string string0 = Rcpp::as<std::string>(seqVector[0]);
   std::string string1 = Rcpp::as<std::string>(seqVector[1]);
 
+  fprintf(fp,"string0,%s\n",string0.c_str());
+  fprintf(fp,"string1,%s\n",string1.c_str());
+
+
 
   //create the agents from the strings
   /* To Do this, we need to call 'make_ag' which is a function of the StringPM class
@@ -1226,6 +1259,21 @@ void doReactionFP(Rcpp::StringVector seqVector, bool verbose = false) {
   if(verbose)
     Rprintf("Bind probability for these molecules is %f\n",bprob);
 
+
+  fprintf(fp,"bprob,%0.6f\n",bprob);
+
+  bool dtb = set_exec(m0,m1,&sw);
+  bool dtexec = true;
+
+  if(dtb)
+    fprintf(fp,"deterministicBind,TRUE\n");
+  else
+    fprintf(fp,"deterministicBind,FALSE\n");
+
+  fprintf(fp,"m0status,%d\n",m0->status);
+  fprintf(fp,"m1status,%d\n",m1->status);
+
+
   /*
   Lresult["bprob"] = (bprob);
 
@@ -1239,9 +1287,16 @@ void doReactionFP(Rcpp::StringVector seqVector, bool verbose = false) {
   Lresult["deterministicExec"] = true;
   */
 
+
+
+
+
   int count = 0;
   const int climit = 1000;
   //run exec_setp until the reactants dissassociate
+
+  char mActive[MAXL0];
+  char mPassive[MAXL0];
 
   bool NDStep = false;
   while( count <= climit){
@@ -1251,6 +1306,8 @@ void doReactionFP(Rcpp::StringVector seqVector, bool verbose = false) {
       if(verbose)print_exec(stdout,m0);
       //Lresult["mActive"]  = ((String) m0->S);
       //Lresult["mPassive"] = ((String) m1->S);
+      sprintf(mActive,"%s",m0->S);
+      sprintf(mPassive,"%s",m1->S);
     }
 
     if(m1->status == B_ACTIVE){
@@ -1258,6 +1315,8 @@ void doReactionFP(Rcpp::StringVector seqVector, bool verbose = false) {
       if(verbose)print_exec(stdout,m1);
       //Lresult["mActive"]  = ((String) m1->S);
       //Lresult["mPassive"] = ((String) m0->S);
+      sprintf(mActive,"%s",m1->S);
+      sprintf(mPassive,"%s",m0->S);
     }
 
     if(m0->status == B_UNBOUND || m1->status == B_UNBOUND ){
@@ -1265,11 +1324,26 @@ void doReactionFP(Rcpp::StringVector seqVector, bool verbose = false) {
       break;
     }
 
-    //if(NDStep)
-    //  Lresult["deterministicExec"] = false;
+    if(NDStep){
+      //  Lresult["deterministicExec"] = false;
+      dtexec = false;
+    }
 
     count++;
   }
+
+
+  fprintf(fp,"mActive,%s\n",mActive);
+  fprintf(fp,"mPassive,%s\n",mPassive);
+  if(product != NULL)
+    fprintf(fp,"product,%s\n",product->S);
+  else
+    fprintf(fp,"product,none\n");
+
+  fprintf(fp,"count,%d\n",count);
+  fprintf(fp,"m0status,%d\n",m0->status);
+  fprintf(fp,"m1status,%d\n",m1->status);
+
 
   /*
   if(product != NULL){
@@ -1294,7 +1368,7 @@ void doReactionFP(Rcpp::StringVector seqVector, bool verbose = false) {
 
 
   //return Lresult;
-
+  fclose(fp);
 
 
 }
@@ -1306,7 +1380,7 @@ void doReactionFP(Rcpp::StringVector seqVector, bool verbose = false) {
 //////////////////////
 // EXPERIMENTAL MODULE
 //////////////////////
-
+/*
 
 class Foo {
 public:
@@ -1328,7 +1402,7 @@ RCPP_MODULE(mod_foo) {
   .property( "z", &Foo::get_z, &Foo::set_z )
   ;
 }
-
+*/
 
 
 
