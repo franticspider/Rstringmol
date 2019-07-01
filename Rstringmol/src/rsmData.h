@@ -12,7 +12,20 @@ public:
   rsmData();
   ~rsmData();
 
+  //setters
+  void setString0(char *s);
+  void setString1(char *s);
+
+  //getters
+
+  //utils
+  void toFile(char *fn);
+
 private:
+
+  char string0[MAXL0];
+  char string1[MAXL0];
+
   char status[20];
   float bprob;
   int count;
