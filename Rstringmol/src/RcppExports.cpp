@@ -17,7 +17,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // doReaction
-Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose);
+List doReaction(Rcpp::StringVector seqVector, bool verbose);
 RcppExport SEXP _Rstringmol_doReaction(SEXP seqVectorSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

@@ -26,6 +26,8 @@ using namespace Rcpp;
 
 #include "SMspp.h" //Contains the definition of s_ag - the basic species unit
 
+#include "rsmData.h"
+
 //set in stringPM.cpp
 const unsigned int maxl = 2000;
 const unsigned int maxl0 = maxl+1;
@@ -1036,7 +1038,7 @@ Procedure: doReaction
 //' @param seqVector the sequence of the two strings, active first, then passive.
 //' @export
 // [[Rcpp::export]]
-Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
+List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
 
   s_ag *m0,*m1;
 
@@ -1048,7 +1050,7 @@ Rcpp::List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
   blosum = NULL;
 
 
-  Rcpp::List Lresult = Rcpp::List::create(_["product"] = "empty",
+  List Lresult = List::create(_["product"] = "empty",
                                           _["status"] = "none",
                                           _["bprob"] = 0.0,
                                           _["count"] = 0,
@@ -1180,6 +1182,11 @@ void doReactionFP(Rcpp::StringVector seqVector, bool verbose = false) {
   align sw;
   swt	*blosum;
   blosum = NULL;
+
+  rsmData result;
+
+  result.tofile("raw.txt");
+
 
   /*
   Rcpp::List Lresult = Rcpp::List::create(_["product"] = "empty",
