@@ -19,3 +19,10 @@ rsmData::rsmData(){
   deterministicExec = true; //we have to prove it's false!
   sprintf(product,"unset");
 }
+
+
+rsmData::~rsmData(){
+
+
+
+}

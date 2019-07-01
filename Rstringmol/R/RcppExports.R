@@ -17,7 +17,7 @@ doReaction <- function(seqVector, verbose = FALSE) {
 #'
 #' @param seqVector the sequence of the two strings, active first, then passive.
 #' @export
-doReactionFP <- function(seqVector, verbose = FALSE) {
-    invisible(.Call(`_Rstringmol_doReactionFP`, seqVector, verbose))
+doReactionFP <- function(seqVector, fnVector, verbose = FALSE) {
+    invisible(.Call(`_Rstringmol_doReactionFP`, seqVector, fnVector, verbose))
 }
 
