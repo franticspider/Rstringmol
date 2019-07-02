@@ -1180,14 +1180,14 @@ void doReactionFP(Rcpp::StringVector seqVector,  Rcpp::StringVector fnVector, bo
 
   rsmData result;
 
-  Rprintf("Testing fnVector stuff\n");
+  //Rprintf("Testing fnVector stuff\n");
 
 
-  Rprintf("fnVector size is %d:\n",fnVector.size());
+  //Rprintf("fnVector size is %d:\n",fnVector.size());
 
   for(int ff=0;ff<fnVector.size();ff++){
     std::string fileName = Rcpp::as<std::string>(fnVector[ff]);
-    Rprintf("fnVector[%d] is %s\n",ff,fileName.c_str());
+    //Rprintf("fnVector[%d] is %s\n",ff,fileName.c_str());
   }
 
   if(fnVector.size()!=1){
@@ -1206,7 +1206,7 @@ void doReactionFP(Rcpp::StringVector seqVector,  Rcpp::StringVector fnVector, bo
 
   }
 
-  Rprintf("Writing reaction data to file %s \n",fileName.c_str());
+  //Rprintf("Writing reaction data to file %s \n",fileName.c_str());
 
 
   /*
@@ -1339,7 +1339,7 @@ void doReactionFP(Rcpp::StringVector seqVector,  Rcpp::StringVector fnVector, bo
   if(product != NULL)
     fprintf(fp,"product,%s\n",product->S);
   else
-    fprintf(fp,"product,none\n");
+    fprintf(fp,"product,empty\n");
 
   fprintf(fp,"count,%d\n",count);
   fprintf(fp,"m0status,%d\n",m0->status);

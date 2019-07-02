@@ -61,6 +61,35 @@ We're going to try and figure out reaction classes based *solely* on the .conf f
   
 ```
 
+
+```{r}
+  require(stringr)
+  datafile <- system.file("extdata", "out1_880000.conf", package = "Rstringmol")
+  data <- rconf_rdata(datafile,summarize = F)
+
+  actset <- unique(data$actseq)
+  for(aa in 1:length(actset)){
+    passet <- unique(data$passeq[data$actseq == actset[aa]])
+    for(pp in 1:length(passet)){
+      ty <- reaction_typeFP(actset[aa],passet[pp])
+      data$type[data$actseq == actset[aa] & data$passeq == passet[pp]] = ty$rtype
+      data$detBind[data$actseq == actset[aa] & data$passeq == passet[pp]] = ty$deterministicBind
+      data$detExec[data$actseq == actset[aa] & data$passeq == passet[pp]] = ty$deterministicExec
+      
+    }
+  }
+  
+  tt <- table(data$type)
+  tt <- tt[rtypes]
+  
+  par(mar=c(10,6,1,0))
+  barplot(tt,las=2,col=rcols)
+  
+```
+
+
+
+
 OK, that seemed to work. Let's now try and make a grid of this: 
 
 
@@ -125,7 +154,8 @@ while(gotdata){
     for(aa in 1:length(actset)){
       passet <- unique(data$passeq[data$actseq == actset[aa]])
       for(pp in 1:length(passet)){
-        ty <- reaction_type(actset[aa],passet[pp])
+        message(sprintf("reacting %s with %s",actset[aa],passet[pp]))
+        ty <- reaction_typeFP(actset[aa],passet[pp])
         data$type[data$actseq == actset[aa] & data$passeq == passet[pp]] = ty$rtype
         data$detBind[data$actseq == actset[aa] & data$passeq == passet[pp]] = ty$deterministicBind
         data$detExec[data$actseq == actset[aa] & data$passeq == passet[pp]] = ty$deterministicExec
@@ -158,7 +188,7 @@ while(gotdata){
   tt <- tt+tstep
 }
 
-dev.off()
+#dev.off()
 
 ```
 
