@@ -55,29 +55,56 @@ rconf_rdata <- function(fn,verbose = F,summarize=T){
     actx[rr] <- as.numeric(words[[1]][19])
     acty[rr] <- as.numeric(words[[1]][20])
 
-
     words <-strsplit(cf[rpos[rr]+7,1],split=" ")
 
     ##if(is.na(as.integer(words[[1]][3])))message("BOOM")
-    ##if(pdebug)message(sprintf("words[[1]][3] = %s",words[[1]][3]))
-    ##TODO: we get 'NAs introduced by coercion' when this is e.g. "$OYHOB"
-    pasno[rr] <- suppressWarnings(  as.numeric(words[[1]][3]) )
-    passeq[rr] <- words[[1]][4]
+    if(words[[1]][1] == "###############"){
 
+      ##if(pdebug)message(sprintf("words[[1]][3] = %s",words[[1]][3]))
+      ##TODO: we get 'NAs introduced by coercion' when this is e.g. "$OYHOB"
+      pasno[rr] <- suppressWarnings(  as.numeric(words[[1]][3]) )
+      passeq[rr] <- words[[1]][4]
 
-    words <-strsplit(cf[rpos[rr]+6,1],split=" ")
-    passx[rr] <- as.numeric(words[[1]][5])
-    passy[rr] <- as.numeric(words[[1]][6])
+      words <-strsplit(cf[rpos[rr]+6,1],split=" ")
+      passx[rr] <- as.numeric(words[[1]][5])
+      passy[rr] <- as.numeric(words[[1]][6])
+    }
+    else{
 
-    #TODO handle bad format better where passive mol is above rpos!! (and find out how this happens...)
-    if(is.na(pasno[rr])){
-      words <-strsplit(cf[rpos[rr]-1,1],split=" ")
+      count_bad_format <- count_bad_format + 1
+      if(verbose)#message(sprintf("Bad format number %d encountered, rpos[rr] is %d, rr is %d, no is %d ax,ay = %d,%d", count_bad_format, rpos[rr], rr, pasno[rr],actx[rr],acty[rr]))
+        message(sprintf("Bad format number %d encountered",count_bad_format))
+
+      foundpassive <- F
+      loff <- -1
+      while(!foundpassive){
+        lno <- rpos[rr]+loff
+        if(str_length(cf[lno,1])>14){
+          if(verbose)message(sprintf("rr = %d Searching line %d: %s",rr,lno, cf[lno,1]))
+         
+          words <-strsplit(cf[lno,1],split=" ")
+          if(words[[1]][1] == "###############"){
+            if(verbose)message("Found passive line...")
+            foundpassive <- T
+	  }
+	}
+        loff <- loff-1
+        if(loff < -10){
+          message(sprintf("Unable to find passive partner; returning from rconf_data"))
+          return(NA)
+	}
+      }
+
+      #TODO handle bad format better where passive mol is above rpos!! (and find out how this happens...)
+      #if(is.na(pasno[rr])){
       pasno[rr] <- as.numeric(words[[1]][3])
       passeq[rr] <- words[[1]][4]
-      passx[rr] <- as.numeric(words[[1]][6])
-      passy[rr] <- as.numeric(words[[1]][7])
-      count_bad_format <- count_bad_format + 1
-      if(verbose)message(sprintf("Bad format number %d encountered, rpos[rr] is %d, rr is %d, no is %d ax,ay = %d,%d", count_bad_format, rpos[rr], rr, pasno[rr],actx[rr],acty[rr]))
+      #go up one more line to get gridx and gridy 
+      words <-strsplit(cf[lno-1,1],split=" ")
+      passx[rr] <- as.numeric(words[[1]][5])
+      passy[rr] <- as.numeric(words[[1]][6])
+
+      message(sprintf("Found passeq:%s, passx:%s, passy:%s",passeq[rr],passx[rr],passy[rr]))
     }
     #message(sprintf("Active  molecule %s seq %s",actno[rr],actseq[rr]))
     #message(sprintf("Passive molecule %s seq %s",actno[rr],actseq[rr]))
