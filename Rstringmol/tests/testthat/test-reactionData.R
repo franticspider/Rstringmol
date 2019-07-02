@@ -55,7 +55,6 @@ test_that("inexact execution paths can be detected",{
 
   expect_false(rr$deterministicExec)
 
-  rm(result)
 })
 
 test_that("inexact execution paths can be counted",{
@@ -71,7 +70,7 @@ test_that("inexact execution paths can be counted",{
 
   expect_equal(nrow(outputs), 3)
 
-  rm(result)
+  rm(results)
   rm(outputs)
 })
 

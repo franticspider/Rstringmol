@@ -4,9 +4,9 @@ context("molecule-molecule interactions; FP method")
 
 
 test_that("runReactionFP fails gracefully",{
-  result <- runReactionFP(c("AAA","NNN"))
+  result <- runReactionFP("")
   expect_match(result$status,"bad number of input strings")
-  rm(result)
+
 })
 
 
@@ -30,8 +30,8 @@ test_that("FP replicator replicates",{
 
 test_that("FP inexact execution is inexact",{
 
-
-  result <- runReactionFP(c("OOGEOLHHHRLUEUOBBBRBXUUUDYGRHBLROORE$BBBBBBBBBB^B>C$=?>$$BBBBBBBBB%}OOOONNOOOO","OOGEOLHHHRLUEUOBBBRBXUUUDYGRHBLROORE$BBBBBBBBBB^B>C$=?>$$BBBBBBBBB%}OOOONNOOOO"))
+  result <- runReactionFP(c("OOGEOLHHHRLUEUOBBBRBXUUUDYGRHBLROORE$BBBBBBBBBB^B>C$=?>$$BBBBBBBBB%}OOOONNOOOO",
+                            "OOGEOLHHHRLUEUOBBBRBXUUUDYGRHBLROORE$BBBBBBBBBB^B>C$=?>$$BBBBBBBBB%}OOOONNOOOO"))
   expect_equal(result$bprob, 0.576381, tolerance=1e-6)
 
   rm(result)
@@ -70,8 +70,8 @@ test_that("inexact execution paths can be counted",{
 
   expect_equal(nrow(outputs), 3)
 
-  rm(results)
-  rm(outputs)
+  #rm(results)
+  #rm(outputs)
 })
 
 

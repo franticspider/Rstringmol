@@ -7,6 +7,18 @@
 #' @export
 runReactionFP <- function(reactants,verbose = F){
 
+
+  result <- list()
+
+  if(length(reactants)!=2){
+    message(sprintf("Wrong number of arguments to runReactionFP. Expecting 2, got %d",length(reactants)))
+    result$status<-"bad number of input strings"
+    return(result)
+  }
+
+
+
+
   fn <- tempfile(fileext = ".csv")
 
   doReactionFP(reactants,fn)
