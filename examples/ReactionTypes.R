@@ -4,17 +4,22 @@
 
 
 #froot="D:/sjh/stringmol/out3smsp/"
-#froot="D:/sjh/stringmol/smsp/1705smsp/out5/"
-froot="~/Desktop/paulien/smsp/1705smsp/out3/"
+froot="D:/sjh/stringmol/smsp/1705smsp/out5/"
+#froot="~/Desktop/paulien/smsp/1705smsp/out3/"
 
-pdf(file = "~/smsp5types.pdf",width = 12,height = 10)
+#pdf(file = "~/smsp5types.pdf",width = 12,height = 10)
 
 tstep <- 20000 #sometimes its 10000
-tt <-   1500000 + tstep
+tt <-   20000
 sps <- list()
 nsps <- 1
 gotdata<-T
+imno = 1
 while(gotdata){
+
+  png(file = sprintf("%srtypes%07d.png",froot,imno),width = 500,height=500)
+
+
   fn <- sprintf("%sout1_%d.conf",froot,tt)
 
   message(sprintf("Working on file %s",fn))
@@ -22,7 +27,7 @@ while(gotdata){
   if(file.exists(fn)){
 
     #Get the data...
-    data <- rconf_rdata(fn,summarize = F)
+    data <- rconf_rdata(fn,summarize = F, verbose = F)#T)
 
     actset <- unique(data$actseq)
     for(aa in 1:length(actset)){
@@ -36,6 +41,9 @@ while(gotdata){
 
       }
     }
+
+  #TODO: PLOT THE UNBOUND MOLECULES
+
 
   # Now do the plot...
   ps <- rconf_params(fn)
@@ -58,8 +66,9 @@ while(gotdata){
   else{
   gotdata<-F
   }
-
+  dev.off()
   tt <- tt+tstep
+  imno <- imno+1
 }
 
-dev.off()
+#dev.off()
