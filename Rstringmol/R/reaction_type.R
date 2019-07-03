@@ -13,9 +13,9 @@ rcols = c("grey",
           "blue",
           "pink",
           "red",
-          "yellow",
-          "green",
-          "orange")
+          "darkgrey",
+          "deepskyblue",
+          "deeppink")
 
 
 #' Determine the type of stringmol reacion
