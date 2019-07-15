@@ -5,7 +5,16 @@
 
 #froot="D:/sjh/stringmol/out3smsp/"
 #froot="D:/sjh/stringmol/smsp/1705smsp/out5/"
-froot="~/Desktop/paulien/smsp/1705smsp/out5/"
+froot="~/Desktop/paulien/smsp/1705smsp/out3/"
+froot="~/Desktop/paulien/smsp/1705smsp/out2/"
+froot="~/Desktop/paulien/smsp/1705smsp/out1/"
+
+
+#froot="~/Desktop/paulien/smsp/1705smspr/out3/"
+froot="~/Desktop/paulien/smsp/1705smspr/out2/"
+
+#TODO: Need to redo the figure for 'letterbox' arena shapes
+#froot="~/Desktop/paulien/smsp/1705sm250r/out3/"
 
 #pdf(file = "~/smsp5types.pdf",width = 12,height = 10)
 
@@ -29,7 +38,7 @@ while(gotdata){
     message(sprintf("Working on file %s",fn))
 
     #Get the data...
-    data <- rconf_rdata(fn,summarize = F, verbose = F)#T)
+    data <- rconf_rdata(fn, verbose = F,summarize = F)#T)
 
     actset <- unique(data$actseq)
     for(aa in 1:length(actset)){
