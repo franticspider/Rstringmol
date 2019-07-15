@@ -1,6 +1,51 @@
 
 
+rtype_plot <- function(fn){
 
+  #fn <- sprintf("%sout1_%d.conf",froot,tt)
+
+  message(sprintf("Working on file %s",fn))
+
+  if(file.exists(fn)){
+
+    #Get the data...
+    data <- rconf_rdata(fn,summarize = F, verbose = F)#T)
+
+    actset <- unique(data$actseq)
+    for(aa in 1:length(actset)){
+      passet <- unique(data$passeq[data$actseq == actset[aa]])
+      for(pp in 1:length(passet)){
+        #message(sprintf("reacting %s with %s",actset[aa],passet[pp]))
+        ty <- reaction_typeFP(actset[aa],passet[pp])
+        data$type[data$actseq == actset[aa] & data$passeq == passet[pp]] = ty$rtype
+        data$detBind[data$actseq == actset[aa] & data$passeq == passet[pp]] = ty$deterministicBind
+        data$detExec[data$actseq == actset[aa] & data$passeq == passet[pp]] = ty$deterministicExec
+
+      }
+    }
+
+    #TODO: PLOT THE UNBOUND MOLECULES
+
+
+    # Now do the plot...
+    ps <- rconf_params(fn)
+
+    plot(NA,xlim=c(0,ps$gridx+50),ylim=c(0,ps$gridy),asp=1,main=sprintf("T= %d",tt))
+    rect(xleft = 0,xright=ps$gridx,ybottom = 0,ytop=ps$gridy,col="black",lty = "blank")
+
+    for(mm in 1:nrow(data)){
+      xx <- data$actx[mm]
+      yy <- data$acty[mm]
+      rc <- rcols[which(rtypes == data$type[mm])]
+      rect(xleft = xx,xright = xx+1,ybottom = yy,ytop=yy+1,col=rc,lty = "blank")
+      xx <- data$passx[mm]
+      yy <- data$passy[mm]
+      rect(xleft = xx,xright = xx+1,ybottom = yy,ytop=yy+1,col=rc,lty = "blank")
+      legend("topright",pch=15,col = rcols,legend=rtypes)
+
+    }
+  }
+}
 
 
 #froot="D:/sjh/stringmol/out3smsp/"
@@ -16,6 +61,14 @@ nsps <- 1
 gotdata<-T
 imno = 1
 while(gotdata){
+
+  #This is how we'll do it in a function:
+  png(file = sprintf("%sFrtypes%07d.png",froot,imno),width = 500,height=500)
+  fn <- sprintf("%sout1_%d.conf",froot,tt)
+  if(file.exists(fn)){
+    rtype_plot(fn)
+  }
+  dev.off()
 
   png(file = sprintf("%srtypes%07d.png",froot,imno),width = 500,height=500)
 
@@ -42,26 +95,26 @@ while(gotdata){
       }
     }
 
-  #TODO: PLOT THE UNBOUND MOLECULES
+    #TODO: PLOT THE UNBOUND MOLECULES
 
 
-  # Now do the plot...
-  ps <- rconf_params(fn)
+    # Now do the plot...
+    ps <- rconf_params(fn)
 
-  plot(NA,xlim=c(0,ps$gridx+50),ylim=c(0,ps$gridy),asp=1,main=sprintf("T= %d",tt))
-  rect(xleft = 0,xright=ps$gridx,ybottom = 0,ytop=ps$gridy,col="black",lty = "blank")
+    plot(NA,xlim=c(0,ps$gridx+50),ylim=c(0,ps$gridy),asp=1,main=sprintf("T= %d",tt))
+    rect(xleft = 0,xright=ps$gridx,ybottom = 0,ytop=ps$gridy,col="black",lty = "blank")
 
-  for(mm in 1:nrow(data)){
-  xx <- data$actx[mm]
-  yy <- data$acty[mm]
-  rc <- rcols[which(rtypes == data$type[mm])]
-  rect(xleft = xx,xright = xx+1,ybottom = yy,ytop=yy+1,col=rc,lty = "blank")
-  xx <- data$passx[mm]
-  yy <- data$passy[mm]
-  rect(xleft = xx,xright = xx+1,ybottom = yy,ytop=yy+1,col=rc,lty = "blank")
-  legend("topright",pch=15,col = rcols,legend=rtypes)
+    for(mm in 1:nrow(data)){
+      xx <- data$actx[mm]
+      yy <- data$acty[mm]
+      rc <- rcols[which(rtypes == data$type[mm])]
+      rect(xleft = xx,xright = xx+1,ybottom = yy,ytop=yy+1,col=rc,lty = "blank")
+      xx <- data$passx[mm]
+      yy <- data$passy[mm]
+      rect(xleft = xx,xright = xx+1,ybottom = yy,ytop=yy+1,col=rc,lty = "blank")
+      legend("topright",pch=15,col = rcols,legend=rtypes)
 
-  }
+    }
   }
   else{
   gotdata<-F
