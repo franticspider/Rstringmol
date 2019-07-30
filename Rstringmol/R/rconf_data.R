@@ -21,7 +21,7 @@ rconf_agents<- function(fn){
 #' verbose whether to run quietly or not
 #' summarize whether to compress the data into a summary of each species
 #' @export
-rconf_rdata <- function(fn,verbose = F,summarize=T){
+rconf_rdata <- function(fn,verbose = F,summarize=F){
 
   pdebug <- T
 

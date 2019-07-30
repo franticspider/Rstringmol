@@ -11,11 +11,11 @@ rtypes = c("SelfSelfNoProduct",
 
 rcols = c("grey",
           "blue",
-          "pink",
+          "orange",
           "red",
           "darkgrey",
           "deepskyblue",
-          "deeppink")
+          "yellow")
 
 
 #' Determine the type of stringmol reacion
