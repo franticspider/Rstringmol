@@ -18,7 +18,7 @@ rcols = c("grey",
           "yellow")
 
 
-#' Determine the type of stringmol reacion
+#' Determine the type of stringmol reaction
 #'
 #' @param act the active stringmol
 #' @param pas the passive stringmol
