@@ -1,0 +1,302 @@
+---
+title: "Progress"
+author: "Simon Hickinbotham"
+date: "21 July 2017"
+output: 
+  html_document: 
+    number_sections: yes
+---
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Summary
+
+##Experiments
+
+- two arena shapes: 250x50 and 125x100
+- two seeding patterns - random pairs and blocks
+- 5 runs of each of the four configurations - surviving runs to continue until t == 2 million
+- 5 runs Extension of original 'evoevo' 1 million run to 2 million and beyond
+
+
+## Questions
+
+- Does the system terminate when it's gone outside the original R-P specification? - How 'far' from the original spec have runs gone?
+- Any evidence of higher-level emergence like semantic closure?
+- Any common features to extinction?
+- What is the range of novel behaviours? How often does each instance emerge?
+
+
+##Progress
+
+- **125x100, block seed** 4 of 5 ran to t=2,000,000; 1 extinct at t~=80,000
+- **125x100, random seed** 2 of 5 ran to t=2,000,000; 2 extinct at t~=90,000; 1 extinct at t~=120,000
+- **250x50, block seed:** 2 of 5 ran to t=2,000,000; 3 extinct at t~= 50,000, 100,000 and 170,000
+- **250x50, random seed:** All 5 exinct at t = 50,000, 80,000, 90,000, 120,000 and 340,000
+- **evoevo** 3 of 5 ran from 1m to 2m; extinctions at t = 1,610,000 and 1,710,000
+
+##Observations
+
+### *as predicted*:
+
+- block seeding more stable than random seeding
+- 125x100 arena more stable than 250x50 arena
+
+### *non-rp behaviours*
+
+
+- Generally all less stable than predicted, usually a seeding effect, but not always. Hypothesis - as system evolves, parameters of r-p relationship change, *OR* behaviour emerges outside the r-p model. *Conclusion* r-p mechanisms implemented in stringmol carry enough mechansisms to evolve new behaviours. Q: *is this also true of biological repicators?*
+- Evolution to short replicators is common
+- Longer replicators emerge
+- List of new phenomena:
+    - jumpers 
+    - hypercycles
+    - long parasites
+    - arena floods
+    - delay timers
+    
+#Detail
+
+- in all these, the first video has cells coloured by molecule length and the second has cells coloured by species number
+- Timing - 4 seconds shows approximately 100,000 timesteps
+
+##125x100, block seed
+
+###run 1
+
+- *not extinct*
+- *sudden transition to short replicator at  ~ 8s*
+- *longer replicator emerges at ~34s*
+- *hypercycles at ~43s* (equal length - see species video)
+- *long parasites emerge at ~1:00*
+- *jumpers at ~1:15*
+
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/UxZ3c6NDEe4" frameborder="0" allowfullscreen></iframe>
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/WuAv_-iipec" frameborder="0" allowfullscreen></iframe>
+
+###run 2
+
+- *not extinct*
+- *possible hypercycle at 12s*
+- *long period of co-existence of short and long replicator from 13s*
+- jumpers at 36s
+- arena flood at 48s
+
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/qzMC4aN7SRg" frameborder="0"  allowfullscreen></iframe>
+<iframe width="400" height="500" src="https://www.youtube.com/embed/R2DbrIDl-og" frameborder="0"  allowfullscreen></iframe>
+
+###run 3
+
+- *not extinct*
+- *long period of co-existence of short and long replicator*
+- long period of short replicator with parasites
+- jumpers at 0:58
+- flood at 1:08
+
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/8onxqVtAKEs" frameborder="0" allowfullscreen></iframe>
+<iframe width="400" height="500" src="https://www.youtube.com/embed/BtkpgIMrgpc" frameborder="0"  allowfullscreen></iframe>
+
+
+
+###run 4
+
+- *extinction at t ~= 20 000*
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/J7acWGHluHo" frameborder="0" allowfullscreen></iframe><iframe  width="400" height="500" src="https://www.youtube.com/embed/kgdbIM8fdFU" frameborder="0" allowfullscreen></iframe>
+
+
+###run 5 
+
+- *not extinct*
+- jumpers at 0:10s
+- flood at 0:24s
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/_3BKWf8KeTs" frameborder="0"  allowfullscreen></iframe>
+<iframe width="400" height="500" src="https://www.youtube.com/embed/1a-Iy97dLlU" frameborder="0"  allowfullscreen></iframe>
+
+
+---
+
+##125x100, random seed
+
+###run 1
+
+- *extinction at t ~= 90 000*
+
+
+<iframe  width="400" height="500" src="https://www.youtube.com/embed/Z0G_KV9Q8yc" frameborder="0"  allowfullscreen></iframe><iframe  width="400" height="500" src="https://www.youtube.com/embed/dKdyzjv6lWI" frameborder="0" allowfullscreen></iframe>
+
+###run 2
+
+- *not extinct*
+- jumpers at 0:28s
+- long parasites at 0:49s - these die out at 1:21s
+
+<iframe  width="400" height="500" src="https://www.youtube.com/embed/g59Z_i73U38" frameborder="0"  allowfullscreen>
+</iframe><iframe  width="400" height="500" src="https://www.youtube.com/embed/Eieme6UgmXc" frameborder="0" allowfullscreen></iframe>
+
+
+###run 3
+
+- *not extinct*
+- hypercycles at 0:15s
+- hypercycles persist, but in some periods the partners are of equal length so the characteristic pattern isn't visible in the 'length' movie.
+- some partners in hypercycles are long (coloured white)
+- long parasites also? check this!
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/X-denaujGw0" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe><iframe width="400" height="500" src="https://www.youtube.com/embed/CxZmAquvJlI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+###run 4
+
+- *extinction at t ~= 120 000*
+
+
+<iframe 
+width="400" height="500" src="https://www.youtube.com/embed/MYXhXIGPSG8" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe><iframe 
+width="400" height="500" src="https://www.youtube.com/embed/gDsgWCQsBaM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+###run 5 
+
+- *extinction at t ~= 90 000*
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/ZrrMa7mlBYA" frameborder="0"  allowfullscreen></iframe><iframe width="400" height="500" src="https://www.youtube.com/embed/gc1O-Cno_fg" frameborder="0" allowfullscreen></iframe> 
+
+##250x50, block seed
+
+###run 1
+
+*extinction at t ~= 170 000*
+
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/7C3MoMo6JlY" frameborder="0" allowfullscreen></iframe><iframe width="1000" height="200" src="https://www.youtube.com/embed/8xVCKRsd_SI" frameborder="0" allowfullscreen></iframe>
+
+###run 2
+
+*extinction at t ~= 50 000*
+
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/y02ASoihftQ" frameborder="0" allowfullscreen></iframe><iframe width="1000" height="200" src="https://www.youtube.com/embed/mhZJp-pziaM" frameborder="0" allowfullscreen></iframe>
+
+###run 3
+
+*extinction at t ~= 100 000*
+
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/zBODqk4ysw8" frameborder="0" allowfullscreen></iframe><iframe width="1000" height="200" src="https://www.youtube.com/embed/BXt1UbOOgdg" frameborder="0" allowfullscreen></iframe>
+
+###run 4
+
+- *not extinct*
+- *hypercycles at 9s, but they go extinct at 11s*
+- extreme jumping at 43s
+- *greater complexity emerges at 1:10s*
+
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/-xLd_C2Cuas" frameborder="0"  allowfullscreen></iframe>
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/sbFVzCjbihw" frameborder="0"  allowfullscreen></iframe>
+
+###run 5 
+
+- *not extinct*
+- *juming genes emerge throughout*
+- *longer replicater emerges at 35s*
+
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/Tbuwcpt1uEw" frameborder="0" width="1000" height="200" allowfullscreen></iframe>
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/tRATTpQnmLU" frameborder="0" width="1000" height="200" allowfullscreen></iframe>
+
+
+
+---
+
+##250x50, random seed
+
+*None of these runs establish successfully, but run 3 lasts until t=340,000 - check why!*
+
+###run 1
+
+*extinction at t ~= 70 000*
+
+<iframe width="450" height="150" src="https://www.youtube.com/embed/cJRB9VGkGeQ" frameborder="0" allowfullscreen></iframe>
+<iframe width="450" height="150" src="https://www.youtube.com/embed/T0wDuXFQi7Q" frameborder="0" allowfullscreen></iframe>
+
+###run 2
+*extinction at t ~= 120 000*
+
+<iframe width="450" height="150" src="https://www.youtube.com/embed/T0wDuXFQi7Q" frameborder="0" allowfullscreen></iframe><iframe width="450" height="150" src="https://www.youtube.com/embed/VDKJLsIyt54" frameborder="0" allowfullscreen></iframe>
+
+###run 3
+*extinction at t ~= 340 000*
+
+<iframe width="450" height="150" src="https://www.youtube.com/embed/SuMCD-EcAQQ" frameborder="0" allowfullscreen></iframe><iframe width="450" height="150" src="https://www.youtube.com/embed/_QsuVtPg93o" frameborder="0" allowfullscreen></iframe>
+
+###run 4
+*extinction at t ~= 90 000*
+
+<iframe width="450" height="150" src="https://www.youtube.com/embed/rc8d79FGMbU" frameborder="0" allowfullscreen></iframe><iframe width="450" height="150" src="https://www.youtube.com/embed/tNS6hQWh2bo" frameborder="0" allowfullscreen></iframe>
+
+###run 5 
+*extinction at t ~= 50 000*
+
+<iframe width="450" height="150" src="https://www.youtube.com/embed/VW2SvOM93P8" frameborder="0" allowfullscreen></iframe><iframe width="450" height="150" src="https://www.youtube.com/embed/eEHRpLagUyI" frameborder="0" allowfullscreen></iframe>
+
+---
+# Extended evoevo (250x50, rand init)
+
+*We decided to continue the run of the original from 1m to 2m timesteps, with five different random number seeds - this is to show where an 'interesting' run (with unrecoverable params) can go..*
+
+The First 1m timesteps (from evoevo) look like this (note different framerate and different length colouring scheme): 
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/eH8WaZnOjHg" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+### Run 1
+
+- *extinct at t= 1,610,000*
+- jumpers at 0:09s
+- long parasites (white/red) from 0:14s - these drive extinction
+
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/LADSrBFbe1s" frameborder="0"  allowfullscreen></iframe>
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/U4EsHrAdRMg" frameborder="0"  allowfullscreen></iframe>
+
+### Run 2
+
+- *not extinct*
+- long replicators from 0:14s
+- red parasites from 0:40s
+
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/SulIecOtd1c" frameborder="0"  allowfullscreen></iframe>
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/1RKX5TOyWT8" frameborder="0"  allowfullscreen></iframe>
+
+### Run 3
+
+- *not extinct*
+- hypercycles die out by 0:13s
+- long parasites emerge
+
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/8Cv6wpEYDjg" frameborder="0"  allowfullscreen></iframe>
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/6n-f2C8EgZw" frameborder="0"  allowfullscreen></iframe>
+
+### Run 4
+
+- *extinct at 1,710,000*
+- long replicator emerges at 0:10s, but hypercycle is reastablished
+- high complexity on lhs at 0:26s
+
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/PbgNWTNU6z8" frameborder="0"  allowfullscreen></iframe>
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/V8WJp5aAEos" frameborder="0"  allowfullscreen></iframe>
+
+### Run 5
+
+- *not extinct*
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/1aPho1C1OrI" frameborder="0"  allowfullscreen></iframe>
+
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/Yq_ctTNR2JA" frameborder="0"  allowfullscreen></iframe>
