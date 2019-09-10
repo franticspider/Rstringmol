@@ -21,7 +21,7 @@ runReactionFP <- function(reactants,verbose = F){
 
   fn <- tempfile(fileext = ".csv")
 
-  doReactionFP(reactants,fn)
+  doReactionFP(reactants,fn,verbose)
 
   if(file.exists(fn)){
     data <- read.table(fn,sep = ",",stringsAsFactors = F)
