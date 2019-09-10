@@ -1,0 +1,282 @@
+---
+title: "Flood Studies"
+author: "sjh"
+date: "8 August 2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Summary: 125x100, block init run 3
+
+*Flood occurs at 1:08 in the movies:*
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/8onxqVtAKEs" frameborder="0" allowfullscreen></iframe>
+<iframe width="400" height="500" src="https://www.youtube.com/embed/BtkpgIMrgpc" frameborder="0"  allowfullscreen></iframe>
+
+
+Before the flood, the arena looks like this: 
+
+![Emergence of the long replicator starts the flood](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000075.png)
+
+### Pre-flood replicator:
+
+This is basically a "classic" replicator-parasite situation. I've mapped the function of the dominant self-replicator program. It has two novel features over the seed replicator: 'homogenous' bind sites (need a better word for that), which I'll discuss in more detail below, and 'self-scan', which we've observed/discussed previously. I was a little surprised that these features were present *before* the flood event, since I'd suspected that these were the reason *for* the flood event! I've illustrated the execution of the program like this: 
+
+
+![short replicator](/home/sjh/git/Rstringmol/examples/125x100b-3_t1.50m_self-self.png)
+
+
+The 'active' program is shown in pink (top), the passive in blue (bottom). The thin arrows show the path of execution - i.e. the route of the instruction pointer. Remember there are three other pointers for Flow, Read and Write - these aren't shown because it gets too confusing. Black arrows indicate regions of the program that are executed once. Loops are coloured - the blue loop is the 'self-scan' loop, and the red loop is the 'copy' loop. During the copy loop, the Read pointer is moved across the template molecule, which is written to the Write pointer, at the end of the active molecule (not shown). The numbers after each arrow show the number of steps each arrow takes up in the total execution path. As you can see, execution of the program is linear - there are no 'GOTO' jumps. 
+
+### Pre-flood replicator-parasite interaction:
+
+The observations above mean that the replicator executes pretty much the same program when it binds with a parasite as shown below: 
+
+
+![short replicator/parasite](/home/sjh/git/Rstringmol/examples/125x100b-3_t1.50m_self-parasite.png)
+
+...The only thing that changes is the number of instructions executed during the red copy loop.  - a ratio of 105/162 in terms of parasite/replicator copy times. Note that 105/162 > 6/25, where the latter fraction is the ratio of lengths of the parasite/replicator. We should probably compare this ratio with the first parasites on the seed replicase, to see how this value has evolved. 
+
+
+
+## Flood event
+
+![Emergence of the long replicator starts the flood](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000076.png)
+
+
+### Post-flood replicator:
+
+OK, now let's look at the situation *after* the flood event. A longer self-replicator is dominant, and its execution pathway looks like this: 
+
+
+![flood replicator](/home/sjh/git/Rstringmol/examples/125x100b-3_t1.52m_self-self.png)
+
+
+The key new feature is a 'GOTO' statement  (`>A`) at step 134 - execution switches to the partner molecule. Execution takes 298 steps - 6.9 times the length of the molecule (cf 162/25 = 6.48 for the pre-flood replicator). This decreases the bias to copy short molecules further, but introduces an extra feature: templates that bind to this replictor have to include code to 'return' execution from the GOTO statement back to the replicator molecule. If they don't have this, execution will never reach the copy loop (shown in red, remember). 
+
+
+
+### Pre-flood replicator-parasite interaction:
+
+Let's look at an example of the 'defence' against parasites that happens during the flood by reacting a 'flood' replicator with a 'pre-flood' parasite. The self-scan happens as normal, but here the 'GOTO' that switches execution to the parasite is not returned from - instead the program terminates when it reaches the end of the parasite. 
+
+![flood replicator/parasite](/home/sjh/git/Rstringmol/examples/125x100b-3_t1.52m_self-parasite.png)
+
+# Evolution after the flood:
+
+The observations described above have the following properties
+
+- There is a move towards non-complementary binding: although n-op codes like `A` and `N` bind in a rot13 cypher, the active operators that are not in the alphabet like `$` bind to themselves. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----
+
+# Working it out...
+
+### *flood at 1:08 - t = 1,520,000 after emergence of long replicator*
+
+
+![Emergence of the long replicator starts the flood](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000076.png)
+
+
+Strategy:
+
+- Find the "yellow" length species at t=1,520,000
+- Find the common reactions with this spp - get rates and products. 
+
+- Find the 'pale blue' length species at t=1,520,000
+- Find the common reactions with this spp - get rates and products.
+
+
+- Describe *specific* things that give yellow advantage over blue
+- See if these general properties are present in other floods
+- see if these features persist when the flood is 'full' at t=1,640,000
+
+
+## Finding the 'yellow' species. 
+
+Let's load the reaction data for `t=1,520,000`:
+
+```{r}
+require(Rstringmol)
+require(stringr)
+require(knitr)
+fdata <- rconf_rdata("~/Desktop/paulien/smsp/1705smsp/out3/out1_1520000.conf")
+
+```
+
+We can isolate the molecules whose x position is < 30 and whose y position is between 40 and 70:
+
+```{r}
+fdata <- fdata[fdata$actx<30 & fdata$acty > 40 & fdata$acty < 70,]
+```
+
+
+Let's have a look at the head of this list of reactions to see if it's obvious what's common: 
+
+```{r}
+kable(head(fdata,n=20))
+```
+
+
+From this table it's pretty clear that the 'yellow' molecule has the sequence: `$=?>$EB=B^A$=?>$AVB$=?>$EBUB^B$=?>$AVBO%}HOB`.
+
+## Self-Self 'yellow' reaction
+
+To get the reaction info, we can run it. If the `verbose` argument is used, we can see each step of the reaction. 
+
+```{r}
+fss <- runReactionFP(c(fdata$actseq[1],fdata$actseq[1]),verbose=F)
+```
+
+At the moment, we have to manually examine the program to see what it does - a summary is shown below: 
+
+
+
+The `fss` object contains lots of info about the reaction: 
+
+- **bprob = 0.644995**: This is the bind probability. (It might be good to record the bind site as well)
+- **count = 299** - it takes 299 iterations to run the program (the program is 43 opcodes long)
+- **product = `$=?>$EBUB^A$=?>$AVB$=?>$EBUB^B$=?>$AVBO%HOB`**, so the reaction is a self-replicator
+- **deterministicBind = FALSE** - so assignment of active molecule is *not* deterministic, but a random assignment between the two molecules
+- **deterministicExec = TRUE** - so the product described above will *always* be produced
+
+# Other reactions with the flood molecule: 
+
+Let's get a list of everthing this molecule reacts with - we'll do the active first and the passive second:
+
+
+```{r}
+fdata <- rconf_rdata("~/Desktop/paulien/smsp/1705smsp/out3/out1_1520000.conf")
+
+fdata <- fdata[fdata$actx<30 & fdata$acty > 40 & fdata$acty < 70,]
+#fda <- fdata[fdata$actseq == fss$mActive | fdata$passeq == fss$mActive,]
+fda <- fdata
+fap <- data.frame(fda$actseq,fda$passeq)
+fapu <- unique(fap)
+fapu$nobs <-0
+for(ii in 1:nrow(fapu)){
+  fapu$nobs[ii] <- nrow(fap[fap$fda.actseq == fapu$fda.actseq[ii] & fap$fda.passeq == fapu$fda.passeq[ii],])
+}
+fapu <- fapu[order(fapu$nobs,decreasing = F),]
+```
+
+
+
+
+## Before the flood
+
+The numbers and rates we've discovered above don't tell us much unless we know what was going on before the flood, so let's have a look at that:
+
+![Emergence of the long replicator starts the flood](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000075.png)
+
+Let's isolate a region in the top right where a lot of short replicators are
+
+```{r}
+fdata <- rconf_rdata("~/Desktop/paulien/smsp/1705smsp/out3/out1_1500000.conf")
+```
+
+We can isolate the molecules whose x position is < 30 and whose y position is between 40 and 70:
+
+```{r}
+fdata <- fdata[fdata$actx>95 & fdata$acty > 70,]
+```
+
+```{r}
+fdata <- rconf_rdata("~/Desktop/paulien/smsp/1705smsp/out3/out1_1500000.conf")
+
+fdata <- fdata[fdata$actx>95 & fdata$acty > 70,]
+#fda <- fdata[fdata$actseq == fss$mActive | fdata$passeq == fss$mActive,]
+fda <- fdata
+fap <- data.frame(fda$actseq,fda$passeq)
+fapu <- unique(fap)
+fapu$nobs <-0
+for(ii in 1:nrow(fapu)){
+  fapu$nobs[ii] <- nrow(fap[fap$fda.actseq == fapu$fda.actseq[ii] & fap$fda.passeq == fapu$fda.passeq[ii],])
+}
+fapu <- fapu[order(fapu$nobs,decreasing = F),]
+```
+
+The reaction below shows that the short replicator *also* self-scans - so what can it be that the long replicator does? 
+
+```{r}
+bf <- runReactionFP(c("$=?>$EBUB^B$=?>$AVBO%}HOB","$=?>$EBUB^B$=?>$AVBO%}HOB"),verbose = T)
+```
+
+Here's how the reaction with the parasite proceeds: 
+
+
+```{r}
+bf <- runReactionFP(c("$=?>$EBUB^B$=?>$AVBO%}HOB","$=?>$B"),verbose = T)
+```
+
+
+# Situation at max flood - t= 1,540,000
+
+
+
+
+```{r}
+fdata <- rconf_rdata("~/Desktop/paulien/smsp/1705smsp/out3/out1_1540000.conf")
+
+#fdata <- fdata[fdata$actx>95 & fdata$acty > 70,]
+#fda <- fdata[fdata$actseq == fss$mActive | fdata$passeq == fss$mActive,]
+fda <- fdata
+fap <- data.frame(fda$actseq,fda$passeq)
+fapu <- unique(fap)
+fapu$nobs <-0
+for(ii in 1:nrow(fapu)){
+  fapu$nobs[ii] <- nrow(fap[fap$fda.actseq == fapu$fda.actseq[ii] & fap$fda.passeq == fapu$fda.passeq[ii],])
+}
+fapu <- fapu[order(fapu$nobs,decreasing = F),]
+```
+
+
+
+```{r}
+bf <- runReactionFP(c("$=?>$EBUB^A$=?>$AVB$=?>$EBUB^B$=?>$AVBO%HOB","$=?>$B"),verbose = T)
+```
+
+
+# Studying the parasites
+
+
+

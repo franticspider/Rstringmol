@@ -65,6 +65,8 @@ knitr::opts_chunk$set(echo = TRUE)
     - arena floods
     - delay timers
     
+----
+
 #Detail
 
 - in all these, the first video has cells coloured by molecule length and the second has cells coloured by species number
@@ -74,41 +76,106 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ###run 1
 
-- *not extinct*
-- *sudden transition to short replicator at  ~ 8s*
-- *longer replicator emerges at ~34s*
-- *hypercycles at ~43s* (equal length - see species video)
-- *long parasites emerge at ~1:00*
-- *jumpers at ~1:15*
 
 
 <iframe width="400" height="500" src="https://www.youtube.com/embed/UxZ3c6NDEe4" frameborder="0" allowfullscreen></iframe>
 
 <iframe width="400" height="500" src="https://www.youtube.com/embed/WuAv_-iipec" frameborder="0" allowfullscreen></iframe>
 
+- *not extinct*
+
+#### *sudden transition to short replicator at  ~ 8s (t=200,000)*
+
+Below is the first of the new images I've managed to generate with R. The new plots that describe the reaction type are on the top row. These show where the reaction types are happending and how many of each reaction are observed. Note that unbound molecules are not plotted on this figure, so there will be more black cells in this plot than those on the bottom row. 
+
+The bottom plots are the length and species images that were used to generate the movies - unfortunately these are rotated with respect to the movies, but hopefully you can switch between them ok. 
+
+The plot for t=200,000 shows the structure of a typical wave event that happens soon after initialisation: 
+
+- The leading edge of the wave is almost entirely self-replicators (dark blue), with the occasional mutation thrown in. 
+- Behind that is a ragged line of parasitic reactions (red). It's interesting to see how the reaction plot compares with the length plot - it gives a clearer perspective of how the parasitism interacts with the replication
+- Early parasites often self-bind, but these produce no product as shown in grey on the trailing edge of the wave. 
+- Parasites get better at losing their self-self binding characteristics, so the trailing edge loses its greyness and turns red. 
+
+
+![short replicators at t=200,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000010.png)
+
+
+#### *longer replicator emerges at ~34s (t=800,000)*
+
+- this is best viewed at 0.25 speed from about 30s. 
+- is parasitised, but able to reproduction ratio between replicators/parasites is larger than that for the shorter replicator. 
+- appears to also be some hypercycle activity
+- Cannot invade short replicator patches
+- Short replicators are trapped between parasite fringe and 'wall' of longer replicators - they go extinct. 
+- A new short replicator emerges which contains the same 'ratio' strategy. 
+
+
+![longer replicators at t=800,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000041.png)
+
+
+#### *hypercycles at ~43s (t=1,000,000)* (equal length - see species video)
+
+Hypercycles dominate at this point - hence the rise of non-self replicators. 
+
+![Hypercycles at t=1,000,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000050.png)
+
+
+
+#### *long parasites emerge at ~1:00 (t=1,400,000)*
+
+These are indicated by the yellow colour in the 'length' plot, bottom left. It is quite difficult to ascertain whether there principle mode of operation is parasitic, as the reaction colouring seems to suggest a variety of different stratigies, and possibly a set of different species at different lengths. Indeed, some of these longer species are 'jumpers' as well! - this is a ripe candidate for explanation in the paper!
+
+![long parasites at t=1,560,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000078.png)
+
+
+
+
+
+
 ###run 2
 
-- *not extinct*
-- *possible hypercycle at 12s*
-- *long period of co-existence of short and long replicator from 13s*
-- jumpers at 36s
-- arena flood at 48s
 
 
 <iframe width="400" height="500" src="https://www.youtube.com/embed/qzMC4aN7SRg" frameborder="0"  allowfullscreen></iframe>
 <iframe width="400" height="500" src="https://www.youtube.com/embed/R2DbrIDl-og" frameborder="0"  allowfullscreen></iframe>
 
+
+#### *possible hypercycle at 12s* ; *long period of co-existence of short and long replicator from t=300,000 to 420,000*
+
+
+![short/long replicator coexistence at t=320,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out2R/rtypes0000016.png)
+
+
+#### *jumpers at 36s, t=880,000*
+![short/long replicator coexistence at t=320,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out2R/rtypes0000044.png)
+
+
+#### *arena flood at 48s
+
+
+Note a 'ring' of parasites also occurring in this
+
+![arena flood at t=1,160,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out2R/rtypes0000068.png)
+
 ###run 3
-
-- *not extinct*
-- *long period of co-existence of short and long replicator*
-- long period of short replicator with parasites
-- jumpers at 0:58
-- flood at 1:08
-
 
 <iframe width="400" height="500" src="https://www.youtube.com/embed/8onxqVtAKEs" frameborder="0" allowfullscreen></iframe>
 <iframe width="400" height="500" src="https://www.youtube.com/embed/BtkpgIMrgpc" frameborder="0"  allowfullscreen></iframe>
+
+#### *long period of co-existence of short and long replicator, t=70,000 to 720,000*
+
+![short and long replicator, t=70,000 to 720,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000018.png)
+
+#### *long period of short replicator with parasites, t=740,000 to 1,500,000; jumpers at 0:58*
+
+![short replicator and jumper](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000071.png)
+#### *flood at 1:08 - t = 1,520,000 after emergence of long replicator*
+
+
+![short and long replicator, t=70,000 to 720,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000076.png)
+
+
 
 
 
@@ -121,13 +188,19 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ###run 5 
 
-- *not extinct*
 - jumpers at 0:10s
 - flood at 0:24s
 
 <iframe width="400" height="500" src="https://www.youtube.com/embed/_3BKWf8KeTs" frameborder="0"  allowfullscreen></iframe>
 <iframe width="400" height="500" src="https://www.youtube.com/embed/1a-Iy97dLlU" frameborder="0"  allowfullscreen></iframe>
 
+#### Flood
+
+![flood](/home/sjh/Desktop/paulien/smsp/1705smsp/out5R/rtypes0000028.png)
+
+#### Jumpers
+
+![jumper](/home/sjh/Desktop/paulien/smsp/1705smsp/out5R/rtypes0000038.png)
 
 ---
 
@@ -300,3 +373,8 @@ The First 1m timesteps (from evoevo) look like this (note different framerate an
 <iframe width="1000" height="200" src="https://www.youtube.com/embed/1aPho1C1OrI" frameborder="0"  allowfullscreen></iframe>
 
 <iframe width="1000" height="200" src="https://www.youtube.com/embed/Yq_ctTNR2JA" frameborder="0"  allowfullscreen></iframe>
+
+
+
+
+
