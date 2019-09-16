@@ -20,19 +20,19 @@ knitr::opts_chunk$set(echo = TRUE)
 <iframe width="400" height="500" src="https://www.youtube.com/embed/BtkpgIMrgpc" frameborder="0"  allowfullscreen></iframe>
 
 
-Before the flood, the arena looks like this: 
+Before the flood, the arena looks like this - note the preponderance of pale blue in the length plot - these are what well call "short replicators": 
 
 ![Emergence of the long replicator starts the flood](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000075.png)
 
 ### Pre-flood replicator:
 
-This is basically a "classic" replicator-parasite situation. I've mapped the function of the dominant self-replicator program. It has two novel features over the seed replicator: 'homogenous' bind sites (need a better word for that), which I'll discuss in more detail below, and 'self-scan', which we've observed/discussed previously. I was a little surprised that these features were present *before* the flood event, since I'd suspected that these were the reason *for* the flood event! I've illustrated the execution of the program like this: 
+This is basically a "classic" replicator-parasite situation. I've mapped the function of the dominant self-replicator program. It has two novel features over the seed replicator: 'homogenous' bind sites (we need a better word for that), which I'll discuss in more detail below, and 'self-scan', which we've observed/discussed previously. I was a little surprised that these features were present *before* the flood event, since I'd suspected that these were the reason *for* the flood event! I've illustrated the execution of the program like this: 
 
 
 ![](/home/sjh/git/Rstringmol/examples/125x100b-3_t1.50m_self-self.png)
 
 
-The 'active' program is shown in pink (top), the passive in blue (bottom). The thin arrows show the path of execution - i.e. the route of the instruction pointer. Remember there are three other pointers for Flow, Read and Write - these aren't shown because it gets too confusing. Black arrows indicate regions of the program that are executed once. Loops are coloured - the blue loop is the 'self-scan' loop, and the red loop is the 'copy' loop. During the copy loop, the Read pointer is moved across the template molecule, which is written to the Write pointer, at the end of the active molecule (not shown). The numbers after each arrow show the number of steps each arrow takes up in the total execution path. As you can see, execution of the program is linear - there are no 'GOTO' jumps. 
+The 'active' program is shown in pink (top), the passive in blue (bottom). The thin arrows show the path of execution - i.e. the route of the instruction pointer. Remember there are three other pointers for Flow, Read and Write - these aren't shown because it gets too confusing to follow. Black arrows indicate regions of the program that are executed once. Loops are coloured - the blue loop is the 'self-scan' loop, and the red loop is the 'copy' loop. During the copy loop, the Read pointer is moved across the template molecule, which is written to the Write pointer, at the end of the active molecule (not shown). The numbers after each arrow show the number of steps each arrow takes up in the total execution path. As you can see, execution of the program is linear - there are no 'GOTO' jumps. 
 
 ### Pre-flood replicator-parasite interaction:
 
@@ -60,11 +60,11 @@ OK, now let's look at the situation *after* the flood event. A longer self-repli
 ![](/home/sjh/git/Rstringmol/examples/125x100b-3_t1.52m_self-self.png)
 
 
-The key new feature is a 'GOTO' statement  (`>A`) at step 134 - execution switches to the partner molecule, and continues along until the 'GOTO' statement on the partner molecule switches execution back. Execution takes 298 steps - 6.9 times the length of the molecule (cf 162/25 = 6.48 for the pre-flood replicator). This decreases the bias to copy short molecules further, but introduces an extra feature: templates that bind to this replictor have to include code to 'return' execution from the GOTO statement back to the replicator molecule. If they don't have this, execution will never reach the copy loop (shown in red, remember). We'll show this in the next section
+The key new feature is a 'GOTO' statement  (`>A`) at step 134 - execution switches to the partner molecule, and continues along until the 'GOTO' statement on the partner molecule switches execution back. Execution takes 298 steps - 6.9 times the length of the molecule (cf 162/25 = 6.48 for the pre-flood replicator). This decreases the bias to copy short molecules further, but introduces an extra feature: templates that bind to this replictor have to include code (`>A`) to 'return' execution from the GOTO statement back to the replicator molecule. If they don't have this, execution will never reach the copy loop (shown in red, remember). We'll illustrate this parasite resistance in the next section.
 
 
 
-### Pre-flood replicator-parasite interaction:
+### Flood replicator vs pre-flood parasite:
 
 Let's look at an example of the 'defence' against parasites that happens during the flood by reacting a 'flood' replicator with a 'pre-flood' parasite. The self-scan happens as normal, but here the 'GOTO' that switches execution to the parasite is not returned from - instead the program terminates when it reaches the end of the parasite. This means that the parasite is not copied - this replicator has evolved a simple check as to whether it is bound to a parasite or not!
 
@@ -94,8 +94,8 @@ Let's pick a time `t=1,620,000` when the whole arena is (visually) filled with l
 
 ![](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000081.png)
 
-We can now load this data and get all the reactions that are classed as parasitic, using this code: 
 
+<<<<<<< HEAD
 ```{r}
 require(Rstringmol)
 require(stringr)
@@ -111,9 +111,16 @@ setwd("../examples//")
 froot <- "D:/sjh/stringmol/smsp/"
 
 fdata <- rconf_rdata(sprintf("%s1705smsp/out3/out1_1520000.conf",froot))
+=======
+```{r include=FALSE}
+require(Rstringmol,quietly = T)
+require(stringr,quietly = T)
+require(knitr,quietly = T)
+fdata <- rconf_rdata("~/Desktop/paulien/smsp/1705smsp/out3/out1_1520000.conf")
+>>>>>>> df0cf2faede7d4bda0d28c60f6db791715698439
 ```
 
-let's get a list of the unique reactions, and plot a histogram of them compared with the parasitic reactions: 
+We can now classify the reactions, and plot a histogram of them compared with the parasitic reactions: 
 
 ```{r include=FALSE}
 
@@ -148,11 +155,14 @@ sm_lap_plot <- function(data,xlim=range(c(data$actlen,data$paslen))){
  
  pcols <- rainbow(n = nrow(data))
  
-  plot(NA,xlim=xlim,ylim=c(5,25),yaxt="n")
+  plot(NA,xlim=xlim,ylim=c(5,25),yaxt="n",xlab="length",ylab ="",axes = F)
+  axis(1)
   points(x=ja,y=rep(acty,length(data$actlen)),col=pcols,pch=19)
   points(x=jp,y=rep(pasy,length(data$actlen)),col=pcols,pch=19)
   segments(x0=ja,x1=jp,y0=rep(acty,length(data$actlen)),y1=rep(pasy,length(data$actlen)),col=pcols)
   
+  text("Active",x=(xlim[1]+xlim[2]/2),y=acty+3)
+  text("Passive",x=(xlim[1]+xlim[2]/2),y=pasy-3)
   
 }
 ```
@@ -194,36 +204,33 @@ sm_barplot(pur$paslen,xlim=c(0,200),xlab="length",ylab="frequency",title="Passiv
 
 
 
-OK, there's a few things to note in this plot - I'll try to discuss these in the order of the plots above:
+OK, there's a few things to note in this plot - I'll try to discuss these in the order of the plots above, but first note that the y-axis scale is different for each plot:
 
-- The active species seem to be in three distinct size groups with a long 'tail' of lengths above 40 opcodes. I think that the rightmost peak and the tail are long replicators, the middle peak is the pre-flood replicator and the leftmost peak represent parasite-parasite binding. 
-- You can see that the distribution of all passive species is very similar, if slightly skewed towards shorter species - this is entirely to be expected I guess. Note that where binding is generally non-complementary (so `$=?>$` binds to `$=?>$`) it becomes much harder to distinguish between the altruistic and parasitic strategies, since assignment of control of the program is 50:50 on binding.
+- The active species (top plot) seem to be in three distinct size groups with a long 'tail' of lengths above 40 opcodes. I think that the rightmost peak and the tail are long replicators, the middle peak is the pre-flood replicator and the leftmost peak represent parasite-parasite binding - but I'd have to look into this to confirm. 
+- You can see that the distribution of all passive species (second row) is very similar, if slightly skewed towards shorter species - this is entirely to be expected I guess since parasites can *only* be passive in their niche reactions. Note that where binding is generally non-complementary (so `$=?>$` binds to `$=?>$`) it becomes much harder to distinguish between the altruistic and parasitic strategies, since assignment of control of the program is 50:50 on binding.
 - Things get easier to interpret when we look at *only* parasitic reactions, as shown in the bottom two plots. Here it is clear that the parasites are (almost) exclusively exploiting what remains of the pre-flood replicator population
 
 
 We can get a bit more detail by plotting the active and passive lengths in the reactions like this: 
 
-```{r}
+```{r echo=FALSE}
 sm_lap_plot(pur,xlim=c(0,100))
 ```
 
-The plot above shows that even at this point, the majority of parasitic reactions are confined to the remaining short replicators. 
-
-It's also worth looking at some numbers:
-- 2767 reactions in total at this $t$, of which:
-- 518 are parsitic, of which:
-- 5 involve the longer replicator. 
+The plot above shows each reaction as a pair of dots joined by a line. Active are on the top row and passive are on the bottom, with a line connecting them. This shows nicely that the majority of parasitic reactions are confined to the remaining short replicators. Here's a table of the parasitic reactions: 
 
 
-OK, let's check the short active molecules first - are they really parasites? 
 
 ```{r}
-lpur <- pur[pur$actlen>30,]
+library(knitr)
+ppur <- data.frame("Active" = pur$actseq, "Passive" = pur$passeq, "N observations" = pur$nobs)
+ppur <- ppur[order(pur$nobs,decreasing = T),]
+kable(ppur,escape = T)
 ```
 
-We can write the steps of a raw reaction to a file like this - then step through it manually to get the diagrams that we need: 
 
 
+<<<<<<< HEAD
 ```{r}
 #sink(file = "lparasite.txt")
 #doReactionFP(c(lpur$actseq[1],lpur$passeq[1]),fn="tmp.txt",verbose = T)
@@ -232,9 +239,24 @@ We can write the steps of a raw reaction to a file like this - then step through
 
 So these parasites work as follows: if they are bound to a long replicator that has the checking mechanism we describe above, then they *also* contain the code `^A` to flip the program execution back to the right place; where this isn't the case, the replicator is long, but is missing the checking mechanism - so pre-flood parasitism works. 
 
+=======
+It's also worth looking at some numbers:
+- 2767 reactions in total at this $t$, of which:
+- 518 are parsitic, of which:
+>>>>>>> df0cf2faede7d4bda0d28c60f6db791715698439
 
 
+- 5 involve the longer replicator. 
 
 
+```{r include=FALSE}
+lpur <-  pur[pur$actlen>30,]
+sink(file = "~/Desktop/lparasite.txt")
+fn <- tempfile(fileext = ".txt")
+doReactionFP(c(lpur$actseq[1],lpur$passeq[1]),fn,verbose = T)
+sink()
+```
 
+We can take steps t
 
+So these parasites work as follows: if they are bound to a long replicator that has the checking mechanism we describe above, then they *also* contain the code `^A` to flip the program execution back to the right place; where this isn't the case, the replicator is long, but is missing the checking mechanism - so pre-flood parasitism works. 
