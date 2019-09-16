@@ -1,0 +1,75 @@
+                                  seq nhyd nglut    mass1 seqpos missed.cleaves
+901                     TGQPGAVGPAGIR    0     0 1180.636   1997              0
+903                     TGQPGAVGPAGIR    1     0 1196.631   1997              0
+282 GLTGPIGPPGPAGAPGDKGETGPSGPAGPTGAR    2     0 2883.416    602              0
+797 GPSGEPGTAGPPGTPGPQGLLGAPGFLGLPGSR    4     0 3017.490   1776              0
+799 GPSGEPGTAGPPGTPGPQGLLGAPGFLGLPGSR    5     0 3033.485   1776              0
+    collagen       prob
+901        2 0.04750000
+903        2 0.90500000
+282        1 0.45385125
+797        2 0.08784885
+799        2 0.45333847
+                                  seq nhyd nglut    mass1 seqpos missed.cleaves
+904                     TGQPGAVGPAGIR    0     0 1180.636   1997              0
+906                     TGQPGAVGPAGIR    1     0 1196.631   1997              0
+282 GLTGPIGPPGPAGAPGDKGETGPSGPAGPTGAR    2     0 2883.416    602              0
+798 GPSGEPGTAGPPGTPGPQGFLGPPGFLGLPGSR    4     0 3077.490   1776              0
+800 GPSGEPGTAGPPGTPGPQGFLGPPGFLGLPGSR    5     0 3093.485   1776              0
+    collagen
+904        2
+906        2
+282        1
+798        2
+800        2
+                                  seq nhyd nglut    mass1 seqpos missed.cleaves
+900                     IGQPGAVGPAGIR    0     0 1192.673   1997              0
+902                     IGQPGAVGPAGIR    1     0 1208.668   1997              0
+282 GLTGPIGPPGPAGAPGDKGEAGPSGPAGPTGAR    2     0 2853.406    602              0
+796 GPSGEPGTAGPPGTPGPQGLLGAPGFLGLPGSR    4     0 3017.490   1776              0
+798 GPSGEPGTAGPPGTPGPQGLLGAPGFLGLPGSR    5     0 3033.485   1776              0
+    collagen
+900        2
+902        2
+282        1
+796        2
+798        2
+                                  seq nhyd nglut    mass1 seqpos missed.cleaves
+901                     TGQPGAVGPAGIR    0     0 1180.636   1997              0
+903                     TGQPGAVGPAGIR    1     0 1196.631   1997              0
+282 GLTGPIGPPGPAGAPGDKGETGPSGPAGPTGAR    2     0 2883.416    602              0
+797 GPSGEPGTAGPPGTPGPQGLLGAPGFLGLPGSR    4     0 3017.490   1776              0
+799 GPSGEPGTAGPPGTPGPQGLLGAPGFLGLPGSR    5     0 3033.485   1776              0
+    collagen       prob
+901        2 0.04750000
+903        2 0.90500000
+282        1 0.45385125
+797        2 0.08784885
+799        2 0.45333847
+'data.frame':	5 obs. of  7 variables:
+ $ seq           : chr  "IGQPGAVGPAGIR" "IGQPGAVGPAGIR" "GLTGPIGPPGPAGAPGDKGEAGPSGPAGPTGAR" "GPSGEPGTAGPPGTPGPQGLLGAPGFLGLPGSR" ...
+ $ nhyd          : int  0 1 2 4 5
+ $ nglut         : int  0 0 0 0 0
+ $ mass1         : num  1193 1209 2853 3017 3033
+ $ seqpos        : num  1997 1997 602 1776 1776
+ $ missed.cleaves: num  0 0 0 0 0
+ $ collagen      : num  2 2 1 2 2
+function (x, size, replace = FALSE, prob = NULL)  
+         checking for file 'C:\Users\Simon\AppData\Local\Temp\RtmpkJATfT\remotes33343656605c\bioarch-sjh-bacollite-458fbaf/DESCRIPTION' ...     checking for file 'C:\Users\Simon\AppData\Local\Temp\RtmpkJATfT\remotes33343656605c\bioarch-sjh-bacollite-458fbaf/DESCRIPTION' ...   v  checking for file 'C:\Users\Simon\AppData\Local\Temp\RtmpkJATfT\remotes33343656605c\bioarch-sjh-bacollite-458fbaf/DESCRIPTION'
+      -  preparing 'bacollite': (596ms)
+   checking DESCRIPTION meta-information ...     checking DESCRIPTION meta-information ...   v  checking DESCRIPTION meta-information
+-  cleaning src
+      -  checking for LF line-endings in source and make files and shell scripts (342ms)
+      -  checking for empty or unneeded directories
+      -  looking to see if a 'data/datalist' file should be added
+      -  building 'bacollite_0.2.tar.gz'
+     
+function (x, size, replace = FALSE, prob = NULL)  
+'data.frame':	5 obs. of  7 variables:
+ $ seq           : chr  "IGQPGAVGPAGIR" "IGQPGAVGPAGIR" "GLTGPIGPPGPAGAPGDKGEAGPSGPAGPTGAR" "GPSGEPGTAGPPGTPGPQGLLGAPGFLGLPGSR" ...
+ $ nhyd          : int  0 1 2 4 5
+ $ nglut         : int  0 0 0 0 0
+ $ mass1         : num  1193 1209 2853 3017 3033
+ $ seqpos        : num  1997 1997 602 1776 1776
+ $ missed.cleaves: num  0 0 0 0 0
+ $ collagen      : num  2 2 1 2 2

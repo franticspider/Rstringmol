@@ -1,0 +1,11 @@
+bprob,0.644995
+deterministicBind,FALSE
+m0status,3
+m1status,2
+mActive,$=?>$EBUB^A$=?>$AVB$=?>$EBUB^B$=?>$AVBO%}HOB
+mPassive,$=?>$EBUB^A$=?>$AVB$=?>$EBUB^B
+product,$=?>$EBUB^A$=?>$AVB$=?>$EBUB^B
+count,260
+m0status,1
+m1status,1
+deterministicExec,TRUE
