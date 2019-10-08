@@ -91,6 +91,7 @@ int LongestCommonSubsequence(char *s1, char *s2);
 int SmithWaterman(char *s1, char *s2, align *A, swt *T, int verbose);
 int SmithWatermanV2(char *s1, char *s2, align *A, swt *swT, int verbose);
 
+void align_init(align *A);
 void align_prob(align *A);
 int align_event(align *A, int len);
 
