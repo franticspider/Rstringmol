@@ -147,6 +147,8 @@ char * IfLabel(char *ip, char *rp, char *sp, swt *T, const int maxl, float *ipro
 	int i,len = LabLength(ip, maxl);
 	ip++;
 	align A;
+ 
+        align_init(&A);
 
 	switch(len){
 
@@ -179,7 +181,7 @@ char * IfLabel(char *ip, char *rp, char *sp, swt *T, const int maxl, float *ipro
 		SmithWatermanV2(tmp,tmp2,&A,T,0);
 
 		bool ae = align_event(&A,len);
-    *iprob = A.prob;
+                *iprob = A.prob;
 		if(ae)
 		  return ip+len+1;
 		else

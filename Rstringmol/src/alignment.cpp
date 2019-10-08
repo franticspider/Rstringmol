@@ -61,8 +61,6 @@ int load_sw(s_sw *b, align *sw){
 	return 0;
 }
 
-
-
 void free_swlist(s_sw **head){
 
 	s_sw *p,*pold;
@@ -467,6 +465,16 @@ int SmithWatermanV2(char *s1, char *s2, align *A, swt *swT, int verbose){
 
 
 
+void align_init(align *A){
+	A->match = 0;
+	A->score = 0.;
+	A->prob  = 0.;
+	A->s1    = 0;
+	A->e1    = 0;
+	A->s2    = 0;
+	A->e2    = 0;
+}
+
 
 
 
@@ -492,8 +500,11 @@ int align_event(align *A,int len){
 		fflush(stdout);
 		align_prob(A);
 	}
-	else
+	else{
+
+		//printf("DEBUG: A->score = %f; len = %d\n",A->score,len);
 		A->prob = pow((float)A->score/len,len);//factorial(len);//A->score/len;
+	}
 	if(rand<A->prob)
 		return 1;
 	return 0;
