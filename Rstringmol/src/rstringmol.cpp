@@ -1046,14 +1046,18 @@ List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
 
 
   List Lresult = List::create(_["product"] = "empty",
-                                          _["status"] = "none",
+                                          _["status"] = ((String) "none"),
                                           _["bprob"] = 0.0,
                                           _["count"] = 0,
                                           _["m0status"] = -1,
                                           _["m1status"] = -1,
-                                          _["mActive"] = "unset",
-                                          _["mPassive"] = "unset",
-                                          _["errcode"] = 0);
+                                          _["mActive"] = ((String)"unset"),
+                                          _["mPassive"] = ((String)"unset"),
+                                          _["errcode"] = 0,
+					  _["deterministicBind"] = false,
+					  _["deterministicExec"] = true,
+					  _["product"] = ((String) "") 
+				);
   if(seqVector.length() != 2){
     Rprintf("ERROR: 2 stringmols required, %d given\n",seqVector.length());
     Lresult["status"] = "bad number of input strings";

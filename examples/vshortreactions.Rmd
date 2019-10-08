@@ -1,0 +1,193 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+We've run a file called `vg.R` in `~/Desktop/paulien/valgrind/`, that creates pdfs of the lengths of the active and passive members of each reaction. We've noticed that there's something strange going on with the reactions, so we're going to have a quick check. The functions are here: 
+
+
+```{r}
+sm_barplot <- function(pdata,xlim=c(0,100),ylim=NA,title="",xlab="",ylab=""){
+  
+  dt <- as.data.frame(table(pdata))
+  dt$pdata <- as.integer(as.character(dt$pdata))
+  
+  #if(is.na(xlim))
+  #  xlim = range(dt$pdata)
+  
+  if(is.na(ylim[1]))
+    ylim = range(dt$Freq)
+  
+  plot(NA,xlim=xlim,ylim=ylim,xlab=xlab,ylab=ylab)
+  title(title,line = -2)
+  
+  rect(xleft = dt$pdata-0.5,ybottom = 0,xright = dt$pdata+0.5,ytop=dt$Freq)
+
+  return(max(dt$Freq))
+  
+}
+
+
+draw_reaction <- function(data,acty,pasy,pcols){
+  
+  ja <- data$actlen #jitter(data$actlen,amount = 0)
+  jp <- data$paslen #jitter(data$paslen)
+  mindot <- 0.25
+ 
+  points(x=ja,y=rep(acty,length(data$actlen)),col=pcols,pch=19,cex=(mindot+log(data$nobs)))
+  points(x=jp,y=rep(pasy,length(data$actlen)),col=pcols,pch=19,cex=(mindot+log(data$nobs)))
+  segments(x0=ja,x1=jp,y0=rep(acty,length(data$actlen)),y1=rep(pasy,length(data$actlen)),col=pcols,lwd = (max(1,(mindot+log(data$nobs))/2)))
+  
+  
+}
+
+sm_lap_plot <- function(data,xlim=range(c(data$actlen,data$paslen)),title=""){
+  
+ acty <- 20
+ pasy <- 10
+ 
+ data <- data[order(data$actlen),]
+ 
+ 
+ pcols <- adjustcolor(rainbow(n = nrow(data)), alpha.f = 0.4)
+  
+ 
+  plot(NA,xlim=xlim,ylim=c(5,25),yaxt="n",xlab="length",ylab ="",axes = F)
+  axis(1)
+  
+  # have to do a for loop otherwise the segments are drawn out of sequence to the points:
+  for(dd in 1:nrow(data))  draw_reaction(data[dd,],acty,pasy,pcols[dd])
+  
+  text("Active",x=(xlim[1]+xlim[2]/2),y=acty+3)
+  text("Passive",x=(xlim[1]+xlim[2]/2),y=pasy-3)
+  title(title)
+}
+
+
+library(Rstringmol)
+library(stringr)
+
+
+
+parasite_plot_per_time <- function(tt,infroot,xlim = c(0,100),maxfreq=500){
+
+	  message(sprintf("%d",tt))
+	  #fdata <- rconf_rdata(sprintf("~/Desktop/paulien/smsp/1705smsp/out1/out1_%d.conf",tt))
+		
+	  fn <- sprintf("%s%d.conf",infroot,tt)
+	  if(file.exists(fn)){
+
+	    
+	    message("Loading data")
+		  fdata <- rconf_rdata(fn)
+		  
+		  ur <- unique(data.frame(actseq = fdata$actseq, passeq = fdata$passeq))
+		  ur$actseq <- as.character(ur$actseq)
+		  ur$passeq <- as.character(ur$passeq)
+		  ur$type <- "unknown"
+		  ur$product <- ""
+
+		  ur$actlen <- str_length(ur$actseq)
+		  ur$paslen <- str_length(ur$passeq)
+		  
+		  message("Bar plots")
+		  
+		  par(mfrow=c(6,1))
+		  par(mar=c(3,5,1,1))
+		  afreq <- sm_barplot(ur$actlen,xlim=xlim,xlab="length",ylab="frequency",title="All Active Spp",ylim=c(0,500))
+		  pfreq <- sm_barplot(ur$paslen,xlim=xlim,xlab="length",ylab="frequency",title="All Passive Spp",ylim=c(0,500))
+		  message(sprintf("maxfreq was %d, afreq =  %d, pfreq = %d",maxfreq,afreq,pfreq))
+		  maxfreq <- max(maxfreq,afreq,pfreq)
+		  #plot.new()
+		  #plot.new()
+		   
+		   
+		  message(sprintf("%d different reactions",nrow(ur)))
+		  for (rr in 1:nrow(ur)){
+		    
+		    message(sprintf("%d: %s    %s",rr,ur$actseq[rr],ur$passeq[rr]))
+		    flush.console()
+		  #}
+		  #
+		  #for (rr in 1:nrow(ur)){
+		    rt <- reaction_typeFP(ur$actseq[rr],ur$passeq[rr])
+		    ur$type[rr] <- rt$rtype
+		    ur$product[rr] <- rt$product
+		    ur$dexec[rr] <- rt$deterministicExec
+		    ur$dbind[rr] <- rt$deterministicBind
+		    ur$nobs[rr] <- nrow(fdata[fdata$actseq == ur$actseq[rr] & fdata$passeq == ur$passeq[rr],])
+		  }
+		   
+		  # message("lap plots")
+		  # 
+		  # #ur$actlen <- as.integer(str_length(pur$actseq))
+		  # #ur$paslen <- as.integer(str_length(pur$passeq))
+		  # 
+		  # pur <- rbind(ur[ur$type=="SelfSelfReplicator",] , ur[ur$type=="NonSelfReplicator" ,])
+		  # sm_lap_plot(pur,xlim=xlim,title=sprintf("t=%d: Replicator reactions",tt))
+		  # 
+		  # pur <- ur[ur$type=="Parasite",]		  
+		  # sm_lap_plot(pur,xlim=xlim,title=sprintf("Parasites"))
+		  # 
+		  # #nur <- ur[ur$type!="Parasite",]
+		  # #sm_lap_plot(nur,xlim=xlim)
+		  # #title(sprintf("Non-parasitic reactions"))
+		  # 
+		  # pur <- rbind(ur[ur$type=="SelfSelfDifferentProduct",] , ur[ur$type=="NonSelfDifferentProduct" ,])
+		  # sm_lap_plot(pur,xlim=xlim,title=sprintf("Reactions with a different product"))
+		  # 
+		  # pur <- rbind(ur[ur$type=="SelfSelfNoProduct",] ,  ur[ur$type=="NonSelfNoProduct" ,])
+		  # sm_lap_plot(pur,xlim=xlim,title=sprintf("Reactions with no product"))
+		  # 
+		  # rm(ur)
+		  # rm(fdata)
+		  # rm(pur)
+		  # #rm(nur)
+		  
+		  plot.new()
+		  plot.new()
+		  plot.new()
+		  plot.new()
+		  
+	  }
+	  else{
+	    message(sprintf("file %s not found, exiting...",fn))
+            break
+	  }  
+}
+
+
+
+
+
+parasite_plot <- function(infroot,outfn,xlim = c(0,100),from = 20000, to = 60000, by = 20000,type = "Parasite"){
+
+	xmax <- 100
+  maxfreq <- 0
+
+	#pdf(file=outfn,width = 9, height = 9)
+	#for(tt in seq(from = 20000, to = 2000000, by = 20000)){
+	for(tt in seq(from = from, to = to, by = by)){
+		 parasite_plot_per_time(tt,infroot,xlim,maxfreq) 
+	}
+	#dev.off()
+}
+```
+
+
+...we've broken out the function `parasite_plot_per_time` so that we can look at an individual file and investigate. Let's check that it works: 
+
+```{r fig.height=8, fig.width=6}
+parasite_plot("~/Desktop/paulien/smsp/1705smspr/out2/out1_","smspr_out2.pdf")
+```
+
+
+
+
+
+
+
+We want to look at 
+
+

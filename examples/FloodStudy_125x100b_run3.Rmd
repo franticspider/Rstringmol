@@ -9,6 +9,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(bookdown)
 ```
 
 
@@ -20,9 +21,15 @@ knitr::opts_chunk$set(echo = TRUE)
 <iframe width="400" height="500" src="https://www.youtube.com/embed/BtkpgIMrgpc" frameborder="0"  allowfullscreen></iframe>
 
 
-Before the flood, the arena looks like this - note the preponderance of pale blue in the length plot - these are what well call "short replicators": 
+Before the flood, the arena looks like \ref{fig:fig1}. - note the preponderance of pale blue in the length plot - these are what well call "short replicators": 
 
-![Emergence of the long replicator starts the flood](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000075.png)
+
+
+```{r fig1, echo=FALSE, fig.cap="State of the arena before the flood event",out.width=300, fig.align = 'center'}
+knitr::include_graphics("/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000075.png")
+```
+
+
 
 ### Pre-flood replicator:
 
@@ -125,6 +132,18 @@ sm_barplot <- function(pdata,xlim=NA,ylim=NA,title="",xlab="",ylab=""){
 }
 
 
+draw_reaction <- function(data,acty,pasy,pcols){
+  
+  ja <- data$actlen #jitter(data$actlen,amount = 0)
+  jp <- data$paslen #jitter(data$paslen)
+ 
+  points(x=ja,y=rep(acty,length(data$actlen)),col=pcols,pch=19,cex=(1+log(data$nobs)))
+  points(x=jp,y=rep(pasy,length(data$actlen)),col=pcols,pch=19,cex=(1+log(data$nobs)))
+  segments(x0=ja,x1=jp,y0=rep(acty,length(data$actlen)),y1=rep(pasy,length(data$actlen)),col=pcols,lwd = ((1+log(data$nobs))/2))
+  
+  
+}
+
 sm_lap_plot <- function(data,xlim=range(c(data$actlen,data$paslen))){
   
  acty <- 20
@@ -132,16 +151,15 @@ sm_lap_plot <- function(data,xlim=range(c(data$actlen,data$paslen))){
  
  data <- data[order(data$actlen),]
  
- ja <- data$actlen #jitter(data$actlen,amount = 0)
- jp <- data$paslen #jitter(data$paslen)
  
- pcols <- rainbow(n = nrow(data))
+ pcols <- adjustcolor(rainbow(n = nrow(data)), alpha.f = 0.4)
+  
  
   plot(NA,xlim=xlim,ylim=c(5,25),yaxt="n",xlab="length",ylab ="",axes = F)
   axis(1)
-  points(x=ja,y=rep(acty,length(data$actlen)),col=pcols,pch=19)
-  points(x=jp,y=rep(pasy,length(data$actlen)),col=pcols,pch=19)
-  segments(x0=ja,x1=jp,y0=rep(acty,length(data$actlen)),y1=rep(pasy,length(data$actlen)),col=pcols)
+  
+  # have to do a for loop otherwise the segments are drawn out of sequence to the points:
+  for(dd in 1:nrow(data))  draw_reaction(data[dd,],acty,pasy,pcols[dd])
   
   text("Active",x=(xlim[1]+xlim[2]/2),y=acty+3)
   text("Passive",x=(xlim[1]+xlim[2]/2),y=pasy-3)
@@ -195,39 +213,140 @@ OK, there's a few things to note in this plot - I'll try to discuss these in the
 
 We can get a bit more detail by plotting the active and passive lengths in the reactions like this: 
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.height=3, fig.width=8}
 sm_lap_plot(pur,xlim=c(0,100))
 ```
 
-The plot above shows each reaction as a pair of dots joined by a line. Active are on the top row and passive are on the bottom, with a line connecting them. This shows nicely that the majority of parasitic reactions are confined to the remaining short replicators. Here's a table of the parasitic reactions: 
+The plot above shows each reaction as a pair of dots joined by a line. Active are on the top row and passive are on the bottom, with a line connecting them. The size of the dots is proportional on a log scale to the number of times the reaction is occurring at this particular timestep.  This shows nicely that the majority of parasitic reactions are confined to the remaining short replicators. 
 
 
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 library(knitr)
 ppur <- data.frame("Active" = pur$actseq, "Passive" = pur$passeq, "N observations" = pur$nobs)
 ppur <- ppur[order(pur$nobs,decreasing = T),]
-kable(ppur,escape = T)
+#kable(ppur,escape = T)
 ```
 
 
 
 It's also worth looking at some numbers:
+
 - 2767 reactions in total at this $t$, of which:
-- 518 are parsitic, of which:
-
-
+- 518 are parasitic, of which:
 - 5 involve the longer replicator. 
 
 
-```{r include=FALSE}
+```{r eval=FALSE, include=FALSE}
 lpur <-  pur[pur$actlen>30,]
-sink(file = "~/Desktop/lparasite.txt")
-fn <- tempfile(fileext = ".txt")
-doReactionFP(c(lpur$actseq[1],lpur$passeq[1]),fn,verbose = T)
-sink()
+#sink(file = "~/Desktop/lparasite.txt")
+#fn <- tempfile(fileext = ".txt")
+#doReactionFP(c(lpur$actseq[1],lpur$passeq[1]),fn,verbose = T)
+#sink()
+lpur <- lpur[order(lpur$nobs,decreasing = T),]
 ```
 
-We can take steps t
+Here's a quick analysis of the five parasitic reactions on replicators longer than 30: 
 
-So these parasites work as follows: if they are bound to a long replicator that has the checking mechanism we describe above, then they *also* contain the code `^A` to flip the program execution back to the right place; where this isn't the case, the replicator is long, but is missing the checking mechanism - so pre-flood parasitism works. 
+- This one has a parasite that sends execution back to the replicator becuase it is a copy of most of the replictor:
+```
+A	$=?>$EBUB^A$=?>$AVB$=?>$EBUB^B$=?>$AVBO%}HOB	
+P $=?>$EBUB^A$=?>$AVB$=?>$EBUB^B
+```
+
+- This one has lost the `^` opcode that is needed to move execution to the passive molecule
+```
+           |
+           v
+A	$=?>$EBUBA$=?>$AVB$=?>$EBUB^B$=?>$AVBO%}HOB	
+P $=?>$EBUB^A$=?>$AVB$=?>$EBUB^B$=?>$AVBO%}HOB
+```
+
+- This one is parasitic because there's a `^B` instead of an `^A` so the execution switch doesn't happen
+```
+            |
+            v
+A	$=?>$EBUB^B$=?>$AVBO%}HOB$=?>$EBUB^B$=?>$AVBO%NHOB	
+P $=?>$EB
+```
+
+- The parasite here is a replicator with a broken copy loop, so it can't replicate but it can parasitise
+```
+A	$=?>$EBUB^A$=?>$AVB$=?>$EBUB^B$=?>$AVBO%}HOB	
+P $=?>$EBUB^A$=?>$AVB$=?>$EBUB^$=?>$AVBO%}HOB
+                               ^
+                               |
+```
+
+- This parasite is longer than the replicator!
+```
+A	$=?>$EBUB^A$=?>$AVB$=?>$EBUB^B$=?>$AVBO%}HOB
+P $=?>$EBUB^A$=?>$AVB$=?>$EBUB^B$=?>$AVB}%}HOB$=?>$EBUB^A$=?>$AVB$=?>$EBUB^B$=?>$AVB
+```
+
+In summary then, I think we can say that the parasitism observed during a flood follows one of two strategies: 
+
+- Either parastise the shorter ("non-checking") replicators with a shorter parasite. This is an 'echo' of the earlier dominant ecosystem which never fully goes away
+- Fool the long ("checking") replicators into copying you by having extra code to evade the check. 
+
+
+# Change in length-dependent parasitism
+
+Here we are using length as a proxy for function of the replicator - let's create a big figure that shows how this evolves from t=150,000
+
+
+```{r}
+pdf(file="parsite_evolution.pdf",width = 8, height = 8)
+for(tt in seq(from = 20000, to = 2000000, by = 20000)){
+  message(sprintf("%d",tt))
+  fdata <- rconf_rdata(sprintf("~/Desktop/paulien/smsp/1705smsp/out3/out1_%d.conf",tt))
+  
+  ur <- unique(data.frame(actseq = fdata$actseq, passeq = fdata$passeq))
+  ur$actseq <- as.character(ur$actseq)
+  ur$passeq <- as.character(ur$passeq)
+  ur$type <- "unknown"
+  ur$product <- ""
+
+  ur$actlen <- str_length(ur$actseq)
+  ur$paslen <- str_length(ur$passeq)
+  
+  par(mfrow=c(3,1))
+  par(mar=c(3,5,1,1))
+  sm_barplot(ur$actlen,xlim=c(0,200),xlab="length",ylab="frequency",title="All Active Spp")
+  sm_barplot(ur$paslen,xlim=c(0,200),xlab="length",ylab="frequency",title="All Passive Spp")
+  
+  for (rr in 1:nrow(ur)){
+    rt <- reaction_typeFP(ur$actseq[rr],ur$passeq[rr])
+    ur$type[rr] <- rt$rtype
+    ur$product[rr] <- rt$product
+    ur$dexec[rr] <- rt$deterministicExec
+    ur$dbind[rr] <- rt$deterministicBind
+    ur$nobs[rr] <- nrow(fdata[fdata$actseq == ur$actseq[rr] & fdata$passeq == ur$passeq[rr],])
+  }
+  
+  pur <- ur[ur$type=="Parasite",]
+  
+  pur$actlen <- as.integer(str_length(pur$actseq))
+  pur$paslen <- as.integer(str_length(pur$passeq))
+  
+  sm_lap_plot(pur,xlim=c(0,200))
+  
+  rm(ur)
+  rm(fdata)
+  rm(pur)
+  
+}
+dev.off()
+```
+
+
+
+
+
+
+
+
+
+
+
+
