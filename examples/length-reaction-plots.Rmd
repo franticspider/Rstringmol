@@ -36,7 +36,7 @@ Let's say we have instances of *i* and *j* that are identical -- this would be t
 ---|----|---|---|---|
 A|A| - | No Product | No bind
 A|A| A+A+A | Replicator |This is the standard replicator reaction
-A|A| A+A+0 | No product | makes two A unavailable for other work
+A|A| A+A+0 | No Product | makes two A unavailable for other work
 A|A| A+A+X | Different product |Different product 
 A|A| X+X+Y | Macromutation | 
 
@@ -65,12 +65,12 @@ The first table shows an interpretation of behaviour where binding is *determini
 
 *i*+*j*   | *j*+*i*    | class| notes 
 ---|---|---|---|
-- | -     | No Reaction           | A can't bind B
-A+B+A | A+B+A | Replicator         |standard replicator
-A+B+0 | A+B+0 | No Reaction        |A can't get made by B
-A+B+X | A+B+X | Different Product  |X approximates B or wildly different
-A+B+B | A+B+B | Parasite           |A can't get made by B  
-X+X+Y | X+X+Y | Parasite           |A can't get made by B  
+- | -     | No Product            | A can't bind B
+A+B+A | A+B+A | Replicator         | standard replicator
+A+B+0 | A+B+0 | No Product        |
+A+B+X | A+B+X | Different Product  | X approximates B or wildly different
+A+B+B | A+B+B | Parasite           | A can't get made by B  
+X+X+Y | X+X+Y | Macromutation      |  
 
 
 Note that the "Active" molecule is the one on which the program starts. Execution may switch to the program of the passive partner, but this will be using the pointers of the active molecule. This is important because the arrangement of pointers is initialised at the point of binding. 
@@ -117,12 +117,12 @@ Note from the perspective of A all these reactions are replicator reactions. Cle
 
 *i*+*j*   | *j*+*i*   | class| notes 
 ---|---|---|---|
-A+B+0 | -     | No product |  
-A+B+0 | B+A+A | No product | A is now parsitising B 
-A+B+0 | B+A+0 | No product | 
-A+B+0 | B+A+X | No product |
-A+B+0 | B+A+B | No product | B is now parasitising A 
-A+B+0 | X+X+Y | No product 
+A+B+0 | -     | No Product |  
+A+B+0 | B+A+A | No Product | A is now parsitising B 
+A+B+0 | B+A+0 | No Product | 
+A+B+0 | B+A+X | No Product |
+A+B+0 | B+A+B | No Product | B is now parasitising A 
+A+B+0 | X+X+Y | No Product 
 
 The second row is difficult to interpret here - Clearly, A is being copied by B, but *only* if B is the active molecule. Similarly, the production of a different product in the fourth row is not recognised by the `A-centric' classification. In this case the classification indicated by the second column will be given when B+A+* is output in the first column of other tables in this document. 
 
@@ -176,17 +176,22 @@ if(A == B)
     case 0: return "No Product"
     case X: return "Different Product"
     case Y: reutrn "Macromutation"
-  
-if(prodA.deterministicBind)  
+else  
+  rtype = "No Product"
   switch(prodA.k)
-    case -: return "No Product"
-    case A: return "Replicator"
-    case 0: return "No Product"
-    case X: return "Different Product"
-    case Y: reutrn "Macromutation"
-
-prodB = react(B,A)
-
+    case -: rtype =  "No Product"
+    case A: rtype =  "Replicator"
+    case 0: rtype =  "No Product"
+    case X: rtype =  "Different Product"
+    case B: rtype =  "Parasite"
+    case Y: rtype =  "Macromutation"
+  if(!prodA.deterministicBind)
+    prodB = react(B,A)
+    if(prodB.k == B)
+      if(prodB.k == A)
+        rtype = "Replicator"
+  return rtype
+    
 ```
 
 ------
