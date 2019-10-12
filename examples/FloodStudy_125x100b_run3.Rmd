@@ -97,16 +97,26 @@ The observations described above have the following properties
 # Parasitism at max flood: 
 
 Paulien was surprised at how many parasites were prevalent if the above observations hold. 
-Let's pick a time `t=1,620,000` when the whole arena is visually filled with longer replicators, like this: 
+Let's pick a time `t=1,620,000` when the whole arena is (visually) filled with longer replicators, like this: 
 
 ![](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000081.png)
 
 
-```{r include=FALSE}
-require(Rstringmol,quietly = T)
-require(stringr,quietly = T)
-require(knitr,quietly = T)
-fdata <- rconf_rdata("~/Desktop/paulien/smsp/1705smsp/out3/out1_1520000.conf")
+```{r}
+  require(Rstringmol,quietly = T)
+  require(stringr,quietly = T)
+  require(knitr,quietly = T)
+  message("err...")
+  setwd("../Rstringmol/")
+  devtools::test()
+  setwd("../examples//")
+
+  #ubuntu
+  #froot <- "~/Desktop/paulien/smsp/"
+  #windows:
+  froot <- "D:/sjh/stringmol/smsp/"
+
+  fdata <- rconf_rdata(sprintf("%s1705smsp/out3/out1_1520000.conf",froot))
 ```
 
 We can now classify the reactions, and plot a histogram of them compared with the parasitic reactions: 
@@ -229,11 +239,18 @@ ppur <- ppur[order(pur$nobs,decreasing = T),]
 ```
 
 
+```{r}
+#sink(file = "lparasite.txt")
+#doReactionFP(c(lpur$actseq[1],lpur$passeq[1]),fn="tmp.txt",verbose = T)
+#sink()
+```
+
+So these parasites work as follows: if they are bound to a long replicator that has the checking mechanism we describe above, then they *also* contain the code `^A` to flip the program execution back to the right place; where this isn't the case, the replicator is long, but is missing the checking mechanism - so pre-flood parasitism works. 
 
 It's also worth looking at some numbers:
 
 - 2767 reactions in total at this $t$, of which:
-- 518 are parasitic, of which:
+- 518 are parsitic, of which:
 - 5 involve the longer replicator. 
 
 
