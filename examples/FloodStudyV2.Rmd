@@ -1,0 +1,117 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Flood events in all runs:
+- 2.1.1 m=0:41?
+- 2.1.2 t=1,360,000
+- 2.1.3 m=1:08, t=1,380,000
+- 2.1.5 t=570,000
+- 2.2.2 - *has some very dense periods - qualititavely different from 2.1
+- 2.2.3 - difflen hypercycles throughout
+- 2.3.4 - extreme jumping at m=0:43
+- 2.3.5 - floods
+
+*Can we characterise a flood numerically?* - population size above ...
+
+# box-box 
+
+## Run 2
+
+*flood at t=710,000*
+
+- 
+
+
+# Classifying reactions
+
+
+These are reactions that run *without mutation* so that we can see what the role of the evolved product is. 
+
+
+*i*+*j*  ->  *i*+*j*+*k* 
+
+In this notation, *i* is the active molecule, *j* is the passive molecule, and *k* is the new molecule that's created. Note that the position of the symbol on the left hand side indicates its role - the first symbol is the active molecule and the second symbol is the passive. 
+
+There are four classes values of product  *k*  in the reaction: 
+
+- *i*: A copy of the active molecule
+- *j*: A copy of the passive molecule
+- "`0`": No product
+- "X": A different product to the input molecules
+
+Note that this is without considering the possibility that *multiple* products *k* may be produced. 
+
+## Self-Self reactions
+
+*i* | *j* |  result  | class | notes
+---|----|---|---|---|
+A|A| A+A+A | |This is the standard replicator reaction
+A|A| A+A+0 | |No product, but this makes two A unavailable for other work
+A|A| A+A+X | |Different product 
+
+## Self-NonSelf reactions
+
+
+Here *i* and *j* are different. In this scenario we have to consider that the assignment to the active and passive roles can be reversed during the binding process, so two reactions must be studied: 
+
+
+- *i*+*j*  ->  *i*+*j*+*k* 
+- *j*+*i*  ->  *j*+*i*+*k* 
+
+
+When we are looking at a single timestep, we want to get an idea what each observed reaction does. But it is difficult to classify a reaction unless we know what/whether active partners can be swapped. Note also that the classification is done from the perspective of the active molecule - otherwise the interpretation gets very confusing very quickly. 
+
+
+The first two columns in the tables below show the product of each of these reactions. The first row shows an interpretation of behaviour where binding is *deterministic* -- i.e. it is not possible for B to take the role of active molecule because of the bind configuration. 
+
+Let's consider that A has a 'standard' replicator function - you can see that the function of the pairing depends on what happens if the roles are swapped: 
+
+A+B   | B+A   | class| notes 
+---|---|---|---|
+A+B+B | -     | Parasite           | A can't get copied when it binds B
+A+B+B | B+A+A | Replicator         |standard replicator (hypercycle)
+A+B+B | B+A+0 | Parasite           |A can't get made by B
+A+B+B | B+A+X | Different Product  |X approximates B or wildly different
+A+B+B | B+A+B | Parasite           |A can't get made by B  
+
+The fourth row could also be interpreted as parasitic, since A does not get copied. 
+
+
+Now let's consider the situation where A makes a copy of *itself* rather than its passive partner
+
+A+B   | B+A   | class| notes 
+---|---|---|---|
+A+B+A | -     | Replicator          | A is now parsitising B 
+A+B+A | B+A+A | Replicator         | A is now parsitising B 
+A+B+A | B+A+0 | Replicator          | 
+A+B+A | B+A+X | Replicator |
+A+B+A | B+A+B | Replicator        | unusual mutualism
+
+
+Note from the perspective of A all these reactions are replicator reactions. The story is different from the perspective of B, in which case we have: Parasite; Parasite; Parasite; Parasite; Replicator. 
+
+
+
+No product
+
+A+B   | B+A   | class| notes 
+---|---|---|---|
+A+B+0 | -     | No product |  
+A+B+0 | B+A+A | ??? | A is now parsitising B 
+A+B+0 | B+A+0 | Parasite | 
+A+B+0 | B+A+X | Different Product |
+A+B+0 | B+A+B | Replicator | unusual mutualism
+
+Different product
+
+A+B   | B+A   | class| notes 
+---|---|---|---|
+A+B+X | -     | Different product |  
+A+B+X | B+A+A | ??? | A is now parsitising B 
+A+B+X | B+A+0 | Different product  | 
+A+B+X | B+A+X | Different Product |
+A+B+X | B+A+B | Replicator | unusual mutualism
+
+

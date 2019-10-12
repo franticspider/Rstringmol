@@ -69,7 +69,7 @@ library(Rstringmol)
 library(stringr)
 
 
-
+#  WARNING! THIS CAUSES A SEGFAULT SOMEHOW!
 parasite_plot_per_time <- function(tt,infroot,xlim = c(0,100),maxfreq=500){
 
 	  message(sprintf("%d",tt))
@@ -108,9 +108,6 @@ parasite_plot_per_time <- function(tt,infroot,xlim = c(0,100),maxfreq=500){
 		    
 		    message(sprintf("%d: %s    %s",rr,ur$actseq[rr],ur$passeq[rr]))
 		    flush.console()
-		  #}
-		  #
-		  #for (rr in 1:nrow(ur)){
 		    rt <- reaction_typeFP(ur$actseq[rr],ur$passeq[rr])
 		    ur$type[rr] <- rt$rtype
 		    ur$product[rr] <- rt$product
@@ -161,19 +158,81 @@ parasite_plot_per_time <- function(tt,infroot,xlim = c(0,100),maxfreq=500){
 
 
 
-parasite_plot <- function(infroot,outfn,xlim = c(0,100),from = 20000, to = 60000, by = 20000,type = "Parasite"){
+
+parasite_plot <- function(infroot,outfn,xlim = c(0,100),from = 20000, to = 2000000, by = 20000,type = "Parasite"){
 
 	xmax <- 100
-  maxfreq <- 0
+        maxfreq <- 0
 
-	#pdf(file=outfn,width = 9, height = 9)
+	pdf(file=outfn,width = 9, height = 9)
 	#for(tt in seq(from = 20000, to = 2000000, by = 20000)){
 	for(tt in seq(from = from, to = to, by = by)){
-		 parasite_plot_per_time(tt,infroot,xlim,maxfreq) 
+	  message(sprintf("%d",tt))
+	  #fdata <- rconf_rdata(sprintf("~/Desktop/paulien/smsp/1705smsp/out1/out1_%d.conf",tt))
+		
+	  fn <- sprintf("%s%d.conf",infroot,tt)
+	  if(file.exists(fn)){
+
+		  fdata <- rconf_rdata(fn)
+		  
+		  ur <- unique(data.frame(actseq = fdata$actseq, passeq = fdata$passeq))
+		  ur$actseq <- as.character(ur$actseq)
+		  ur$passeq <- as.character(ur$passeq)
+		  ur$type <- "unknown"
+		  ur$product <- ""
+
+		  ur$actlen <- str_length(ur$actseq)
+		  ur$paslen <- str_length(ur$passeq)
+		  
+		  par(mfrow=c(6,1))
+		  par(mar=c(3,5,1,1))
+		  afreq <- sm_barplot(ur$actlen,xlim=xlim,xlab="length",ylab="frequency",title="All Active Spp",ylim=c(0,500))
+		  pfreq <- sm_barplot(ur$paslen,xlim=xlim,xlab="length",ylab="frequency",title="All Passive Spp",ylim=c(0,500))
+		  message(sprintf("maxfreq was %d, afreq =  %d, pfreq = %d",maxfreq,afreq,pfreq))
+		  maxfreq <- max(maxfreq,afreq,pfreq)
+		  
+		  for (rr in 1:nrow(ur)){
+		    rt <- reaction_typeFP(ur$actseq[rr],ur$passeq[rr])
+		    ur$type[rr] <- rt$rtype
+		    ur$product[rr] <- rt$product
+		    ur$dexec[rr] <- rt$deterministicExec
+		    ur$dbind[rr] <- rt$deterministicBind
+		    ur$nobs[rr] <- nrow(fdata[fdata$actseq == ur$actseq[rr] & fdata$passeq == ur$passeq[rr],])
+		  }
+
+		  
+		  #ur$actlen <- as.integer(str_length(pur$actseq))
+		  #ur$paslen <- as.integer(str_length(pur$passeq))
+
+		  pur <- rbind(ur[ur$type=="SelfSelfReplicator",] , ur[ur$type=="NonSelfReplicator" ,])
+		  sm_lap_plot(pur,xlim=xlim,title=sprintf("t=%d: Replicator reactions",tt))
+		  
+		  pur <- ur[ur$type=="Parasite",]		  
+		  sm_lap_plot(pur,xlim=xlim,title=sprintf("Parasites"))
+
+		  #nur <- ur[ur$type!="Parasite",]
+		  #sm_lap_plot(nur,xlim=xlim)
+		  #title(sprintf("Non-parasitic reactions"))
+
+		  pur <- rbind(ur[ur$type=="SelfSelfDifferentProduct",] , ur[ur$type=="NonSelfDifferentProduct" ,])
+		  sm_lap_plot(pur,xlim=xlim,title=sprintf("Reactions with a different product"))
+
+		  pur <- rbind(ur[ur$type=="SelfSelfNoProduct",] ,  ur[ur$type=="NonSelfNoProduct" ,])
+		  sm_lap_plot(pur,xlim=xlim,title=sprintf("Reactions with no product"))
+
+		  rm(ur)
+		  rm(fdata)
+		  rm(pur)
+		  #rm(nur)
+	  }
+	  else{
+	    message(sprintf("file %s not found, exiting...",fn))
+            break
+	  }
+		  
 	}
-	#dev.off()
+	dev.off()
 }
-```
 
 
 ...we've broken out the function `parasite_plot_per_time` so that we can look at an individual file and investigate. Let's check that it works: 

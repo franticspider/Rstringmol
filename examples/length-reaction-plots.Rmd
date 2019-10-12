@@ -1,0 +1,201 @@
+---
+title: "Classifying Reactions"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+A stringmol reaction can be written as: 
+
+
+*i*+*j*  ->  *i*+*j*+*k* 
+
+
+In this notation, *i* is the active molecule, *j* is the passive molecule, and *k* is the new molecule that's created. Note that the position of the symbol on the left hand side indicates its role - the first symbol is the active molecule and the second symbol is the passive. On the right hand side the order is active; passive; product
+
+These are reactions that run *without mutation* so that we can see what the role is without any unpredicatable copy operations. . 
+
+Note that the study below is done without considering the possibility that *multiple* outputs of *i*, *j* or *k* could be produced. We haven't (yet) got the tools to explicity detect this.  
+
+## Reaction classes
+
+There are five classes, one (or more) of which can happen when molecule A binds with molecule B
+
+- *Replicator:* the active molecule gets copied
+- *Parasite:* the passive molecule gets copied, and the active one does not. 
+- *No Product:* no new molecule is produced
+- *Different Product:* a new molecule is produced that is not a copy of the active or passive molecules
+- *Macromutation:* one or more of the active or passive molecules is changed. There may or may not be a new molecule produced. 
+
+## Self-Self reactions
+
+Let's say we have instances of *i* and *j* that are identical -- this would be true of the seed replicase that we start the simulation with. There are five possible outcomes:
+
+
+*i* | *j* |  result  | class | notes
+---|----|---|---|---|
+A|A| - | No Product | No bind
+A|A| A+A+A | Replicator |This is the standard replicator reaction
+A|A| A+A+0 | No product | makes two A unavailable for other work
+A|A| A+A+X | Different product |Different product 
+A|A| X+X+Y | Macromutation | 
+
+Note that the last row is shorthand for a panolpy of reactions: the results X *could* be A in one of the available slots, but not both, and Y can be X or 0. 
+
+
+## Self-NonSelf reactions
+
+
+Here *i* and *j* are different - we'll use A+B to indicate this. In this scenario we have to consider that the assignment to the active and passive roles can be reversed during the binding process, so two reactions must be studied: 
+
+
+- *i*+*j*  ->  *i*+*j*+*k* 
+- *j*+*i*  ->  *j*+*i*+*k* 
+
+
+When we are looking at a single timestep, we want to get an idea what each observed reaction does. But it is difficult to classify a reaction unless we know what/whether active partners can be swapped. Note also that the classification is done from the perspective of the active molecule - otherwise the interpretation gets very confusing very quickly. 
+
+
+The first two columns in the tables below show the product of each of these reactions, when the inputs are A+B and B+A respectively. 
+
+### Deterministic binds:
+
+The first table shows an interpretation of behaviour where binding is *deterministic* -- i.e. it is not possible for B to take the role of active molecule because of the bind configuration. 
+
+
+*i*+*j*   | *j*+*i*    | class| notes 
+---|---|---|---|
+- | -     | No Reaction           | A can't bind B
+A+B+A | A+B+A | Replicator         |standard replicator
+A+B+0 | A+B+0 | No Reaction        |A can't get made by B
+A+B+X | A+B+X | Different Product  |X approximates B or wildly different
+A+B+B | A+B+B | Parasite           |A can't get made by B  
+X+X+Y | X+X+Y | Parasite           |A can't get made by B  
+
+
+Note that the "Active" molecule is the one on which the program starts. Execution may switch to the program of the passive partner, but this will be using the pointers of the active molecule. This is important because the arrangement of pointers is initialised at the point of binding. 
+
+### Nondeterministic binds:
+
+
+
+From here on, we have to consider binds that are "non deterministic", in that it's a coin toss as to whether A or B is active or passive. Note that it is only guaranteed that the first column of results has been seen at a particular timestep - the second column of results have not (necessarily) been seen, although it is likely that they will have been due to the coin toss assignment of active. Note that if the second column *has* been seen, then that reaction will have been studied as well. For these reasons, the first column of results has priority over the second in terms of interpretation. 
+
+*Replicator (result = A+B+B):*
+
+First let's consider that A has a 'standard' replicator function on B - it copies what it binds to - you can see that the interpretation of the function of the pairing depends on what happens if the roles are swapped: 
+
+*i*+*j*   | *j*+*i*  | class| notes 
+---|---|---|---|
+A+B+B | -     | Parasite           | A can't get copied when it binds B
+A+B+B | B+A+A | Replicator         |standard replicator (hypercycle)
+A+B+B | B+A+0 | Parasite           |A can't get made by B
+A+B+B | B+A+X | Parasite           |X approximates B or is wildly different
+A+B+B | B+A+B | Parasite           |A can't get made by B  
+A+B+B | X+X+Y | Parasite           |A can't get made by B  
+
+The fourth row (B+A+X) could also be interpreted as "Different Product", since although A does not get copied, a macromutation occurs when roles are exchanged. But from the perspective of A, the important thing is the Parasitism it suffers.  
+
+*Active copying (result = A+B+A):*
+
+Now let's consider the situation where A makes a copy of *itself* rather than its passive partner. Remember, we are considering the reaction from the perspective of A
+
+*i*+*j*   | *j*+*i*   | class| notes 
+---|---|---|---|
+A+B+A | -     | Replicator | A is now parsitising B
+A+B+A | B+A+A | Replicator | A is now parsitising B twice!
+A+B+A | B+A+0 | Replicator | A is now parsitising B 
+A+B+A | B+A+X | Replicator | A is now parsitising B 
+A+B+A | B+A+B | Replicator | hypercycle: unusual mutualism
+A+B+A | X+X+Y | Replicator | A is now parsitising B 
+
+
+Note from the perspective of A all these reactions are replicator reactions. Clearly, the story is different from the perspective of B, in which case we have: Parasite; Parasite; Parasite; Parasite; Replicator; MacroMutation respectively. 
+
+
+*No Product (result = A+B+0):*
+
+*i*+*j*   | *j*+*i*   | class| notes 
+---|---|---|---|
+A+B+0 | -     | No product |  
+A+B+0 | B+A+A | No product | A is now parsitising B 
+A+B+0 | B+A+0 | No product | 
+A+B+0 | B+A+X | No product |
+A+B+0 | B+A+B | No product | B is now parasitising A 
+A+B+0 | X+X+Y | No product 
+
+The second row is difficult to interpret here - Clearly, A is being copied by B, but *only* if B is the active molecule. Similarly, the production of a different product in the fourth row is not recognised by the `A-centric' classification. In this case the classification indicated by the second column will be given when B+A+* is output in the first column of other tables in this document. 
+
+*Different product (result = A+B+X):*
+
+*i*+*j*   | *j*+*i*   | class| notes 
+---|---|---|---|
+A+B+X | -     | Different product |  
+A+B+X | B+A+A | Different product | A is now parsitising B 
+A+B+X | B+A+0 | Different product | 
+A+B+X | B+A+X | Different Product |
+A+B+X | B+A+B | Different Product | unusual mutualism
+A+B+X | X+X+Y | Different Product 
+
+*Macromutation (result = X+X+Y)*
+
+
+*i*+*j*   | *j*+*i*   | class| notes 
+---|---|---|---|
+X+X+Y | -     | Macromutation |  
+X+X+Y | B+A+A | Macromutation |  
+X+X+Y | B+A+0 | Macromutation |  
+X+X+Y | B+A+X | Macromutation |  
+X+X+Y | B+A+B | Macromutation |  
+X+X+Y | X+X+Y | Macromutation |  
+
+
+Summary: For non-deterministic binds, the *only* time a classification should take into account the reciprocal reaction  is when a hypercycle is indicated. 
+
+
+
+
+
+# Algorithm
+
+The considerations above can be captured in the following pseudocode:
+
+-----
+
+```
+ALGORITHM: Classfiy reaction
+INPUT: Two molecule sequences, A and B
+OUTPUT: A classification of the reaction
+
+prodA = react(A,B)
+
+if(A == B)
+  switch(prodA.k)
+    case -: return "No Product"
+    case A: return "Replicator"
+    case 0: return "No Product"
+    case X: return "Different Product"
+    case Y: reutrn "Macromutation"
+  
+if(prodA.deterministicBind)  
+  switch(prodA.k)
+    case -: return "No Product"
+    case A: return "Replicator"
+    case 0: return "No Product"
+    case X: return "Different Product"
+    case Y: reutrn "Macromutation"
+
+prodB = react(B,A)
+
+```
+
+------
+
+
+
+
+
+
+
+
+
