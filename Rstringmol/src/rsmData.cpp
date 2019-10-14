@@ -1,5 +1,5 @@
-#include <Rcpp.h>
-using namespace Rcpp;
+//#include <Rcpp.h>
+//using namespace Rcpp;
 
 #include <stdio.h>
 #include "rsmData.h"
