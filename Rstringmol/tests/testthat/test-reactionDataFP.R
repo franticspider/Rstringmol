@@ -17,8 +17,6 @@ test_that("FP replicator replicates",{
   expect_equal(result$bprob, 0.576381, tolerance=1e-6)
   expect_true(result$product == "OOGEOLHHHRLUEUOBBBRBXUUUDYGRHBLROORE$BLUBO^B>C$=?>$$BLUBO%}OYHOB")
 
-  #Here's a different replicator that doesn't appear to work:
-
   result <- runReactionFP(c("$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYH","$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYH"))
   expect_equal(result$bprob, 0.695410, tolerance=1e-6)
   expect_true(result$product == "$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYH")
