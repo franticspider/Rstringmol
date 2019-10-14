@@ -158,78 +158,32 @@ reaction_typeFP_old <- function(act,
 #' @export
 #' @examples
 #' p <- reaction_type("AAA","NNN")
-reaction_type <- function(pro,
+reaction_type <- function(act,pas,
+                          result,
                           conv,
                           verbose = F,
-                          detail = F,
-                          FP = T) {
-
-  act <- pro$mActive
-  pas <- pro$mPassive
+                          detail = F) {
 
 
-  #Self-self reaction:
-  if (act == pas) {
-    # No bind
-    if (pro$bprob < 0.000000000001) {
-      pro$rtype = "SelfSelfNoProduct"
-    } else{
-      # Self Replicator (A+A+A)
-      if (pro$product == act)
-        pro$rtype = "SelfSelfReplicator"
-      else{
-        # No Product (A+A+0)
-        if (pro$product == "empty")
-          pro$rtype = "SelfSelfNoProduct"
-        # Different Product (A+A+X)
-        else
-          pro$rtype = "SelfSelfDifferentProduct"
-      }
+  result$type = "undefined"
 
-      #macromutation (X+X+Y)
-      if ((pro$mActive != act) || (pro$mPassive != pas))
-        pro$rtype = "Macromutation"
-    }
-
-  #Self-nonSelf reaction:
-  } else{
-    # No bind
-    if (pro$bprob < 0.000000000001) {
-      pro$rtype = "NonSelfNoProduct"
-    } else{
-      # Self Replicator (A+A+A)
-      if (pro$product == act)
-        pro$rtype = "NonSelfReplicator"
-      else
-        # No Product (A+A+0)
-        if (pro$product == "empty")
-          pro$rtype = "NonSelfNoProduct"
-        # Different Product (A+A+X)
-        else
-          if (pro$product == pas) {
-            #use the FP version until memory leaks are fixed:
-            if (FP)
-              conv <- runReactionFP(c(pas, act))
-            else
-              conv <- runReaction(c(pas, act))
-
-            if (conv$product == act)
-              pro$rtype = "NonSelfReplicator"
-            else
-              pro$rtype = "Parasite"
-
-
-          } else
-            pro$rtype = "NonSelfDifferentProduct"
-
-          #macromutation (X+X+Y)
-          if ((pro$mActive != act) || (pro$mPassive != pas))
-            pro$rtype = "Macromutation"
-          if ((pro$mActive != pas) || (pro$mPassive != act))
-            pro$rtype = "Macromutation"
-    }
+  if(act == pas){
+    if((result$bprob < 0.0000001) || (result$product == "empty"))
+      result$type <- "SelfSelfNoProduct"
+    if(result$product == pas)
+      result$type <- "SelfSelfReplicator"
+  }else{
+    if((result$bprob < 0.0000001) || (result$product == "empty"))
+      result$type <- "NonSelfNoProduct"
+    if(result$product == pas)
+      result$type <- "NonSelfReplicator"
+    if((result$mActive != act ) && (result$mActive != pas))
+      result$type <- "Macromutation"
+    if((result$mPassive != act ) && (result$mPassive != pas))
+      result$type <- "Macromutation"
   }
+
   # for debugging:
   #pro$product = "BBBBBBB"
-  return(pro)
+  return(result)
 }
