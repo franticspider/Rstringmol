@@ -60,6 +60,7 @@ void    free_swt(swt *table);
 
 ///////////////////////////////////////////////////////////////////////////////
 
+//append the agent to the list of agents
 //int stringPM::append_ag(s_ag **list, s_ag *ag){
 int             append_ag(s_ag **list, s_ag *ag){
   s_ag *pag;
@@ -82,7 +83,7 @@ int             append_ag(s_ag **list, s_ag *ag){
 }
 
 
-
+//reposition any pointers that have been placed beyond the size of the current string
 //int stringPM::rewind_bad_ptrs(s_ag* act){
 int             rewind_bad_ptrs(s_ag* act){
 
@@ -164,7 +165,7 @@ int             rewind_bad_ptrs(s_ag* act){
 }
 
 
-
+// check that the position of pointers is valid
 //int stringPM::check_ptrs(s_ag* act){
 int             check_ptrs(s_ag* act){
 
@@ -201,8 +202,8 @@ int             check_ptrs(s_ag* act){
 
 
 
-
-
+//Calculate the new position of a pointer
+//This should be moved to instructions.cpp
 //int stringPM::h_pos(s_ag *pag, char head){
 int h_pos(s_ag *pag, char head){
 
@@ -249,7 +250,9 @@ int h_pos(s_ag *pag, char head){
 
 
 
-
+//Copy a character from the read poisition to the write position
+//NB mutation is commented out in this code
+//This should be moved to instructions.cpp
 //int stringPM::hcopy(s_ag *act){
 int hcopy(s_ag *act){
 
@@ -357,20 +360,13 @@ int hcopy(s_ag *act){
     *(act->w[act->wt])=*(act->r[act->rt]);
     act->w[act->wt]++;
     act->r[act->rt]++;
-
-
-
   }
   //update lengths
   act->len = strlen(act->S);
   act->pass->len = strlen(act->pass->S);
-
-
-
-
+  
   //Increment the instruction pointer
   act->i[act->it]++;
-
 
 #ifdef VERBOSE
   if(mut)
@@ -384,6 +380,8 @@ int hcopy(s_ag *act){
 
 
 
+//Divde the string into two to create a new string
+//This should be moved to instructions.cpp
 //int stringPM::cleave(s_ag *act){
 int             cleave(s_ag *act,s_ag **nexthead){
 
@@ -486,7 +484,7 @@ int             cleave(s_ag *act,s_ag **nexthead){
 
 
 
-
+//Free an agent struct
 //int stringPM::free_ag(s_ag *pag){
 int free_ag(s_ag *pag){
 
@@ -505,7 +503,7 @@ int free_ag(s_ag *pag){
 
 
 
-
+//Initialise an agent struct
 /* TODO: Move this outside stringPM..
  * Create an 'agent', which is a string 'molecule'
  * NB: The string is not allocated here - done outside the function
@@ -550,6 +548,8 @@ s_ag * make_ag(int alab, int agct){
   }
 }
 
+
+//Create a molecule as an "agent"
 //This is a common way to create molecules, e.g. in stringPM::load_agents(), although there isn't a function with this name
 s_ag * make_mol(char * seq){
   s_ag * pag;
@@ -566,7 +566,8 @@ s_ag * make_mol(char * seq){
 
 
 
-
+//Calculate the bind probability
+//This should be in alignment.cpp
 //float stringPM::get_bprob(align *sw){
 float get_bprob(align *sw){
   float bprob = 0.;
@@ -590,7 +591,8 @@ float get_bprob(align *sw){
 
 
 
-
+//Generate a smith-waterman alignment 
+//This should be in alignment.cpp
 //float stringPM::get_sw(s_ag *a1, s_ag *a2, align *sw){
 float             get_sw(s_ag *a1, s_ag *a2, align *sw, swt *blosum){//}, s_sw *swlist){
 
@@ -634,6 +636,7 @@ float             get_sw(s_ag *a1, s_ag *a2, align *sw, swt *blosum){//}, s_sw *
 }
 
 
+//set the executing (active) string
 //void stringPM::set_exec(s_ag *A, s_ag *B, align *sw){
 bool set_exec(s_ag *A, s_ag *B, align *sw){
 
@@ -699,7 +702,7 @@ bool set_exec(s_ag *A, s_ag *B, align *sw){
 
 
 
-
+//Unbind a molecule/agent
 //int stringPM::unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp *pp){
 int             unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp *pp){
 
@@ -728,6 +731,8 @@ int             unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp 
 }
 
 
+//execute the next instruction
+//This should be moved to instructions.cpp
 //int stringPM::exec_step(s_ag *act, s_ag *pass){
 bool             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
 
@@ -921,7 +926,7 @@ bool             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
 
 
 
-
+//print the pointer location (used if verbose == True)
 //void stringPM::print_ptr_offset(FILE *fp, char *S, char *p,int F, char c){
 void             print_ptr_offset(FILE *fp, char *S, char *p,int F, char c){
   int i,n=p-S;
@@ -938,7 +943,7 @@ void             print_ptr_offset(FILE *fp, char *S, char *p,int F, char c){
 
 
 
-
+//print the current state of a reaction (used if verbose == TRUE)
 //void stringPM::print_exec(FILE *fp, s_ag *act, s_ag *pas){
 void             print_exec(FILE *fp, s_ag *act){
 
@@ -992,7 +997,8 @@ void             print_exec(FILE *fp, s_ag *act){
 
 
 
-
+//Free a smith waterman table
+//This should be in alignment.cpp
 void free_swt(swt *table){
   //commented bits are reverse order allocations from default table..
   int i;
@@ -1015,29 +1021,14 @@ void free_swt(swt *table){
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+///////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char *argv[]){
 
-
-
-  //Additional structures to make this main work like rstringmol.cpp:
+  //Additional structures to make this main work as in rstringmol.cpp:
   bool verbose = false; 
   FILE *fp;
+  //we're just going to print to stdout for now...
   fp = stdout;
 
   if(verbose)printf("Hello!\n");fflush(stdout);
@@ -1045,7 +1036,9 @@ int main(int argc, char *argv[]){
   initmyrand(1);
   
   s_ag *m0,*m1;
-  s_ag *product; //This is used to hold any new molecules that are produced.. it's called 'nexthead' in the functions because that's what it's called in stringPM
+  s_ag *product; //This the head of a linked list, used to hold any new 
+                 //molecules that are produced.. it's called 'nexthead' in the 
+                 //functions because that's what it's called in stringPM
   product = NULL;
 
   align sw;
@@ -1057,17 +1050,15 @@ int main(int argc, char *argv[]){
 
   if(verbose)printf("Making blosum table\n");fflush(stdout);
 
+  //generate the default scoring table
   blosum =  default_table();
   
   //create the agents from the strings
-  /* To Do this, we need to call 'make_ag' which is a function of the StringPM class
-  * However, this function should be moved!
-  * So for now, we'll copy the function into the code and just give a warning
-  */
   if(verbose)printf("Making molecules\n");fflush(stdout);
   m0 = make_mol(argv[1]);
   m1 = make_mol(argv[2]);
 
+  //Copy the input string to the output string
   result.setString0(m0->S);
   result.setString1(m1->S);
 
@@ -1083,9 +1074,9 @@ int main(int argc, char *argv[]){
   if(verbose)
     printf("Bind probability for these molecules is %f\n",bprob);
 
-
   fprintf(fp,"bprob,%0.6f\n",bprob);
 
+  //set the executing molecule - and record the determinism for reporting
   bool dtb = set_exec(m0,m1,&sw);
   bool dtexec = true;
 
@@ -1097,32 +1088,17 @@ int main(int argc, char *argv[]){
   fprintf(fp,"m0status,%d\n",m0->status);
   fprintf(fp,"m1status,%d\n",m1->status);
 
-
-  /*
-  Lresult["bprob"] = (bprob);
-
-
-  //use set_exec to determine the active and passive strings
-  Lresult["deterministicBind"] = set_exec(m0,m1,&sw);
-
-  Lresult["m0status"] = ((int) m0->status);
-  Lresult["m1status"] = ((int) m1->status);
-
-  Lresult["deterministicExec"] = true;
-  */
-
-
-
-
-
   int count = 0;
-  const int climit = 1000;
+  //we need a limit on the number of instructions because there is no death!
+  const int climit = 1000; 
   //run exec_setp until the reactants dissassociate
 
   char mActive[MAXL0];
   char mPassive[MAXL0];
 
   bool NDStep = false;
+  
+  //Iterate through the program 
   while( count <= climit){
     if(verbose)printf("\n========== STEP %d ==========\n",count);
     if(m0->status == B_ACTIVE){
@@ -1156,6 +1132,7 @@ int main(int argc, char *argv[]){
     count++;
   }
 
+  //report the reaction data to the console
   fprintf(fp,"mActive,%s\n",mActive);
   fprintf(fp,"mPassive,%s\n",mPassive);
   if(product != NULL)
