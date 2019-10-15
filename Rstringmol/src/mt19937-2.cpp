@@ -112,17 +112,17 @@ genrand()
 
 //double /* generating reals */
 /* unsigned long */ /* for integer generation */
-unsigned long genrandint()
+/*unsigned long genrandint()
 {
     unsigned long y;
     static unsigned long mag01[2]={0x0, MATRIX_A};
-    /* mag01[x] = x * MATRIX_A  for x=0,1 */
+    // mag01[x] = x * MATRIX_A  for x=0,1 
 
-    if (mti >= N) { /* generate N words at one time */
+    if (mti >= N) { // generate N words at one time 
         int kk;
 
-        if (mti == N+1)   /* if sgenrand() has not been called, */
-            sgenrand(4357); /* a default initial seed is used   */
+        if (mti == N+1)   // if sgenrand() has not been called, 
+            sgenrand(4357); // a default initial seed is used   
 
         for (kk=0;kk<N-M;kk++) {
             y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
@@ -144,32 +144,32 @@ unsigned long genrandint()
     y ^= TEMPERING_SHIFT_T(y) & TEMPERING_MASK_C;
     y ^= TEMPERING_SHIFT_L(y);
 
-    //*return ( (double)y * 2.3283064365386963e-10 ); /* reals: [0,1)-interval */
-     return y;  /* for integer generation */
-}
+    //return ( (double)y * 2.3283064365386963e-10 ); // reals: [0,1)-interval 
+     return y;  // for integer generation 
+}*/
 
 /*UTILITY FUNCTION FOR RE-SEEDING ON RESTART*/
-int mt_get_mti(){
+/*int mt_get_mti(){
 	return mti;
-}
+}*/
 
-void mt_set_mti(int val){
+/*void mt_set_mti(int val){
 	mti = val;
-}
+}*/
 
 
 /*RECORDING FUNCTION*/
-void print_mt(FILE *fp){
+/*void print_mt(FILE *fp){
 	int i=0;
 	fprintf(fp,"MTI %d\n",mti);
 	for(i=0;i<N;i++){
 		fprintf(fp,"%lu\n",mt[i]);
 	}
-}
+}*/
 
 
 
-int report_load_error(enum load_mt_errcode ec, int posn, const char *fn){
+/*int report_load_error(enum load_mt_errcode ec, int posn, const char *fn){
 	char msg[128];
 	switch(ec){
 	case load_mt_nofile:
@@ -192,12 +192,12 @@ int report_load_error(enum load_mt_errcode ec, int posn, const char *fn){
 	}
 
 	return ec;
-}
+}*/
 
 
 
 /*LOADING FUNCTION */
-int load_mt(const char *fn){
+/*int load_mt(const char *fn){
 
 	FILE *fp;
 	const int maxl = 128;
@@ -249,7 +249,7 @@ int load_mt(const char *fn){
 	}
 
 	return report_load_error(errcode,ii,fn);
-}
+}*/
 
 
 

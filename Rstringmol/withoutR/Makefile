@@ -1,23 +1,20 @@
 
 
-CC = gcc -Os++
+CC = gcc
 WARN = -Wall
 
 
 all: stst
 
 
-stst: main.o SMspp.o alignment.o randutil.o mt19937-2.o \
+stst: main.o alignment.o randutil.o mt19937-2.o \
 	rsmData.o memoryutil.o instructions.o stringmanip.o
-	${CC} ${WARN} -o stst main.o SMspp.o alignment.o randutil.o mt19937-2.o \
+	${CC} ${WARN} -o stst main.o alignment.o randutil.o mt19937-2.o \
 	rsmData.o memoryutil.o instructions.o stringmanip.o \
 	-lstdc++ -lm
   
 main.o: main.cpp
 	${CC} ${WARN} -c main.cpp
-	
-SMspp.o: SMspp.cpp SMspp.h 
-	${CC} ${WARN} -c SMspp.cpp
 	
 alignment.o: alignment.cpp alignment.h
 	${CC} ${WARN} -c alignment.cpp

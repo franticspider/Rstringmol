@@ -25,17 +25,17 @@
 
 //extern const int  maxl0;
 
-SMspp::SMspp() {
+/*SMspp::SMspp() {
 	spp_count=1;  // Why is this 1??
 	species = NULL;
-}
+}*/
 
-SMspp::~SMspp() {
-	/* nothing needs doing here at present */
-}
+/*SMspp::~SMspp() {
+	// nothing needs doing here at present
+}*/
 
 
-s_parent *SMspp::get_parents(l_spp * c, l_spp *paspp, l_spp  *ppspp){
+/*s_parent *SMspp::get_parents(l_spp * c, l_spp *paspp, l_spp  *ppspp){
 
 	s_parent *pp;
 	for(pp = c->pp;pp!=NULL;pp=pp->next){
@@ -50,10 +50,10 @@ s_parent *SMspp::get_parents(l_spp * c, l_spp *paspp, l_spp  *ppspp){
 	pp = make_parents(paspp,ppspp);
 	append_parents(c,pp);
 	return pp;
-}
+}*/
 
 
-void SMspp::append_parents(l_spp *c, s_parent *pp){
+/*void SMspp::append_parents(l_spp *c, s_parent *pp){
 	s_parent *oo;
 
 	if(c->pp==NULL){
@@ -67,11 +67,11 @@ void SMspp::append_parents(l_spp *c, s_parent *pp){
 		}
 		oo->next = pp;
 	}
-}
+}*/
 
 //NB: We have to know what the parents are to do this, and to have checked that
 // the parent pair does not already exist.
-s_parent * SMspp::make_parents(l_spp * paspp, l_spp * ppspp){
+/*s_parent * SMspp::make_parents(l_spp * paspp, l_spp * ppspp){
 
 	s_parent *pp;
 	pp = (s_parent *) malloc(sizeof(s_parent));
@@ -86,10 +86,10 @@ s_parent * SMspp::make_parents(l_spp * paspp, l_spp * ppspp){
 	pp->next=NULL;
 
 	return pp;
-}
+}*/
 
 
-l_spp * SMspp::make_spp_from_string(char *S, int extit, const int maxl0, const int spno){
+/*l_spp * SMspp::make_spp_from_string(char *S, int extit, const int maxl0, const int spno){
 
 	int l;
 	l_spp *sp;
@@ -129,10 +129,10 @@ l_spp * SMspp::make_spp_from_string(char *S, int extit, const int maxl0, const i
 
 	return sp;
 
-}
+}*/
 
 
-l_spp * SMspp::make_spp_from_agent(s_ag *a, int extit, const int maxl0){
+/*l_spp * SMspp::make_spp_from_agent(s_ag *a, int extit, const int maxl0){
 
 	l_spp *sp;
 
@@ -143,17 +143,17 @@ l_spp * SMspp::make_spp_from_agent(s_ag *a, int extit, const int maxl0){
 
 	a->pp = NULL;
 	return sp;
-}
+}*/
 
 
-void SMspp::prepend_spp(l_spp *sp){
+/*void SMspp::prepend_spp(l_spp *sp){
 
 	sp->next = species;
 	species = sp;
 
-}
+}*/
 
-l_spp * SMspp::find_spp(char *S, const int maxl0){
+/*l_spp * SMspp::find_spp(char *S, const int maxl0){
 
 	l_spp *p;
 	//First, check if it's in the list:
@@ -164,11 +164,11 @@ l_spp * SMspp::find_spp(char *S, const int maxl0){
 
 	return NULL;
 
-}
+}*/
 
 
 /*gets a spp no. and makes a new one if needed */
-l_spp * SMspp::getspp(s_ag *a, int extit,const int maxl0){//s_spp * paspp, s_spp * ppspp){
+/*l_spp * SMspp::getspp(s_ag *a, int extit,const int maxl0){//s_spp * paspp, s_spp * ppspp){
 
 	l_spp *p;
 
@@ -181,10 +181,10 @@ l_spp * SMspp::getspp(s_ag *a, int extit,const int maxl0){//s_spp * paspp, s_spp
 	}
 
 	return p;
-}
+}*/
 
 /*gets a spp no. and makes a new one if needed */
-l_spp * SMspp::getspp_from_string(char *S, int extit,const int maxl0, const int spno){//s_spp * paspp, s_spp * ppspp){
+/*l_spp * SMspp::getspp_from_string(char *S, int extit,const int maxl0, const int spno){//s_spp * paspp, s_spp * ppspp){
 
 	l_spp *p;
 
@@ -197,7 +197,7 @@ l_spp * SMspp::getspp_from_string(char *S, int extit,const int maxl0, const int 
 	}
 
 	return p;
-}
+}*/
 
 
 /*
@@ -217,7 +217,7 @@ s_spp * SMspp::getspp(int spno){
 }
 */
 
-void SMspp::free_parent_list(s_parent *pp){
+/*void SMspp::free_parent_list(s_parent *pp){
 
 	s_parent *tmp;
 
@@ -226,18 +226,18 @@ void SMspp::free_parent_list(s_parent *pp){
 		pp=pp->next;
 		free(tmp);
 	}
-}
+}*/
 
 
-void SMspp::free_spp(l_spp *sp){
+/*void SMspp::free_spp(l_spp *sp){
 	free(sp->S);
 	free_parent_list(sp->pp);
 	free(sp);
 	//NEED ALSO TO FREE PARENT LIST!
-}
+}*/
 
 
-int SMspp::clear_list(){
+/*int SMspp::clear_list(){
 	l_spp *ps,*n;
 
 	for(ps=species;ps!=NULL;){
@@ -248,10 +248,10 @@ int SMspp::clear_list(){
 	species = NULL;
 	spp_count=1;  // Why is this 1??
 	return 0;
-}
+}*/
 
 
-int SMspp::print_spp_list(FILE *fp){
+/*int SMspp::print_spp_list(FILE *fp){
 
 	l_spp *ps;
 	s_parent *pp;
@@ -280,4 +280,4 @@ int SMspp::print_spp_list(FILE *fp){
 			}
 	}
 	return count;
-}
+}*/

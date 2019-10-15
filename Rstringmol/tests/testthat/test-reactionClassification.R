@@ -70,7 +70,7 @@ test_that("non-self reactions are classified correctly",{
   rep1 <- "$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYH"
   rep2 <- "$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYHPYH"
   result <- runReactionFP(c(rep1,rep2))
-  result$product <- "DIFFERENT$PRODUCT"
+  result$product <- "DIFFERENT^PRODUCT"
   typ <- reaction_type(rep1,rep2,result,NA)
   expect_true(typ$type == "NonSelfdiffp",info = sprintf("non-self replicator: output is \"%s\"",typ$type))
 

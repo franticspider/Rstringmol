@@ -21,6 +21,7 @@
 // project libs:
 //These header files were for .c files, renamed to .cpp in Rstringmol!
 #include "memoryutil.h"
+#include "randutil.h"
 #include "SMspp.h"
 #include "alignment.h"
 #include "rsmData.h"
@@ -1032,10 +1033,16 @@ void free_swt(swt *table){
 
 int main(int argc, char *argv[]){
 
+
+
   //Additional structures to make this main work like rstringmol.cpp:
   bool verbose = false; 
   FILE *fp;
   fp = stdout;
+
+  if(verbose)printf("Hello!\n");fflush(stdout);
+
+  initmyrand(1);
   
   s_ag *m0,*m1;
   s_ag *product; //This is used to hold any new molecules that are produced.. it's called 'nexthead' in the functions because that's what it's called in stringPM
@@ -1047,6 +1054,9 @@ int main(int argc, char *argv[]){
 
   rsmData result;
 
+
+  if(verbose)printf("Making blosum table\n");fflush(stdout);
+
   blosum =  default_table();
   
   //create the agents from the strings
@@ -1054,6 +1064,7 @@ int main(int argc, char *argv[]){
   * However, this function should be moved!
   * So for now, we'll copy the function into the code and just give a warning
   */
+  if(verbose)printf("Making molecules\n");fflush(stdout);
   m0 = make_mol(argv[1]);
   m1 = make_mol(argv[2]);
 

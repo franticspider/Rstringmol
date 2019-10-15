@@ -19,7 +19,7 @@ public:
   //getters
 
   //utils
-  void toFile(char *fn);
+  //void toFile(char *fn);
 
 private:
 
