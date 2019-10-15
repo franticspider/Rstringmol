@@ -58,7 +58,6 @@ int devrandomseed(){
 
 
 
-
 int initmyrand(int seed){
 
 	if(seed<0){
@@ -83,9 +82,8 @@ int initmyrand(int seed){
 
 
 
-
 /* UNSIGNED LONG VERSIONS */
-unsigned long longdevrandomseed(){
+/*unsigned long longdevrandomseed(){
 
 	int randomData = open("/dev/random", O_RDONLY);
 	long sjhRandomInteger;
@@ -101,11 +99,12 @@ unsigned long longdevrandomseed(){
 	  printf("Problem reading from /dev/random in longdevrandomseed; reurning 1\n");
 	  return 1;
 	}
-}
+}*/
 
 
 
-unsigned long longinitmyrand(unsigned long *inseed){
+
+/*unsigned long longinitmyrand(unsigned long *inseed){
 
 	unsigned long seed;
 	if(inseed==NULL){
@@ -128,15 +127,7 @@ unsigned long longinitmyrand(unsigned long *inseed){
 #endif
 
 	return seed;
-}
-
-
-
-
-
-
-
-
+}*/
 
 
 
@@ -151,7 +142,10 @@ double rand0to1(){
 	return x;
 }
 
-unsigned long randint(){
+
+
+
+/*unsigned long randint(){
 
 	unsigned long x;
 
@@ -161,12 +155,12 @@ unsigned long randint(){
 	x = rand();
 #endif
 	return x;
-}
+}*/
 
 
 
 
-int rand_in_rad(const float rad, float *x, float *y){
+/*int rand_in_rad(const float rad, float *x, float *y){
 
 	int found=0;
 	float tx,ty;
@@ -183,20 +177,25 @@ int rand_in_rad(const float rad, float *x, float *y){
 	*x = tx;
 	*y = ty;
 	return 0;
-}
+}*/
+
+
+
 
 /* Create an array of random integers between the range [min,max) */
-int * randintarray(const int size,const int Min,const int max){
+/*int * randintarray(const int size,const int Min,const int max){
 	int i, * array;
 	array = (int *) malloc(size*sizeof(int));
 	for(i=0;i<size;i++)
 		array[i] = Min + floor((double)max*rand0to1());
-	return array;
-}
+	return array;/
+}*/
+
+
 
 
 /* Create an array of random integers between the range [min,max) */
-int * randboolarray(const int size){
+/*int * randboolarray(const int size){
 	int i, * array;
 	float v;
 	array = (int *) malloc(size*sizeof(int));
@@ -208,25 +207,25 @@ int * randboolarray(const int size){
 			array[i] = 1;
 	}
 	return array;
-}
+}*/
+
+
 
 
 /*UTILITY FUNCTION FOR RE-SEEDING ON RESTART*/
-int get_mti(){
+/*int get_mti(){
 #ifdef USING_MT
 	return mt_get_mti();
 #else
 	printf("NOT USING MERSENNE TWISTER - CAN'T GET MTI!!\n");
 	return 0;
 #endif
-}
+}*/
 
-void set_mti(int val){
+/*void set_mti(int val){
 #ifdef USING_MT
 	mt_set_mti(val);
 #else
 	printf("NOT USING MERSENNE TWISTER - CAN'T SET MTI!!\n");
 #endif
-}
-
-
+}*/

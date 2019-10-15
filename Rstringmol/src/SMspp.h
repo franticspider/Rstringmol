@@ -109,7 +109,7 @@ struct s_parent{
 	s_parent 	*next;	//Pointer to the next data structure
 };
 
-class SMspp {
+/*class SMspp {
 public:
 	l_spp *species; 		//The list of species
 	long int spp_count; 	//The current number of species
@@ -142,6 +142,6 @@ public:
 	//int		list_to_file(const char *fn, const char *mode);
 
 
-};
+};*/
 
 #endif /* SMSPP_H_ */
