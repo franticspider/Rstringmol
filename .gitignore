@@ -45,3 +45,6 @@ rsconnect/
 examples/*.html
 examples/*.pdf
 
+#object files in withoutR:
+withoutR/*.o
+withoutR/stst
