@@ -40,7 +40,7 @@ void * mymalloc(const int number, const int size){
 }
 
 
-int ** intarr2alloc(const int n1, const int n2){
+/*int ** intarr2alloc(const int n1, const int n2){
 
 	int i;
 	int **aa;
@@ -51,9 +51,9 @@ int ** intarr2alloc(const int n1, const int n2){
 	}
 
 	return aa;
-}
+}*/
 
-void  intarr2free(int **aa, const int n1, const int n2){
+/*void  intarr2free(int **aa, const int n1, const int n2){
 
 	int i;
 
@@ -61,11 +61,11 @@ void  intarr2free(int **aa, const int n1, const int n2){
 		free(aa[i]);
 	}
 	free(aa);
-}
+}*/
 
 
 
-void ***old_arr3alloc(const int size, const int n1, const int n2, const int n3){
+/*void ***old_arr3alloc(const int size, const int n1, const int n2, const int n3){
 	int i,j;
 	int ***aa;
 
@@ -80,12 +80,12 @@ void ***old_arr3alloc(const int size, const int n1, const int n2, const int n3){
 
 	return (void ***) aa;
 
-}
+}*/
 
 
 
 
-int **** intarr4alloc(const int n1,const int n2,const int n3,const int n4){
+/*int **** intarr4alloc(const int n1,const int n2,const int n3,const int n4){
 	int i,j,k;
 	int ****aa;
 
@@ -101,11 +101,11 @@ int **** intarr4alloc(const int n1,const int n2,const int n3,const int n4){
 		}
 	}
 
-
 	return aa;
-}
+}*/
 
-void intarr4free(int ****aa, const int n1,const int n2,const int n3,const int n4){
+
+/*void intarr4free(int ****aa, const int n1,const int n2,const int n3,const int n4){
 	int i,j,k;
 
 	for(i=0;i<n1;i++){
@@ -118,12 +118,12 @@ void intarr4free(int ****aa, const int n1,const int n2,const int n3,const int n4
 		free(aa[i]);
 	}
 	free(aa);
+}*/
 
 
-}
 
 
-int *** intarr3alloc(const int n1, const int n2, const int n3){
+/*int *** intarr3alloc(const int n1, const int n2, const int n3){
 
 	int i,j;
 	int ***aa;
@@ -136,10 +136,12 @@ int *** intarr3alloc(const int n1, const int n2, const int n3){
 	}
 
 	return aa;
-}
+}*/
 
 
-void  intarr3free(int ***aaa, const int n1, const int n2, const int n3){
+
+
+/*void  intarr3free(int ***aaa, const int n1, const int n2, const int n3){
 
 	int i,j;
 
@@ -149,13 +151,13 @@ void  intarr3free(int ***aaa, const int n1, const int n2, const int n3){
 		free(aaa[i]);
 	}
 	free(aaa);
-}
+}*/
 
 
 
 
 
-float *** fltarr3alloc(const int n1, const int n2, const int n3){
+/*float *** fltarr3alloc(const int n1, const int n2, const int n3){
 
 	int i,j;
 	float ***aa;
@@ -168,22 +170,10 @@ float *** fltarr3alloc(const int n1, const int n2, const int n3){
 	}
 
 	return aa;
-}
+}*/
 
 
-void  fltarr3free(float ***aaa, const int n1, const int n2, const int n3){
-
-	int i,j;
-
-	for(i=0;i<n1;i++){
-		for(j=0;j<n2;j++)
-			free(aaa[i][j]);
-		free(aaa[i]);
-	}
-	free(aaa);
-}
-
-void  arr3free(void ***aaa, const int n1, const int n2, const int n3){
+/*void  fltarr3free(float ***aaa, const int n1, const int n2, const int n3){
 
 	int i,j;
 
@@ -193,10 +183,22 @@ void  arr3free(void ***aaa, const int n1, const int n2, const int n3){
 		free(aaa[i]);
 	}
 	free(aaa);
-}
+}*/
+
+/*void  arr3free(void ***aaa, const int n1, const int n2, const int n3){
+
+	int i,j;
+
+	for(i=0;i<n1;i++){
+		for(j=0;j<n2;j++)
+			free(aaa[i][j]);
+		free(aaa[i]);
+	}
+	free(aaa);
+}*/
 
 
-void	*** arr3alloc(const int n1, const int n2, const int n3, const int size){
+/*void	*** arr3alloc(const int n1, const int n2, const int n3, const int size){
 
 	int i,j;
 	void ***aa;
@@ -209,12 +211,12 @@ void	*** arr3alloc(const int n1, const int n2, const int n3, const int size){
 	}
 
 	return aa;
-}
+}*/
 
 
 
 
-void	** arr2alloc(const int n1, const int n2, const int size){
+/*void	** arr2alloc(const int n1, const int n2, const int size){
 
 	int j;
 	void **aa;
@@ -224,10 +226,10 @@ void	** arr2alloc(const int n1, const int n2, const int size){
 		aa[j] = (void *) malloc(n2*size);
 
 	return aa;
-}
+}*/
 
 
-void  arr2free(void **aa, const int n1, const int n2){
+/*void  arr2free(void **aa, const int n1, const int n2){
 
 	int i;
 
@@ -235,11 +237,11 @@ void  arr2free(void **aa, const int n1, const int n2){
 		free(aa[i]);
 	}
 	free(aa);
-}
+}*/
 
 
 
-double *** dblarr3alloc(const int n1, const int n2, const int n3){
+/*double *** dblarr3alloc(const int n1, const int n2, const int n3){
 
 	int i,j;
 	double ***aa;
@@ -252,10 +254,10 @@ double *** dblarr3alloc(const int n1, const int n2, const int n3){
 	}
 
 	return aa;
-}
+}*/
 
 
-void  dblarr3free(double ***aaa, const int n1, const int n2, const int n3){
+/*void  dblarr3free(double ***aaa, const int n1, const int n2, const int n3){
 
 	int i,j;
 
@@ -265,11 +267,11 @@ void  dblarr3free(double ***aaa, const int n1, const int n2, const int n3){
 		free(aaa[i]);
 	}
 	free(aaa);
-}
+}*/
 
 
 
-double maxdinarr(double *arr, const int len, int *idx){
+/*double maxdinarr(double *arr, const int len, int *idx){
 	int i,ii=0;
 	double max = arr[0];
 	for(i=0;i<len;i++){
@@ -281,14 +283,14 @@ double maxdinarr(double *arr, const int len, int *idx){
 	if(idx!=NULL)
 		*idx = ii;
 	return max;
-}
+}*/
 
 
-float maxfinarr(float *arr, const int len){
+/*float maxfinarr(float *arr, const int len){
 	int i;
 	float max = arr[0];
 	for(i=0;i<len;i++){
 		max = max<arr[i] ? arr[i] : max;
 	}
 	return max;
-}
+}*/

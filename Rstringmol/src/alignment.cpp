@@ -34,6 +34,7 @@
 
 //swa = read_sw(swlist,a1->spp,a2->spp);
 
+/*
 s_sw * read_sw(s_sw *swlist, int sp1, int sp2){
 
 	s_sw *p;
@@ -45,7 +46,7 @@ s_sw * read_sw(s_sw *swlist, int sp1, int sp2){
 	}
 	return NULL;
 }
-
+*/
 
 
 
@@ -61,7 +62,7 @@ int load_sw(s_sw *b, align *sw){
 	return 0;
 }
 
-void free_swlist(s_sw **head){
+/*void free_swlist(s_sw **head){
 
 	s_sw *p,*pold;
 
@@ -72,7 +73,7 @@ void free_swlist(s_sw **head){
 		pold=p;
 	}
 	*head = NULL;
-}
+}*/
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -127,7 +128,7 @@ float wT(int a, int b,swt *T){
 
 }
 
-
+/*
 float w(int a, int b){
 
 	float mismatch = -1.0/3.0;
@@ -150,9 +151,10 @@ float w(int a, int b){
 	else
 		return mismatch;
 }
+*/
 
 
-
+/*
 int SmithWaterman(char *s1, char *s2, align *A, swt *T, int verbose){
 
 	//align *A;
@@ -287,7 +289,7 @@ int SmithWaterman(char *s1, char *s2, align *A, swt *T, int verbose){
 	free(H);
 
 	return 0;
-}
+}*/
 
 
 
@@ -511,15 +513,19 @@ int align_event(align *A,int len){
 }
 
 
-float instr_wt(char C){
+
+
+/*float instr_wt(char C){
 
 	if(C>='A' && C<='Z')
 		return 1.0;
 	return 0.5;
-}
+}*/
 
 
-void print_swt(FILE *fp, swt *sss){
+
+
+/*void print_swt(FILE *fp, swt *sss){
 	int i,j;
 	printf("   ");
 	for(i=0;i<sss->N;i++)
@@ -538,10 +544,12 @@ void print_swt(FILE *fp, swt *sss){
 		printf("%0.2f ", sss->T[sss->N][i]);
 	}
 	printf("\n");
-}
+}*/
 
 
-char sym_from_adj(char X, swt *swt){
+
+
+/*char sym_from_adj(char X, swt *swt){
 
 	int idx = tab_idx(X,swt);
 	int count=0,i;
@@ -564,21 +572,19 @@ char sym_from_adj(char X, swt *swt){
 		printf("ERRROR reading index for %c\n",X);
 	}
 
-
 	return 0;
-}
+}*/
 
 
 
-void table_from_string(float **T, char *key, const int N){
+
+/*void table_from_string(float **T, char *key, const int N){
 
 	int i,j,d1;
 	int sum;
 
 //	i=0;
 	//Step 1: fill the mutations.
-
-
 
 	i=0;
 	for(i=0;i<N;i++){
@@ -588,14 +594,12 @@ void table_from_string(float **T, char *key, const int N){
 		}
 	}
 
-
 	i=0;
 	//step 2: Calculate the diagonal
 	sum=0;
 	for(i=0;i<N;i++)
 		sum += T[i][0];
 	sum/=N;
-
 
 	i=0;
 	float indval = -4./3.;
@@ -605,8 +609,6 @@ void table_from_string(float **T, char *key, const int N){
 		T[N][i]= indval;
 	}
 
-
-
 	i=0;
 	//step 4: Normalize over the diagonal.
 	//NB: Indel row is already done in step 3!
@@ -614,11 +616,12 @@ void table_from_string(float **T, char *key, const int N){
 		for(j=0;j<N;j++)
 			T[i][j] /= (float) abs(sum);
 
+}*/
 
-}
 
 
-int load_table(char *fn,swt *T){
+
+/*int load_table(char *fn,swt *T){
 
 	const int maxl=256;
 	FILE *fp,*fp2;
@@ -644,13 +647,12 @@ int load_table(char *fn,swt *T){
 				break;
 			}
 		}
+
 		if(!found){
 			fclose(fp);
 			printf("No MIS file name found\n");
 			return 1;
 		}
-
-
 
 		if((fp2=fopen(fn2,"r"))!=NULL){
 			found = 0;
@@ -714,11 +716,12 @@ int load_table(char *fn,swt *T){
 		return 4;
 
 	return 5;
-}
+}*/
 
 
 
-int tab_idx(char X, swt *T){
+
+/*int tab_idx(char X, swt *T){
 
 	int i;
 	for(i=0;i<T->N;i++)
@@ -727,19 +730,23 @@ int tab_idx(char X, swt *T){
 
 	printf("ERROR: Code %c (%d) not found in instruction set!\n",X,X);fflush(stdout);
 	return -1;
-}
+}*/
+
+
+
 
 /* FUNCTIONS FOR ADAM NELLIS */
-
+/*
 float score_sw(char *s1, char *s2, swt *swT){
 	align A;
 	//SmithWatermanV2(char *s1, char *s2, align *A, swt *swT, int verbose)
 	SmithWatermanV2(s1,s2,&A,swT,0);
 	return A.score;
 }
+*/
 
 /////////TESTING
-
+/*
 void test_adj(swt *swt){
 	int i,j,ntrials=10;
 	printf("Adjacency matrix:\n");
@@ -763,6 +770,7 @@ void test_adj(swt *swt){
 		printf("\n");
 	}
 }
+*/
 
 
 

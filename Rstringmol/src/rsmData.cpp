@@ -30,14 +30,11 @@ void rsmData::setString1(char *s){
   sprintf(string1,"%s",s);
 }
 
-void rsmData::toFile(char *fn){
+/*void rsmData::toFile(char *fn){
   FILE *fp;
   fp = fopen(fn,"w");
   if(fp == NULL) return;
-
-
-
-}
+}*/
 
 
 rsmData::~rsmData(){
