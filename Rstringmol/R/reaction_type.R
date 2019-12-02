@@ -159,28 +159,53 @@ reaction_typeFP_old <- function(act,
 #' @examples
 #' p <- reaction_type("AAA","NNN")
 reaction_type <- function(act,pas,
-                          result,
-                          conv,
+                          result=NULL,
+                          conv=NULL,
                           verbose = F,
                           detail = F) {
 
 
+  if(is.null(result))
+    result <- runReactionFP(c(act,pas))
+
+
   result$type = "undefined"
 
+  #TODO: it should be possible to remove the "if(act == pas)" statement from the outer loop and nest it more deeply when looking for parasites
   if(act == pas){
     if((result$bprob < 0.0000001) || (result$product == "empty"))
       result$type <- "SelfSelfNoProduct"
-    if(result$product == pas)
-      result$type <- "SelfSelfReplicator"
+    else{
+      if(result$mActive != act || result$mPassive !=pas)
+        result$type <- "Macromutation"
+      else{
+        if(result$product == pas)
+          result$type <- "SelfSelfReplicator"
+        if(result$product != pas && result$product != act)
+          result$type <- "SelfSelfDifferentProduct"
+      }
+    }
   }else{
+    #generate the converse reaction if it isn't supplied:
+    if(is.null(conv))
+      conv <- runReactionFP(c(pas,act))
+
     if((result$bprob < 0.0000001) || (result$product == "empty"))
       result$type <- "NonSelfNoProduct"
-    if(result$product == pas)
-      result$type <- "NonSelfReplicator"
-    if((result$mActive != act ) && (result$mActive != pas))
-      result$type <- "Macromutation"
-    if((result$mPassive != act ) && (result$mPassive != pas))
-      result$type <- "Macromutation"
+    else{
+      if(result$mActive != act || result$mPassive !=pas)
+        result$type <- "Macromutation"
+      else{
+        if(result$product == pas){
+          if(conv$product == act)
+            result$type <- "NonSelfReplicator"
+          else
+            result$type <- "Parasite"
+        }
+        if(result$product != pas && result$product != act)
+          result$type <- "NonSelfDifferentProduct"
+      }
+    }
   }
 
   # for debugging:
