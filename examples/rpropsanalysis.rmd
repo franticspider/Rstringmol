@@ -1,0 +1,72 @@
+---
+title: "Reaction Properties Analysis"
+author: "Simon Hickinbotham"
+date: "05/12/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Introduction
+
+Here we'll go through the observations of the movies and see if we can associate them with reaction properties as identified automatically
+
+# 125x100, block seed
+
+## Run 1 
+
+*pdf file is `smsp_out1n.pdf`, title is "box-box1"*
+
+-   192,000 sudden transition to short replicator at ~ 8s
+-   820,000 longer replicator emerges at ~34s
+- 1,036,000 hypercycles at ~43s (equal length - see species video)
+- 1,445,000 long parasites emerge at ~1:00
+- 1,807,000 jumpers at ~1:15
+
+Looking through the reaction plots:
+
+- 192,000 The transition is really clear (compare pages 9 and 10 of the pdf) but there are more reactions with no product than replicators
+- 820,000 (pages 37-40) shows a jump from l~25 to l~38
+- 1,036,000 (pages 45-49)  hypercycles dominate at this point, but they have been a significant subpopulation since t=200,000
+- 1,445,000 - not *just* long parasites - noproduct and complex reactions also get longer and more numerous. Jumpers also start to emerge at this time
+- 1,807,000 jumpers at ~1:15, but also complex and newproduct reactions around length 80 are doing something really strange
+
+## Run 2
+
+*pdf file is `smsp_out2n.pdf`, title is "box-box2"*
+
+-   290,000 - page 10-15 - hypercycle emerges at 12s
+-   313,000 - page 15 - long period of co-existence of short and long replicator - it is clear that these are distinct populations of replicators, linked by some parasitism. *LOTS* of noproduct reactions - why? and how?
+-   867,000 - page 44-46 - jumpers at 36s - not a particularly large population (cf run 1)
+- 1,156,000 - page 65 - arena flood at 48s - short parasites disappear for a while, and there's a huge increase in replicators - as described in emails around sept/oct. 
+
+## Run 3
+
+*pdf file is `smsp_out3n.pdf`, title is "box-box3"*
+
+- page 3-36 - long period of co-existence of short and long replicator
+- page 37- - long period of short replicator with parasites - hypercycles here
+- page 75 - 1,397,000 jumpers at 0:58 - not as well established - transient pulses indicate this is a side reaction?
+- page 75-79 - 1,638,000 flood at 1:08 - increase in parasitic, noProduct and complex reaction types, approx 1/3 of replicators are hypercycles. 
+
+## Run 5 
+
+*pdf file is `smsp_out5n.pdf`, title is "box-box5"*
+
+
+
+
+
+# Things to do:
+
+- It's be nice to figure out the 'ecology' of a dominant spp with a particular property (esp. jumpers) to see how they get their advantage. 
+
+
+
+
+
+
+
