@@ -86,6 +86,10 @@ void 	free_swlist(s_sw **head);
 enum sw_subs{swMATCH=1,swDEL=2,swINS=3};
 
 
+
+
+
+// Alignment functions
 int LongestCommonSubsequence(char *s1, char *s2);
 
 int SmithWaterman(char *s1, char *s2, align *A, swt *T, int verbose);
@@ -112,6 +116,13 @@ float score_sw(char *s1, char *s2, swt *swT);
 
 //Create a default Blosum table with the "ALXII" values - this will be used if no alternative in the config
 swt * default_table();
+
+/* GUT functions for calling from other alignment strategies */
+float wT(int a, int b,swt *T);
+
+//Print functions
+void print_header(char *s2,int l2);
+void print_Hrow(char ic,float *H,int l2);
 
 
 /*TESTING:*/
