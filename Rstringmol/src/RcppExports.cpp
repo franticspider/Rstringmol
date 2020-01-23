@@ -16,6 +16,31 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// doComplement
+Rcpp::String doComplement(Rcpp::String input, bool verbose);
+RcppExport SEXP _Rstringmol_doComplement(SEXP inputSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::String >::type input(inputSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(doComplement(input, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// doSWAlign
+List doSWAlign(Rcpp::StringVector seqVector, bool strip, bool verbose);
+RcppExport SEXP _Rstringmol_doSWAlign(SEXP seqVectorSEXP, SEXP stripSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::StringVector >::type seqVector(seqVectorSEXP);
+    Rcpp::traits::input_parameter< bool >::type strip(stripSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(doSWAlign(seqVector, strip, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
 // doReaction
 List doReaction(Rcpp::StringVector seqVector, bool verbose);
 RcppExport SEXP _Rstringmol_doReaction(SEXP seqVectorSEXP, SEXP verboseSEXP) {
@@ -43,6 +68,8 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_Rstringmol_timesTwelve", (DL_FUNC) &_Rstringmol_timesTwelve, 1},
+    {"_Rstringmol_doComplement", (DL_FUNC) &_Rstringmol_doComplement, 2},
+    {"_Rstringmol_doSWAlign", (DL_FUNC) &_Rstringmol_doSWAlign, 3},
     {"_Rstringmol_doReaction", (DL_FUNC) &_Rstringmol_doReaction, 2},
     {"_Rstringmol_doReactionFP", (DL_FUNC) &_Rstringmol_doReactionFP, 3},
     {NULL, NULL, 0}

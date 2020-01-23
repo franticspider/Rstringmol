@@ -41,10 +41,17 @@ vignettes/*.pdf
 # Shiny token, see https://shiny.rstudio.com/articles/shinyapps.html
 rsconnect/
 
-# html files in examples folder
+# html, pdf and dat files in examples folder
 examples/*.html
 examples/*.pdf
+examples/*.dat
+examples/*.txt
+
+# pdf files in Rstringmol folder
+Rstringmol/*.pdf
 
 #object files in withoutR:
 withoutR/*.o
 withoutR/stst
+
+

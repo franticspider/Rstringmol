@@ -4,7 +4,8 @@
 \alias{reaction_type}
 \title{Determine the type of stringmol reaction}
 \usage{
-reaction_type(act, pas, verbose = F, detail = F, FP = T)
+reaction_type(act, pas, result = NULL, conv = NULL, verbose = F,
+  detail = F)
 }
 \arguments{
 \item{act}{the active stringmol}

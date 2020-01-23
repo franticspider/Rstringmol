@@ -1,4 +1,6 @@
 #include <Rcpp.h>
+#include <string.h>
+
 using namespace Rcpp;
 
 //Error codes
@@ -22,6 +24,7 @@ using namespace Rcpp;
 
 #include "rsmData.h"
 
+#include "sw_strip.h"
 
 //set in stringPM.cpp
 const unsigned int maxl = 2000;
@@ -39,7 +42,7 @@ int     cleave(s_ag *act,s_ag **nexthead);
 s_ag *  make_ag(int alab, int agct = 0);
 s_ag *  make_mol(std::string seq);
 float   get_bprob(align *sw);
-float   get_sw(s_ag *a1, s_ag *a2, align *sw, swt *blosum);
+float   get_sw(s_ag *a1, s_ag *a2, align *sw, swt *blosum, bool usestrip);
 bool    set_exec(s_ag *A, s_ag *B, align *sw);
 int     unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp *pp);
 bool    exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead);
@@ -598,43 +601,22 @@ float get_bprob(align *sw){
 
 
 //float stringPM::get_sw(s_ag *a1, s_ag *a2, align *sw){
-float             get_sw(s_ag *a1, s_ag *a2, align *sw, swt *blosum){//}, s_sw *swlist){
+//This is to be replaced with get_sw_stip()!
+float             get_sw(s_ag *a1, s_ag *a2, align *sw, swt *blosum, bool useStrip = false, bool verbose = false){  //}, s_sw *swlist){
 
   float bprob;
   char *comp;
-  s_sw *swa;
 
-  //SUGGEST: pass in pointer to the species - not its index
-  //this attempts to load a cached sw alignment - which won't happen here!
-  //swa = read_sw(swlist,a1->spp->spp,a2->spp->spp);
-  swa = NULL;
+  comp = string_comp(a1->S);
 
-  if(swa==NULL){
+  if(useStrip)
+    bprob = SmithWatermanStrip(comp,a2->S,sw,blosum,verbose);
+  else
+    bprob = SmithWatermanV2(comp,a2->S,sw,blosum,verbose);
 
-    //get_string_comp(a1);
-    comp = string_comp(a1->S);
-
-    bprob = SmithWatermanV2(comp,a2->S,sw,blosum,0);
-    //bprob = SmithWaterman(comp,a2->S,sw,blosum,0);
-
-    free(comp);
-
-    align sw2;
-
-    bprob = SmithWatermanV2(a1->S,a2->S,&sw2,blosum,0);
-
-    //TODO: SUGGEST: pass in pointer to the species - not its index
-    //store_sw(&swlist,sw,a1->spp->spp,a2->spp->spp);
-  }
-  else{
-    load_sw(swa,sw);
-  }
+  free(comp);
 
   bprob = get_bprob(sw);
-
-  //if(verbose_bind){
-  //  printf("Alignment:\nm1: %d to %d\nm2: %d to %d\nscore = %f\nProb = %f = %E\n",sw->s1,sw->e1,sw->s2,sw->e2,sw->score,bprob,bprob);
-  //}
 
   return bprob;
 }
@@ -1025,6 +1007,144 @@ void free_swt(swt *table){
 
 
 
+
+
+/****************************************
+ Procedure: doComplement
+ *****************************************/
+//' Carry out a Smith-Waterman alignment
+//'
+//' @param input the input string (Assume error checking in R...)
+//' @param verbose whether to print output or not
+//' @export
+// [[Rcpp::export]]
+Rcpp::String doComplement(Rcpp::String input, bool verbose = false) {
+
+  Rprintf("Inside doCmplement\n");
+
+  std::string string0 = input.get_cstring();
+
+  char *instr,*comp;
+
+  instr = (char *) malloc(maxl0*sizeof(char));
+  memset(instr,0,maxl0*sizeof(char));
+
+  strncpy(instr,string0.c_str(),strlen(string0.c_str()));
+
+  comp = string_comp(instr);
+
+  free(instr);
+
+  Rcpp::String output(comp);
+  return(output);
+
+}
+
+
+
+
+
+
+/****************************************
+ Procedure: doSWAlign
+ *****************************************/
+//' Carry out a Smith-Waterman alignment
+//'
+//' @param seqVector the sequence of the two strings, active first, then passive.
+//' @export
+// [[Rcpp::export]]
+List doSWAlign(Rcpp::StringVector seqVector, bool strip = false, bool verbose = false) {
+
+  Rprintf("Inside doSWAlign\n");
+  s_ag *m0,*m1;
+
+  align sw;
+  swt	*blosum;
+  blosum = NULL;
+
+  /*
+   int match;		// the number of matching characters.
+   float score; 	// the score of the match
+   float prob;		// the probability of the match - used for determining events based on the score/match
+   int s1;			// start of the match in string 1
+   int e1;			// end of the match in string 1
+   int s2;			// start of the match in string 2
+   int e2;			// end of the match in string 2
+   */
+
+  List Lresult = List::create(_["status"] = ((String) "none"),
+                              _["match"] = 0,
+                              _["score"] = 0.0,
+                              _["prob"] =  0.0,
+                              _["s1"] = -1,
+                              _["e1"] = -1,
+                              _["s2"] = -1,
+                              _["e2"] = -1,
+                              _["bprob"] = 0.0
+  );
+  if(seqVector.length() != 2){
+    Rprintf("ERROR: 2 stringmols required, %d given\n",seqVector.length());
+    Lresult["status"] = ((String) "bad number of input strings");
+    Lresult["errcode"] = SM_ERR_BADNSTRINGS;
+
+    return Lresult;
+  }
+
+  blosum =  default_table();
+
+  std::string string0 = Rcpp::as<std::string>(seqVector[0]);
+  std::string string1 = Rcpp::as<std::string>(seqVector[1]);
+
+
+  //create the agents from the strings
+  /* To Do this, we need to call 'make_ag' which is a function of the StringPM class
+   * However, this function should be moved!
+   * So for now, we'll copy the function into the code and just give a warning
+   */
+  m0 = make_mol(string0.c_str());
+  m1 = make_mol(string1.c_str());
+
+  if(verbose){
+    Rprintf("Mol 0 has seq %s and length %d\n",m0->S,m0->len);
+    Rprintf("Mol 1 has seq %s and length %d\n",m1->S,m1->len);
+  }
+
+  //Do the equivalent of stringPM::testbind():
+  //run get_sw() to get bind prob - see stringPM::testbind()
+  //Carries out the Smith-Waterman alignment and gets the binding probability
+  float bprob = get_sw(m0,m1,&sw,blosum,strip,verbose);
+  if(verbose)
+    Rprintf("Bind probability for these molecules is %f\n",bprob);
+
+  Lresult["bprob"] = (bprob);
+
+  Lresult["status"] = ((String) "Aligned");
+  Lresult["match"] = sw.match;
+  Lresult["score"] = sw.score;
+  Lresult["prob"] =  sw.prob;
+  Lresult["s1"] = sw.s1;
+  Lresult["e1"] = sw.e1;
+  Lresult["s2"] = sw.s2;
+  Lresult["e2"] = sw.e2;
+
+
+  /* Clean up and return */
+
+  //Tidy up the memory:
+  free_ag(m0);
+  free_ag(m1);
+
+  //align sw; (no pointers in this, so assume it doesn't need deallocating)
+  //swt	*blosum;
+  free_swt(blosum);
+
+  return Lresult;
+}
+
+
+
+
+
 /****************************************
 Procedure: doReaction
 *****************************************/
@@ -1046,17 +1166,17 @@ List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
 
 
   List Lresult = List::create(_["product"] = "empty",
-                                          _["status"] = ((String) "none"),
-                                          _["bprob"] = 0.0,
-                                          _["count"] = 0,
-                                          _["m0status"] = -1,
-                                          _["m1status"] = -1,
-                                          _["mActive"] = ((String)"unset"),
-                                          _["mPassive"] = ((String)"unset"),
-                                          _["errcode"] = 0,
+            _["status"] = ((String) "none"),
+            _["bprob"] = 0.0,
+            _["count"] = 0,
+            _["m0status"] = -1,
+            _["m1status"] = -1,
+            _["mActive"] = ((String)"unset"),
+            _["mPassive"] = ((String)"unset"),
+            _["errcode"] = 0,
 					  _["deterministicBind"] = false,
 					  _["deterministicExec"] = true,
-					  _["product"] = ((String) "") 
+					  _["product"] = ((String) "")
 				);
   if(seqVector.length() != 2){
     Rprintf("ERROR: 2 stringmols required, %d given\n",seqVector.length());
