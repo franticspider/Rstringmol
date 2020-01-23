@@ -24,6 +24,9 @@
 #include <string.h>
 #include <math.h>
 
+//todo - use an ifdef to handle Rcpp includes
+#include <Rcpp.h>
+
 #include "randutil.h"
 
 #include "alignment.h"
@@ -77,9 +80,31 @@ int load_sw(s_sw *b, align *sw){
 
 
 ////////////////////////////////////////////////////////////////////////////////////
+// Print functions
+
+
+void print_header(char *s2,int l2){
+  Rprintf("\t");
+  for(int j=0;j<l2;j++){
+    Rprintf("\t%c",s2[j]);
+  }
+  Rprintf("\n");
+}
 
 
 
+void print_Hrow(char ic,float *H,int l2){  //s1[i-1],H[i],l2);
+
+  Rprintf("\t%c",ic);
+  for(int j=0;j<l2;j++){
+    Rprintf("\t%0.1f",H[j]);
+  }
+  Rprintf("\n");
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////
 
 int swt_index(int c,swt *T){
 	int i = 0;
@@ -330,6 +355,8 @@ int SmithWatermanV2(char *s1, char *s2, align *A, swt *swT, int verbose){
 		memset(T[i],0,(l2+1)*sizeof(  int));
 	}
 
+  if(verbose)
+    print_header(s2,l2);
 
 	//Populate H
 	for(i=1;i<=l1;i++){
@@ -369,6 +396,9 @@ int SmithWatermanV2(char *s1, char *s2, align *A, swt *swT, int verbose){
 				endj = j;
 			}
 		}
+
+		if(verbose)
+		  print_Hrow(s1[i-1],&(H[i][1]),l2);
 	}
 
 	//OK - now we know the max score and the end posn. Need to track back from the end...

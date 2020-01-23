@@ -5,6 +5,23 @@ timesTwelve <- function(x) {
     .Call(`_Rstringmol_timesTwelve`, x)
 }
 
+#' Carry out a Smith-Waterman alignment
+#'
+#' @param input the input string (Assume error checking in R...)
+#' @param verbose whether to print output or not
+#' @export
+doComplement <- function(input, verbose = FALSE) {
+    .Call(`_Rstringmol_doComplement`, input, verbose)
+}
+
+#' Carry out a Smith-Waterman alignment
+#'
+#' @param seqVector the sequence of the two strings, active first, then passive.
+#' @export
+doSWAlign <- function(seqVector, strip = FALSE, verbose = FALSE) {
+    .Call(`_Rstringmol_doSWAlign`, seqVector, strip, verbose)
+}
+
 #' React 2 stringmols together - determine whether the run is deterministic or not
 #'
 #' @param seqVector the sequence of the two strings, active first, then passive.

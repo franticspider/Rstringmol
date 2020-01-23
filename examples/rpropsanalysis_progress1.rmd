@@ -1,0 +1,92 @@
+---
+title: "Reaction Properties Analysis"
+author: "Simon Hickinbotham"
+date: "05/12/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Introduction
+
+We've spent a long time trying to find ways to understand what is going on in these trials both at the level of the actual reaction program itself and in terms of the properties of the reaction. Our aim was to understand the 'flood' events, and on the way explain other observed examples of rich behaviour. All this adds to the main theme of our paper - parasitism, properly considered, is a fundamental driver of complexity in automata-RP systems. This is quite a move away from our initial observations in evoevo that adding space to an RP system increases its stability.
+
+Here we'll go through the observations of the movies and see if we can associate them with reaction properties as identified automatically. We'll do this for one of the 'flood' runs for now - otherwise there's too much data to get through in one document. Once we are happy with the explanation, we'll move on to the other trials. 
+
+## Pairwise reaction plots
+
+*Insert desrcription of the plots from emails here*
+
+## Network reaction plots
+
+I've used R's network plotting package to generate network plots. These need a bit of work to keep the positions of the nodes constant from page to page for example, and to make the edges clearer. 
+
+Since we are trying to understand replication, I'm only plotting molecules that are involved in replicator reactions at the moment. 
+
+In each plot:
+
+- Node size is also related to population size, but this isn't clear yet
+- Edge width is related to reaction frequency, but this looks ridiculous where there is a high number of reactions
+- Blue nodes are observed in the act of self-replication in this timestep (although they can also be involved in replicator reactions)
+- Red nodes are *only* replicators - the aren't observed doing self replication in this timestep
+- Blue edges are Replicator reactions here he arrow point *towards* the entity being replicated, so $A \rightarrow B$ indicates that A is copying B
+- Edges always point from active to passive - but this has different meaning depending on the reaction.
+- Green edges are Self-replicator reactions. These are always seen as "loops" in the plots
+- Red edges are Auto-replicator reactions. I need to investigate these - Active copies Active - so the arrow points to the thing that *isn't* copied here. 
+- Pink edges are Jumper reactions. 
+
+Shortcomings:
+
+- Node numbers aren't consistent to molecule  sequence from page together - the number indicates the rank in terms of population size
+- Overlapping nodes and edges are a problem
+- I need to figure out how to fix node positions from page to page 
+- sometimes the layout engine collapses all the points to a corner with large graphs. 
+
+
+
+
+# Run 1 125x100, 'block' seed
+
+## Movie
+
+Here's the movie for this trial - it's worth looking through this again before reading on. 
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/UxZ3c6NDEe4" frameborder="0" allowfullscreen></iframe>
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/WuAv_-iipec" frameborder="0" allowfullscreen></iframe>
+
+Observations made about the movie are as follows - timesteps are provided for reference
+
+-   192,000 sudden transition to short replicator at ~ 8s
+-   820,000 longer replicator emerges at ~34s
+- 1,036,000 hypercycles at ~43s (equal length - see species video)
+- 1,445,000 long parasites emerge at ~1:00
+- 1,807,000 jumpers at ~1:15
+
+This is nice because these phenomena are all seen at 
+
+## "Pairwise" reaction plots
+
+Looking through the reaction plots:
+
+*pariwise pdf file is `smsp_out1n.pdf`, title is "box-box1"*
+
+- 192,000 (page 9-10) sudden transition to short replicator: The transition to short self-replicators is shown on the fifth row - there's big difference in the length of replicators between page 9-10. The new, short replicator is less than 30 opcodes long. Note that there this shift to long replicators also happens to non-self replicators, as shown in the fourth row. After this (from page 11 onwards) there are more recations with no product than replicator reactions - this is mainly due to parasites now binding to each other, but making no new molecules. 
+- 820,000 (pages 37-45) shows a jump from l~25 to l~38, but also a marked increase in long, complex reactions
+- 1,036,000 (pages 45-49)  Self-replicators go into decline during this period, as hypercycles emerge. Extinct after. 
+- 1,445,000 (page 72 onwards) - not *just* long parasites - noproduct and complex reactions also get longer and more numerous. Jumpers also start to emerge at this time.
+- 1,807,000 (page 90) jumpers at ~1:15, but also complex and newproduct reactions around length 80 are doing something really strange
+
+## "Network" reaction plots
+
+*network pdf file is "csmsp_out1net.pdf", which only shows the replicator reaction types plus jumpers. For all reactions, see "csmsp_out1netall.pdf" -- it's harder to see any detail in this plot!*
+
+
+- 192,000 (page 10) The transition is really clear (compare pages 9 and 10 of the pdf), but the network properties change dramatically - from realatively isolated self-replicating nodes to 
+- 820,000 (pages 37-45) You can see the new population - two sub-networks connected by a single link between two self-replicators. These networks merge into one (p42, t=840,000) *before* the short self-replicator dies out. by p46 we have 4 or 5 numerous long self-replicators.   
+- 1,036,000 (pages 45-49)  The hypercycles are not isolated from each other - instead we have a complex system of mututal replication (there are some isolated pairs of mutual replicators also)
+- 1,445,000 (page 72 onwards) - The network shows a rich set of inter-related behaviours: for example node 060 (the topmost blue node on page 72), is blue, indicating it's  a self-replicator. The pink loop indicates that it is a jumper. So self-self jumper reactions are being classed as replicator reactions because (technically) a new molecule *is* produced, even though one of the parents is destroyed in the reaction. Some of these are isolated, but many are parasitising other replicators that are deeply enmeshed with other replicators. Hard to describe this concisely!
+- 1,807,000 (page 90) This is a clearer picture of the dynamics just described. It might be worth investigating this timestep more deeply - but we've not even got to the floods yet!

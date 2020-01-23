@@ -1,6 +1,9 @@
 
 ##TODO: Rename this function - it simply loads the file...!
 ##      - see rconf_stats for better analysis
+
+#' Try to make a master list of all 'seen' species, handling issues with stringmol logging over restarts.
+#'
 #' @param fn the file name of the species list
 #' @param tmin the start time
 #' @param verbose messages or not

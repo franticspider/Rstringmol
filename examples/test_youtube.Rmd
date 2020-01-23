@@ -137,8 +137,8 @@ These are indicated by the yellow colour in the 'length' plot, bottom left. It i
 
 
 
-<iframe width="400" height="500" src="https://www.youtube.com/embed/qzMC4aN7SRg" frameborder="0"  allowfullscreen></iframe>
 <iframe width="400" height="500" src="https://www.youtube.com/embed/R2DbrIDl-og" frameborder="0"  allowfullscreen></iframe>
+<iframe width="400" height="500" src="https://www.youtube.com/embed/qzMC4aN7SRg" frameborder="0"  allowfullscreen></iframe>
 
 
 #### *possible hypercycle at 12s* ; *long period of co-existence of short and long replicator from t=300,000 to 420,000*

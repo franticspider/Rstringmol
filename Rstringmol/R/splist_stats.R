@@ -1,6 +1,9 @@
 
 ##TODO: Rename this function - it simply loads the file...!
 ##      - see rconf_stats for better analysis
+
+#' Load a splist file and format the data
+#'
 #' @param fn the file name of the species list
 #' @param tmin the start time
 #' @param verbose messages or not
