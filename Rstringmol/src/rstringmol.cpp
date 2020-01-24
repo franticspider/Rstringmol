@@ -1055,7 +1055,9 @@ Rcpp::String doComplement(Rcpp::String input, bool verbose = false) {
 // [[Rcpp::export]]
 List doSWAlign(Rcpp::StringVector seqVector, bool strip = false, bool verbose = false) {
 
-  Rprintf("Inside doSWAlign\n");
+  if(verbose)
+    Rprintf("Inside doSWAlign\n");
+
   s_ag *m0,*m1;
 
   align sw;
@@ -1113,8 +1115,13 @@ List doSWAlign(Rcpp::StringVector seqVector, bool strip = false, bool verbose = 
   //run get_sw() to get bind prob - see stringPM::testbind()
   //Carries out the Smith-Waterman alignment and gets the binding probability
   float bprob = get_sw(m0,m1,&sw,blosum,strip,verbose);
-  if(verbose)
+  if(verbose){
     Rprintf("Bind probability for these molecules is %f\n",bprob);
+    Rprintf("Match runs from (i,j) %d,%d to %d,%d\n",sw.s1,sw.s2,sw.e1,sw.e2);
+    Rprintf("Match, Score and Prob values are %d, %0.3f and %0.3f respectively\n",sw.match,sw.score,sw.prob);
+  }
+
+
 
   Lresult["bprob"] = (bprob);
 
