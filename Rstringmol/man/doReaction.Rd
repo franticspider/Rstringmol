@@ -4,7 +4,7 @@
 \alias{doReaction}
 \title{React 2 stringmols together - determine whether the run is deterministic or not}
 \usage{
-doReaction(seqVector, verbose = FALSE)
+doReaction(seqVector, verbose = FALSE, climit = 1000L)
 }
 \arguments{
 \item{seqVector}{the sequence of the two strings, active first, then passive.}

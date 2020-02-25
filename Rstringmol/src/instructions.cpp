@@ -107,8 +107,9 @@ char * HSearch(char *iptr, char *sp, swt *T, int *itog, int *ftog,const int maxl
 	//SmithWaterman(tmp,sp,&A,T,0);
 	float bprob = SmithWatermanV2(tmp,sp,&A,T,0);
 
-	//TODO: this will always match if any symbols match. There is no stochastic element..
 #ifndef SOFT_SEARCH
+	//TODO: this will always match if any symbols match. There is no stochastic element..
+	//match will only be zero if NO symbols match
 	if(A.match)
 #else
 	int l = A.e1-A.s1 < A.e2-A.s2 ? A.e1-A.s1 : A.e2-A.s2;
@@ -147,7 +148,7 @@ char * IfLabel(char *ip, char *rp, char *sp, swt *T, const int maxl, float *ipro
 	int i,len = LabLength(ip, maxl);
 	ip++;
 	align A;
- 
+
         align_init(&A);
 
 	switch(len){

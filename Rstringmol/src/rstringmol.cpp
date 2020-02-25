@@ -515,7 +515,8 @@ int free_ag(s_ag *pag){
 
 
 
-/* TODO: Move this outside stringPM..
+/* TODO: Declare 's_ag' without using malloc - need to modify the struct to do this!
+ *
  * Create an 'agent', which is a string 'molecule'
  * NB: The string is not allocated here - done outside the function
  *
@@ -1160,7 +1161,7 @@ Procedure: doReaction
 //' @param seqVector the sequence of the two strings, active first, then passive.
 //' @export
 // [[Rcpp::export]]
-List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
+List doReaction(Rcpp::StringVector seqVector, bool verbose = false, const int climit = 1000) {
 
   s_ag *m0,*m1;
 
@@ -1230,7 +1231,7 @@ List doReaction(Rcpp::StringVector seqVector, bool verbose = false) {
   Lresult["m1status"] = ((int) m1->status);
 
   int count = 0;
-  const int climit = 1000;
+  //const int climit = 1000;
   //run exec_setp until the reactants dissassociate
 
   bool NDStep = false;
