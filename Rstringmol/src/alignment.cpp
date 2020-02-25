@@ -1011,15 +1011,3 @@ swt * default_table(){
 
 	return table;
 }
-
-
-
-
-
-
-
-
-
-
-
-
