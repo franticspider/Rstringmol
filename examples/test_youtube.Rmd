@@ -98,7 +98,7 @@ The plot for t=200,000 shows the structure of a typical wave event that happens 
 - Parasites get better at losing their self-self binding characteristics, so the trailing edge loses its greyness and turns red. 
 
 
-![short replicators at t=200,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000010.png)
+[short replicators at t=200,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000010.png)
 
 
 #### *longer replicator emerges at ~34s (t=800,000)*
@@ -111,14 +111,14 @@ The plot for t=200,000 shows the structure of a typical wave event that happens 
 - A new short replicator emerges which contains the same 'ratio' strategy. 
 
 
-![longer replicators at t=800,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000041.png)
+[longer replicators at t=800,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000041.png)
 
 
 #### *hypercycles at ~43s (t=1,000,000)* (equal length - see species video)
 
 Hypercycles dominate at this point - hence the rise of non-self replicators. 
 
-![Hypercycles at t=1,000,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000050.png)
+[Hypercycles at t=1,000,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000050.png)
 
 
 
@@ -126,7 +126,7 @@ Hypercycles dominate at this point - hence the rise of non-self replicators.
 
 These are indicated by the yellow colour in the 'length' plot, bottom left. It is quite difficult to ascertain whether there principle mode of operation is parasitic, as the reaction colouring seems to suggest a variety of different stratigies, and possibly a set of different species at different lengths. Indeed, some of these longer species are 'jumpers' as well! - this is a ripe candidate for explanation in the paper!
 
-![long parasites at t=1,560,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000078.png)
+[long parasites at t=1,560,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000078.png)
 
 
 
@@ -144,11 +144,11 @@ These are indicated by the yellow colour in the 'length' plot, bottom left. It i
 #### *possible hypercycle at 12s* ; *long period of co-existence of short and long replicator from t=300,000 to 420,000*
 
 
-![short/long replicator coexistence at t=320,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out2R/rtypes0000016.png)
+[short/long replicator coexistence at t=320,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out2R/rtypes0000016.png)
 
 
 #### *jumpers at 36s, t=880,000*
-![short/long replicator coexistence at t=320,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out2R/rtypes0000044.png)
+[short/long replicator coexistence at t=320,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out2R/rtypes0000044.png)
 
 
 #### *arena flood at 48s
@@ -156,7 +156,7 @@ These are indicated by the yellow colour in the 'length' plot, bottom left. It i
 
 Note a 'ring' of parasites also occurring in this
 
-![arena flood at t=1,160,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out2R/rtypes0000068.png)
+[arena flood at t=1,160,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out2R/rtypes0000068.png)
 
 ###run 3
 
@@ -165,28 +165,28 @@ Note a 'ring' of parasites also occurring in this
 
 #### *long period of co-existence of short and long replicator, t=70,000 to 720,000*
 
-![short and long replicator, t=70,000 to 720,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000018.png)
+[short and long replicator, t=70,000 to 720,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000018.png)
 
 #### *long period of short replicator with parasites, t=740,000 to 1,500,000; jumpers at 0:58*
 
-![short replicator and jumper](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000071.png)
+[short replicator and jumper](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000071.png)
 #### *flood at 1:08 - t = 1,520,000 after emergence of long replicator*
 
 
-![short and long replicator, t=70,000 to 720,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000076.png)
+[short and long replicator, t=70,000 to 720,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000076.png)
 
 
 
 
 
-###run 4
+### run 4
 
 - *extinction at t ~= 20 000*
 
 <iframe width="400" height="500" src="https://www.youtube.com/embed/J7acWGHluHo" frameborder="0" allowfullscreen></iframe><iframe  width="400" height="500" src="https://www.youtube.com/embed/kgdbIM8fdFU" frameborder="0" allowfullscreen></iframe>
 
 
-###run 5 
+### run 5 
 
 - jumpers at 0:10s
 - flood at 0:24s
@@ -196,24 +196,24 @@ Note a 'ring' of parasites also occurring in this
 
 #### Flood
 
-![flood](/home/sjh/Desktop/paulien/smsp/1705smsp/out5R/rtypes0000028.png)
+[flood](/home/sjh/Desktop/paulien/smsp/1705smsp/out5R/rtypes0000028.png)
 
 #### Jumpers
 
-![jumper](/home/sjh/Desktop/paulien/smsp/1705smsp/out5R/rtypes0000038.png)
+[jumper](/home/sjh/Desktop/paulien/smsp/1705smsp/out5R/rtypes0000038.png)
 
 ---
 
 ##125x100, random seed
 
-###run 1
+### run 1
 
 - *extinction at t ~= 90 000*
 
 
 <iframe  width="400" height="500" src="https://www.youtube.com/embed/Z0G_KV9Q8yc" frameborder="0"  allowfullscreen></iframe><iframe  width="400" height="500" src="https://www.youtube.com/embed/dKdyzjv6lWI" frameborder="0" allowfullscreen></iframe>
 
-###run 2
+### run 2
 
 - *not extinct*
 - jumpers at 0:28s
@@ -223,7 +223,7 @@ Note a 'ring' of parasites also occurring in this
 </iframe><iframe  width="400" height="500" src="https://www.youtube.com/embed/Eieme6UgmXc" frameborder="0" allowfullscreen></iframe>
 
 
-###run 3
+### run 3
 
 - *not extinct*
 - hypercycles at 0:15s

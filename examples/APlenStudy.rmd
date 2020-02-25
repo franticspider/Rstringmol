@@ -1,0 +1,286 @@
+---
+title: "Length differences"
+author: "Simon Hickinbotham"
+date: "24/02/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<style type="text/css">
+.main-container {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+# Answering Paulien's question:  "How can there be a large difference between the length of the passive and active string of a replicator interaction???"
+
+Firslty, let's get the 'big picture' - when does this happen and how often. Here's a plot of active length vs passive length for the two runs I shared details of last week. On the left is the run with 'block' initialisation and on the right is the run with 'random pair' initialisation:
+
+
+```{r echo=FALSE, fig.height=6, fig.width=12}
+
+load("rp1705smsp3.RData")
+
+par(mfrow=c(1,2))
+
+col <- rainbow(n=length(rundata)+10)
+plot(NA,xlab="Active length", ylab = "Passive length",xlim=c(0,200),ylim=c(0,200),main="box-box 3")
+  segments(x0=0,y0=0,x1=200,y1=200)
+  segments(x0=0,y0=0,x1=200,y1=100)
+  segments(x0=0,y0=0,x1=100,y1=200)
+  segments(x0=65,y0=0,x1=65,y1=200,col="red")
+for(rr in 1:length(rundata)){
+  pr <- rundata[[rr]]
+  pr <- pr[pr$pp_Replicator,]
+  points(x=pr$actlen,y=pr$paslen,pch=19,cex=0.2+(0.5 * log(pr$nobs)),col=col[rr])
+}
+br <- pr
+  
+  
+load("rp1705smspr3.RData")
+  
+col <- rainbow(n=length(rundata)+ 10)
+plot(NA,xlab="Active length", ylab = "Passive length",xlim=c(0,200),ylim=c(0,200),main="box-rand 3")
+  segments(x0=0,y0=0,x1=200,y1=200)
+  segments(x0=0,y0=0,x1=200,y1=100)
+  segments(x0=0,y0=0,x1=100,y1=200)
+  segments(x0=65,y0=0,x1=65,y1=200,col="red")
+for(rr in 1:length(rundata)){
+  pr <- rundata[[rr]]
+  pr <- pr[pr$pp_Replicator,]
+  points(x=pr$actlen,y=pr$paslen,pch=19,cex=0.2+(0.5 * log(pr$nobs)),col=col[rr])
+}
+```
+
+There's a lot of data in these plots, so let me take a few bullet points to explian
+
+- Each plot shows *every* observed replicator reaction in the *entire* run (but more recent reactions overlap older ones)
+- The "rainbow" colouring goes from red for t=20000 through orange, yellow, green, blue indigo violet until t=2m. 
+- The size of the dot is propotional to the log of the number of observations of a particular reaction
+- The three black lines indicate some ratios between length. Clockwise from y axis, we have passive len == 2* active len, then passive len == active len, then passive len = 0.5 * active len
+- The vertical red line indicates the original replicator length. If you look closely around this line you can see the original replicators in red, overlaid with other colours of the rainbow as we go through the time series, with sudden jumps to smaller values of Active Length as the run progresses. 
+- You can also see that the replicator will replicate a range of different Passive lengths, but it is striking how the later runs (in blue and violet) have some much longer passive molecules - which is what Paulien was asking about. 
+
+Now we've understood the plots - let's notice some key points about the data: 
+
+- The runs are *strikingly* different - even though the only difference is the initialisation: block on the left, random on the right, but because the latter engenders hypercycles early on, the repercussions last right through the run. 
+- box-box3 has: 
+    - slightly shorter actives - faster replicators; 
+    - groups of reactions along both 2:1 ratio lines (mutual replication I'd guess); 
+    - a longer 'tail' of long passives (bigger vertical distribution of purple points);
+- box-rand3 has:
+    - distinct size groups at different times, especially later;
+    - bigger numbers of long passives just above the 2:1 p:a ratio
+
+## Sequences
+
+We've got the actual sequecnes for these reactions, so let's take a look at the long ones, sorted by the number of occurrences. We'll focus on the final log file, at `t=2m` for now, but may need to look at other values of `t`. 
+It's hard to format a table for these, but in the below, "N" is the number of observations, "Hcyl" is whether the reaction has the hypercycle property, "Par" is whether the reaction has the parasitic property. The final column has the Active sequence above the Passive sequence, so we can fit the sequence into the table 
+
+### box-box3
+
+```{r echo=FALSE}
+load("rp1705smsp3.RData")
+br <- rundata[[length(rundata)]]
+br <- br[br$pp_Replicator,]
+lr <- br[br$paslen > (2*br$actlen),]
+lr <- lr[order(lr$nobs,decreasing = T),]
+#kable(lr)
+message("N\tHcyl\tPar\t\tACTIVE (above) PASSIVE (below) SEQUENCE\n")
+message(sprintf("%d\t%s\t%s\t%s\n\t\t\t\t\t\t%s\n",lr$nobs,lr$np_Hypercycle,lr$np_Parasite,lr$actseq,lr$passeq))
+```
+
+some observations on this table:
+
+- all the reactions are parasitic, and they will place a heavy burden on the replicator, consuming a lot of the time it has to copy itself before being destroyed. 
+- The number of observations of each reaction is always 1 - meaning that these are one-off 
+- These molecules have a common sequence `$=?>$` which is (usually) the bind site for these molecules (Note that where there are multiple instances of a dominant bind sequence, the bind *always* happens at the first instance -- and this run seems to have exploited that)
+- The passive molecules seem to mostly consist of repeats of the active one, apart from instances where they are repeats of a single opcode such as `$` or `^`
+
+
+
+
+Let's see if we can trace the origins of these long molecules now. The reactions that produced these molecules must have happend just before t=2m, so we need to search the species list for them. 
+We can recreate these reactions and find their properties using this code 
+
+
+```{r include=FALSE}
+time = 2000000
+
+seq = "$=?>$DVB^A$=CAB^B$=?>$VBO%NHOB$=?>$=?$EPZUB^BX$=?>$ABO%}HOB$=?>$DVB^Z$=CAB^B$=?>$VBO%NHOB$=?>$DVB^Z$=CAB^B$=?>$VBO%NHOB$=?>$DVB^Z$=CAB^B$=?>$VBO%NHOB$=?>$DVB^Z$=CAB^B$=?>$VBO%NHOB"
+#load("rp1705smsp3.RData")
+for(rr in seq(length(rundata),1,-1)){
+  pr <- rundata[[rr]]
+  sr <- pr[pr$product == seq,]
+  if(nrow(sr)>0)
+    message(sprintf("%d: Found %d reactions with seq as product",time,nrow(sr)))
+  time = time - 20000
+}
+```
+
+
+```{r echo = TRUE, message=FALSE, warning=FALSE, include=FALSE}
+require(Rstringmol)
+spl <- splist_stats("~/Desktop/paulien/smsp/1705smsp/out3/splist2000000.dat",0,T)
+prr <- spl[spl$seq == seq,]
+```
+
+```{r include=FALSE}
+message(sprintf("%d reactions produced seq %s\n\n",nrow(prr),seq))
+```
+
+
+```{r include=FALSE}
+
+source("vg_plus_rprops_functions.R")
+```
+
+
+
+```{r echo=TRUE, message=T, warning=FALSE, collapse=T}
+for(pp in 1:nrow(lr)){
+  prr <- spl[spl$seq == lr$passeq[pp],]
+  message(sprintf("Reaction %d\nL = %s",pp,lr$passeq[pp]))
+  #message(sprintf("Reaction %d\nA = %s,\nP = %s",pp,prr$act[1],prr$pass[1]))
+  ap <- spl[spl$act == prr$act[1] & spl$pass == prr$pass[1],]
+
+  #obtain the parent sequences from the spp numbers
+  ap <- spl[spl$spp == prr$act[1],]
+  pp <- spl[spl$spp == prr$pass[1],]
+  
+  #get the properties and print them
+  reaction <- runReactionFP(c(ap$seq[1],pp$seq[1]))
+  props <- setup.pwprops(ap$seq[1],pp$seq[1])
+  props <- calc.pwprops(props,1,reaction)
+  nprops <- network.properties(props)
+  
+  message(sprintf("Aa= %s",reaction$mActive))
+  message(sprintf("A = %s",ap$seq[1]))
+  message(sprintf("P = %s",pp$seq[1]))
+  message(sprintf("Pa= %s",reaction$mPassive))
+  message(sprintf("Z = %s",reaction$product))
+  print.props(nprops)
+  message("")
+}
+```
+
+In each paragraph of the above, we have 
+
+- The reaction number
+- L  : The long molecule under study
+- Aa : The active parent molecule as found *after* the reaction
+- A  : The Active parent molecule *before* binding
+- P  : The Passive parent molecule *before* binding
+- Pa : The passive parent molecule as found *after* the reaction
+- Z  : The product molecule
+- Any identified properties of the reaction
+
+One of Aa, Pa or Z will usually be identical to L. Unless otherwise stated, if this is not the case it is due to a mutation during the copy (recall that we re-run reactions with mutation OFF, but L is actually observed in the run - fortunately the species list records the parents)
+
+
+OK, these properties are useful, but you need to look at the parent sequences to figure out what is going on. I'll group them together in the list below: 
+
+- Reaction 1,3-5,7,9,12-14,17,20,22 (so 12/22) all have the property 'No Product' and 'Complex'. They produce long strings by appending the passive partner onto the end of the active one, so L = Aa. No new molecule is produced in this reaction (that is to say, no new space in the grid is filled). This is quite an interesting strategy for several reasons:
+    - Assignment of roles in this reaction is a 'coin toss'. The 'reverse' assignment using the same parent molecules is a replicator reaction. *That* reaction, when run, is classed as parasitic - so it looks like we are going to have to revisit our classfiction routine.
+    - When the parent moleucles meet, half the time the parasite will be replicated, but half the time, the program starts on the parasite, which is what we have here. It is strange that the parasite is taking part in a reaction which increases its $\beta$! Since this is happening repeatedly for a range of different molecules, it must be a useful strategy for one of the partners. I'd suggest it is useful to the replicator, because it is making $\beta$ larger for the parasite next time it binds. 
+    - Interestingly, the opcodes that do this is the two-letter sequence `^A`, which we found previously as a mechanism for escaping from copying parasites - the bound parnter also needed to have `^A` so that execution was flipped back to the replicator. So I'd argue the sequencing of the arms race goes like this: 
+      1. Parasites force shorter replicators
+      2. Replicators evolve the `^A` trick to stop themselves copying parasites
+      3. Parasites evolve to mimic the `^A` trick so they can still be copied, albeit with a smaller $\beta$ advantage
+      4. Replicators abandon the `^A` trick, becuase now they can copy their code into the parasites, making $\beta$ for them even longer. 
+    - One thing I find really hard to think about is that the replicator is now writing active code into the parasite - what does this say about evolution? 
+    
+- Reactions 2,11,18,19 and 21 (so 3/22) play a different, if complementary game.  All of the input and output molecules appear to be repeats of a replicator sequence with a few key mutations. An example of how these reactions Function is: 1, self-scan; 2, switch execution to P; 3, copy P to end of A; 4 cleave end of P to make new molecule 
+- 8,10 add one or more short repeats
+- 6 Is in this family of modifiers, but there's a simple trunctation of A by 8 opcodes to make L
+- 15 does a self-scan, then finishes - so it's just a "time-waster"
+
+
+## box-rand3
+
+Now let's repeat the analysis above but for the randomly initialzed-trial we are looking at: 
+
+```{r}
+load("rp1705smspr3.RData")
+br <- rundata[[length(rundata)]]
+br <- br[br$pp_Replicator,]
+lr <- br[br$paslen > (2*br$actlen),]
+lr <- lr[order(lr$nobs,decreasing = T),]
+#kable(lr)
+message("N\tHcyl\tPar\t\tACTIVE (above) PASSIVE (below) SEQUENCE\n")
+message(sprintf("%d\t%s\t%s\t%s\n\t\t\t\t\t\t%s\n",lr$nobs,lr$np_Hypercycle,lr$np_Parasite,lr$actseq,lr$passeq))
+```
+
+You can see that the reactions are all either parasitic or hypercycles, and the more common reactions are hypercycles. 
+
+
+```{r eval=T, include=FALSE}
+pp<-1
+lr$tt<-0
+for(ll in 1:nrow(lr)){
+  for(tt in seq(2000000,20000,-10000)){
+    spl <- splist_stats(sprintf("~/Desktop/paulien/smsp/1705smspr/out3/splist%d.dat",tt),0,F)
+    prr <- spl[spl$seq == lr$passeq[ll],]
+    if(nrow(prr)<1){
+      #message(sprintf("%d Not found for t= %d",ll,tt))
+    }
+    else{
+      message(sprintf("ll = %d tt = %d found %d Reactions for \nL = %s",ll, tt,nrow(prr),lr$passeq[ll]))
+      lr$tt[ll]<-tt
+      break;
+    }
+    
+  }
+}
+```
+ 
+There are 10 times as many distinct reactions for this run than previous -- lets just look at 25 of them for now.! 
+
+
+```{r echo=TRUE, message=T, warning=FALSE, collapse=T}
+source("vg_plus_rprops_functions.R")
+for(pp in 1:25){#nrow(lr)){
+  prr <- spl[spl$seq == lr$passeq[pp],]
+  message(sprintf("Reaction %d\nL = %s",pp,lr$passeq[pp]))
+  if(nrow(prr)>0){
+    #message(sprintf("Reaction %d\nA = %s,\nP = %s",pp,prr$act[1],prr$pass[1]))
+    ap <- spl[spl$act == prr$act[1] & spl$pass == prr$pass[1],]
+  
+    #obtain the parent sequences from the spp numbers
+    ap <- spl[spl$spp == prr$act[1],]
+    pp <- spl[spl$spp == prr$pass[1],]
+    
+    #get the properties and print them
+    reaction <- runReactionFP(c(ap$seq[1],pp$seq[1]))
+    props <- setup.pwprops(ap$seq[1],pp$seq[1])
+    props <- calc.pwprops(props,1,reaction)
+    nprops <- network.properties(props)
+    
+    message(sprintf("Aa= %s",reaction$mActive))
+    message(sprintf("A = %s",ap$seq[1]))
+    message(sprintf("P = %s",pp$seq[1]))
+    message(sprintf("Pa= %s",reaction$mPassive))
+    message(sprintf("Z = %s",reaction$product))
+    print.props(nprops)
+  }else{
+    message("not found in spp list")
+  }
+  message("")
+}
+```
+
+Quick classification:
+
+- 1-6,8-12,14-17,19,21,22,24 - parts of a short-long Hypercycle, but also mutual replicator
+- 7 as above, but complex
+- 13,17,20 Complex/no product (LUBO->YUBO)(1st part of Pa overwritten)
+- 23 Parasite
+- 25 Complex - passive overwritten by active
+
+*More work to do here - figuring out how to detact each of these complex reaction types*
+

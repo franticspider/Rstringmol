@@ -26,8 +26,8 @@ doSWAlign <- function(seqVector, strip = FALSE, verbose = FALSE) {
 #'
 #' @param seqVector the sequence of the two strings, active first, then passive.
 #' @export
-doReaction <- function(seqVector, verbose = FALSE) {
-    .Call(`_Rstringmol_doReaction`, seqVector, verbose)
+doReaction <- function(seqVector, verbose = FALSE, climit = 1000L) {
+    .Call(`_Rstringmol_doReaction`, seqVector, verbose, climit)
 }
 
 #' React 2 stringmols together - determine whether the run is deterministic or not - write to a file

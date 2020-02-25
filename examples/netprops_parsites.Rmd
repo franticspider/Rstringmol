@@ -1,0 +1,36 @@
+---
+title: "Network level properties"
+output:
+  html_document:
+    df_print: paged
+---
+
+Here we'll classify network-level properties, and then do  a study of replicators and parasites. 
+
+
+
+```{r}
+source("vg_plus_rprops_functions.R")
+fn <- "~/Desktop/paulien/smsp/1705smsp/out5/out1_1000000.conf"
+ur<-pairwise.properties(fn)
+b <- ur
+```
+
+Now we've got 
+
+```{r}
+ur <- b
+ur$np_MutualRepl <- F
+ur$np_Hypercycle <- F
+ur$np_Parasitic <- F
+
+mur <- ur[ur$pp_Replicator,]
+
+xur <- mur[mur$actseq %in% mur$passeq,]
+xur <- xur[xur$passeq %in% xur$actseq,]
+
+```
+
+
+$=?>$UO^ARC$$U$UCO^BB$=?E>$CLUP%}YH 
+$=?>$UO^ARC$$U?$UCO^BB$=?E>$CLUP%}YH

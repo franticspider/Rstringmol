@@ -45,10 +45,31 @@ Shortcomings:
 - I need to figure out how to fix node positions from page to page 
 - sometimes the layout engine collapses all the points to a corner with large graphs. 
 
+--- 
+# List of runs to study, and why 
+
+- DONE Run 1 125x100, 'block' seed - made it to 2m
+- DONE Run 2 125x100, 'block' seed - made it to 2m; flood
+-      Run 3 125x100, 'block' seed - made it to 2m; flood
+-      Run 5 125x100, 'block' seed - made it to 2m; flood
+-      Run 2 125x100, 'rand' seed - made it to 2m; 
+-      Run 3 125x100, 'rand' seed - made it to 2m;
+-      Run 4 250x50, 'block' seed
+-      Run 5 250x50, 'block' seed
+-      Run 3 250x50, 'block' seed - extinction at 340k - why?
+
+- what characterises a flood? 
+- how do long parasites/replicators survive?
+- what are the 'supercomplex' behaviours?
+- is there anything different between treatments. 
 
 
 
-# Run 1 125x100, 'block' seed
+
+
+---
+
+# 125x100, 'block' seed Run 1
 
 ## Movie
 
@@ -72,7 +93,7 @@ This is nice because these phenomena are all seen at
 
 Looking through the reaction plots:
 
-*pariwise pdf file is `smsp_out1n.pdf`, title is "box-box1"*
+*pariwise pdf file is `csmsp_out1n.pdf`, title is "box-box1"*
 
 - 192,000 (page 9-10) sudden transition to short replicator: The transition to short self-replicators is shown on the fifth row - there's big difference in the length of replicators between page 9-10. The new, short replicator is less than 30 opcodes long. Note that there this shift to long replicators also happens to non-self replicators, as shown in the fourth row. After this (from page 11 onwards) there are more recations with no product than replicator reactions - this is mainly due to parasites now binding to each other, but making no new molecules. 
 - 820,000 (pages 37-45) shows a jump from l~25 to l~38, but also a marked increase in long, complex reactions
@@ -90,3 +111,537 @@ Looking through the reaction plots:
 - 1,036,000 (pages 45-49)  The hypercycles are not isolated from each other - instead we have a complex system of mututal replication (there are some isolated pairs of mutual replicators also)
 - 1,445,000 (page 72 onwards) - The network shows a rich set of inter-related behaviours: for example node 060 (the topmost blue node on page 72), is blue, indicating it's  a self-replicator. The pink loop indicates that it is a jumper. So self-self jumper reactions are being classed as replicator reactions because (technically) a new molecule *is* produced, even though one of the parents is destroyed in the reaction. Some of these are isolated, but many are parasitising other replicators that are deeply enmeshed with other replicators. Hard to describe this concisely!
 - 1,807,000 (page 90) This is a clearer picture of the dynamics just described. It might be worth investigating this timestep more deeply - but we've not even got to the floods yet!
+
+---
+
+# 125x100, 'block' seed Run 2 
+
+```{r include=FALSE}
+t2tt <- function(t){return (t * 2000000/83)}
+tt2t <- function(t){return (t * 83/2000000)}
+
+```
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/qzMC4aN7SRg" frameborder="0"  allowfullscreen></iframe>
+<iframe width="400" height="500" src="https://www.youtube.com/embed/R2DbrIDl-og" frameborder="0"  allowfullscreen></iframe>
+
+Observations made about the movie are as follows - timesteps are provided for reference
+
+
+-   190,000 transition to short at 8s
+-   290,000 *possible hypercycle at 12s* ; 
+-   320,000 *long period of co-existence of short and long replicator from t=300,000 to 420,000*
+-   650,000 longer replicator emerges at 27s
+-   720,000 flood at 30s
+-   880,000 *jumpers at 36s, t=880,000*
+- 1,156,000 intense arena flood at 48s, then slow transition to shortness - are there jumpers in this? 
+- 1,810,000 flood subsides at 1:15s
+- 1,950,000 long parasites at 1:21
+
+
+
+## "Pairwise" reaction plots
+
+Looking through the reaction plots:
+
+*pariwise pdf file is `csmsp_out2n.pdf`, title is "box-box2"*
+
+-   190,000 transition to short at 8s (page 9-10), Note long self-replicator never goes extinct
+-   290,000 *possible hypercycle at 12s* (page 15) No evidence for strong copying of long by short. Possible "partitioning" of parasitism by length. 
+-   320,000 *long period of co-existence of short and long replicator from t=300,000 to 420,000*. Both size cohorts have self-replication. Long self-replication ends at 420,000
+-   650,000 longer replicator emerges at 27s. Note reactions with no product have similar size distribution to replicator reactions
+-   720,000 flood at 30s - massive increase in complex reactions and new product reactions at this point, but this fades out by 880,000 (p44). Two size cohorts of self replicators
+-   880,000 *jumpers at 36s, t=880,000*. Note that jumpers are also classified as complex and self-replicator reactions - do we need to remove them from these classes? 
+- 1,156,000 (p53 - 58) intense arena flood at 48s, then slow transition to shortness - are there jumpers in this? No! Instead we see a striking return to a single size cohort and a drastic drop in parasitism. 
+- 1,810,000 flood subsides at 1:15s. At this point we start to see a very short active partner in the replicators. Length around 11. 
+- 1,950,000 long parasites at 1:21. Short active replicator now v. numerous - three distinct size cohorts also. This needs investigation!
+
+## "Network" reaction plots
+
+*network pdf file is "csmsp_out2net.pdf", which only shows the replicator reaction types plus jumpers. For all reactions, see "csmsp_out1netall.pdf" -- it's harder to see any detail in this plot!*
+
+
+-   190,000 transition to short at 8s. Replicator networks are partitioned at t= 200,000. Note some arrows go from blue to red, some from red to blue. 
+-   290,000 possible hypercycle at 12s - nothing clear in the plots, but lots of mutual replication
+-   320,000 long period of co-existence of short and long replicator from t=300,000 to 420,000. 
+-   650,000 new longer replicator emerges at 27s, but this is *not* isolated from short. 
+-   720,000 flood at 30s. Lots of different self-replicators. Massive diversity. Many small functionally distinct groups. 
+-   880,000 *jumpers at 36s, t=880,000* - strong pink (self-replicating) loop, embedded in the replicating network. 
+- *1,120,000, p56 - Highly dominant self-replicating reaction*
+- 1,156,000 intense arena flood at 48s, then slow transition to shortness - are there jumpers in this? Even more diversity, and many many self-replicators.
+- 1,810,000 flood subsides at 1:15s. Three linked clusters of self-replicators. 
+- 1,950,000 long parasites at 1:21. Some groups are centered around a strong self-replicator, but some are non-self. 
+
+
+---
+
+# 125x100, 'block' seed Run 3
+
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/8onxqVtAKEs" frameborder="0" allowfullscreen></iframe>
+<iframe width="400" height="500" src="https://www.youtube.com/embed/BtkpgIMrgpc" frameborder="0"  allowfullscreen></iframe>
+
+-    90,000 short emerges at 4s
+-   720,000 *long period of co-existence of short and long replicator, t=70,000 to 720,000*
+- 1,370,000 jumpers
+- 1,500,000 *long period of short replicator with parasites, t=740,000 to 1,500,000; jumpers at 0:58*
+- 1,520,000 *flood at 1:08 - t = 1,520,000 after emergence of long replicator*
+- 1,640,000 long isolated mols throughout last 15 seconds
+
+
+## "Pairwise" reaction plots
+
+*pariwise pdf file is `csmsp_out3n.pdf`, title is "box-box3"*
+
+-    60,000 short replicator emerges
+-    70,000 to 740,000 long period of short and long replicator blooms
+-   740,000 short replicator wins out - fewer nodes from here, but strong links
+- 1,480,000 to 1,520,000 increase in population and diversity, then long replicator (flood)
+- 1,520,000 complex reactions and new product reactions increase; rich cross-coupling of replicators 
+
+## "Network" reaction plots
+
+*network pdf file is "csmsp_out3net.pdf", which only shows the replicator reaction types plus jumpers.* 
+
+-    80,000 Mututal replication links almost all self-replicators
+-    70,000 to 740,000 long period of short and long replicator blooms is clear in these plots
+-   740,000 short replicator wins out - fewer nodes from here, but strong links
+- 1,520,000 Big increase in connectivity and node number after the flood 
+
+*Three clear phases after initialisation: Dual-lenth self-replicators; short replicators with "Collizi" dynamics; flood;* 
+
+## Isolating replicators and parasites
+
+Strategy:
+- Get the pairwise propoerties
+- Get all replicators
+- Parasites are any replicator partners that do *not* mutually copy
+- Get boxplots of the bind rate of these
+- Get boxplots of the copy rate of these. 
+
+Let's try this for one timestep, then extend and make the plot
+
+
+```{r fig.height=6, fig.width=24}
+require(Rstringmol)
+require(stringr)
+require(vioplot)
+source("../examples/vg_plus_rprops_functions.R")
+
+rundata <- list()
+dp <- 1
+
+
+rundata <- runproplist("~/Desktop/paulien/smsp/1705smsp/out1/out1_",outfn = "rp1705smsp1.RData")
+#for(rr in seq(20000,2000000,20000)){
+  # testinfn <- sprintf("~/Desktop/paulien/smsp/1705smsp/out3/out1_%d.conf",rr)
+  # ug <- pairwise.properties(testinfn)
+  # 
+  # ng <- network.properties(ug)
+  # 
+  # rundata[[dp]] <- ng
+  # 
+  # dp <- dp + 1
+#}  
+
+opred =    adjustcolor( "red", alpha.f = 0.2)
+opblue = adjustcolor("blue", alpha.f = 0.2)
+
+plot(NA,xlim=c(0,2000000),ylim=c(0,1000),xlab="timesteps",ylab="Beta")
+  
+dp <- 1  
+for(rr in seq(20000,2000000,20000)){
+  
+  ng <- rundata[[dp]]
+  dp <- dp + 1
+  
+  reps <- ng[ng$pp_Replicator,]
+  paras <- ng[ng$np_Parasite,]
+  
+  rct <- rep(reps$nsteps,reps$nobs)
+  pct <- rep(paras$nsteps,paras$nobs)
+  
+  message(sprintf("%d: nobs rep = %d, nobs parasites = %d",rr,sum(reps$nobs),sum(paras$nobs)))
+  
+  #boxplot(  ug$nsteps,boxwex=10000,at= rr,add=T,width=20000,border="grey20")
+  #vioplot( rct,wex= 15 * sum(reps$nobs),range = 1, width = 100000, at= rr-0,add=T,border=opred,col=opred,drawRect = F)
+  vioplot(rct,wex=15 * sum(reps$nobs),range=1,at=rr,add = T, border=NA,col=opred,drawRect=F)
+vioplot(pct,wex=15 * sum(paras$nobs),range=1,at=rr,add = T, border=NA,col=opblue,drawRect=F)
+
+  #vioplot(pct ,wex= 15 * sum(paras$nobs),range = 1, width = 100000,at= rr+0,add=T,border=opblue,col=opblue,drawRect = F,)
+}
+```
+
+
+
+
+
+```{r fig.height=6, fig.width=36}
+opred =    adjustcolor( "red", alpha.f = 0.4)
+opblue = adjustcolor("blue", alpha.f = 0.4)
+opgreen = adjustcolor("green", alpha.f = 0.4)
+
+pdf(file = "smsp_3_beta_b.pdf", width = 24, height = 6)
+plot(NA,xlim=c(0,2000000),ylim=c(0,1000),xlab="timesteps",ylab="Beta")
+
+dp <- 1  
+for(rr in seq(20000,2000000,20000)){
+  
+  ng <- rundata[[dp]]
+  dp <- dp + 1
+
+  
+  reps <- ng[ng$pp_Replicator,]
+  paras <- ng[ng$np_Parasite,]
+  hyps <- ng[ng$np_Hypercycle,]
+
+  act <- rep(ng$nsteps,ng$nobs)  
+  rct <- rep(reps$nsteps,reps$nobs)
+  pct <- rep(paras$nsteps,paras$nobs)
+  hct <- rep(hyps$nsteps,hyps$nobs)
+  
+  message(sprintf("%d: nobs rep = %d, nobs parasites = %d",rr,sum(reps$nobs),sum(paras$nobs)))
+  
+  #boxplot(  ug$nsteps,boxwex=10000,at= rr,add=T,width=20000,border="grey20")
+  #vioplot( rct,wex= 15 * sum(reps$nobs),range = 1, width = 100000, at= rr-0,add=T,border=opred,col=opred,drawRect = F)
+  
+  wv <- 15
+#vioplot(act,wex=wv * sum(ng$nobs),range=1,at=rr,add = T, border=NA,col="black",drawRect=F)
+vioplot(pct,wex=wv * sum(paras$nobs),range=1,at=rr,add = T, border=NA,col=opred,drawRect=F)
+vioplot(hct,wex=wv * sum(hyps$nobs),range=1,at=rr,add = T, border=NA,col=opgreen,drawRect=F)
+
+  vioplot(rct,wex=wv * sum(reps$nobs),range=1,at=rr,add = T, border=NA,col=opblue,drawRect=F)
+  #vioplot(pct ,wex= 15 * sum(paras$nobs),range = 1, width = 100000,at= rr+0,add=T,border=opblue,col=opblue,drawRect = F,)
+}
+dev.off()
+```
+
+
+
+
+
+```{r fig.height=6, fig.width=24}
+require(Rstringmol)
+require(stringr)
+require(vioplot)
+
+source("../examples/vg_plus_rprops_functions.R")
+
+opred =    adjustcolor( "red", alpha.f = 0.5)
+opblue = adjustcolor("blue", alpha.f = 0.5)
+
+pdf(file = "smsp_3_bprob_b.pdf", width = 24, height = 6)
+plot(NA,xlim=c(0,2000000),ylim=c(0,6),xlab="timesteps",ylab="length")
+dp <- 1
+for(rr in seq(20000,2000000,20000)){
+  ng <- rundata[[dp]]
+  dp <- dp + 1
+  
+  reps <- ng[ng$pp_Replicator,]
+  paras <- ng[ng$np_Parasite,]
+  
+  rct <- rep(1/reps$bprob,reps$nobs)
+  pct <- rep(1/paras$bprob,paras$nobs)
+  
+  message(sprintf("%d: nobs rep = %d, nobs parasites = %d",rr,sum(reps$nobs),sum(paras$nobs)))
+  
+  #boxplot(  ug$nsteps,boxwex=10000,at= rr,add=T,width=20000,border="grey20")
+  vioplot( rct,wex= 15 * sum(reps$nobs),range = 1, width = 100000, at= rr-0,add=T,border=opblue,col=opblue,drawRect = F)
+  vioplot(pct ,wex= 15 * sum(paras$nobs),range = 1, width = 100000,at= rr+0,add=T,border=opred,col=opred,drawRect = F)
+}
+dev.off()
+```
+
+
+## Betas for different properties
+
+We want rows for:
+
+- all
+- replicators
+- parasites
+- hypercycles
+- new product
+- no product
+
+
+# generating rundata files
+
+- box-box: 1,2,3,5
+- box-rand: 2,3
+- slot-box: 4,5
+- slot-rand: none! but 3 goes to 340,000
+- evo-evo: 2,3,5 not extinct
+
+Let's get the full runs in the bag first: 
+
+
+```{r}
+require(Rstringmol)
+source("../examples/vg_plus_rprops_functions.R")
+
+
+rundata <- runproplist("~/Desktop/paulien/smsp/1705smsp/out1/out1_",outfn = "rp1705smsp1.RData")
+rundata <- runproplist("~/Desktop/paulien/smsp/1705smsp/out2/out1_",outfn = "rp1705smsp2.RData")
+rundata <- runproplist("~/Desktop/paulien/smsp/1705smsp/out3/out1_",outfn = "rp1705smsp3.RData")
+rundata <- runproplist("~/Desktop/paulien/smsp/1705smsp/out5/out1_",outfn = "rp1705smsp5.RData")
+
+rundata <- runproplist("~/Desktop/paulien/smsp/1705smspr/out2/out1_",outfn = "rp1705smspr2.RData")
+rundata <- runproplist("~/Desktop/paulien/smsp/1705smspr/out3/out1_",outfn = "rp1705smspr3.RData")
+
+rundata <- runproplist("~/Desktop/paulien/smsp/1705sm250/out4/out1_",outfn = "rp1705sm2504.RData")
+rundata <- runproplist("~/Desktop/paulien/smsp/1705sm250/out5/out1_",outfn = "rp1705sm2505.RData")
+
+
+```
+
+
+The code below assumes that `rundata` holds data for the run of interest- I need to develop the code a bit more to make this easier to edit!
+
+```{r}
+require(vioplot)
+require(stringr)
+
+#Here's the basic plotting functin: 
+# ptype is the switch btween 'beta', 'k' and 'length'#' Load mass spec data from a 2-column space-delimited text file
+#'
+#' @param data is the datafile - an Rstringmol data frame of properties 
+#' @param cname the name of property column that is to be plotted. Set to NULL to plot all 
+#' @param text the name of the plot 
+#' @param start the lower x axis limit
+#' @param from the first sample time
+#' @param to the last sample time
+#' @param by the stepsize between samples
+#' @param ptype the plot type, can be "beta", "k", "len" and "plen", and "nos" (for raw numbers)
+#' @param wex the scalar for the vioplot width. defaults to 15
+#' @param col the colour of the vioplot. defaults to "black"
+#' @export
+#' @examples
+onevio <- function(data,cname,text,start,from,to,by,ptype,wex=15,col="black"){
+  
+  #message("inside onevio()!")
+  plot(NA,xlim=c(start,to),ylim=myylim,xaxt='n')
+  dp <- 1
+  times <- seq(from,to,by)
+  
+  summary <- data.frame(time = times, val = 0)
+  
+  for(rr in seq(from,to,by)){
+    ng <- data[[dp]]
+    
+    if(is.null(cname)){
+      reps <- ng
+    }else{
+      reps <- ng[ ng[,cname] ,]
+    }
+    
+    if(ptype == "beta"){
+      rct <- rep(reps$nsteps,reps$nobs)
+    }
+    
+    if(ptype == "k"){
+      rct <- rep(1/reps$bprob,reps$nobs)
+      rct[rct>100]<-5
+    }
+    
+    if(ptype == "len"){
+      rct <- rep(str_length(reps$actseq),reps$nobs)
+    }
+    
+    if(ptype == "plen"){
+      rct <- rep(str_length(reps$passeq),reps$nobs)
+    }
+    
+    if(ptype == "nos"){
+      rct <- reps$nobs
+    }
+    
+    if(length(unique(rct))>1){
+      #vioplot( rct,wex= 15 * sum(reps$nobs),range = 1, width = 100000, at= rr-0,add=T,border=NA,col="black",drawRect = F)
+      vioplot( rct,wex= wex * sum(reps$nobs),range = 1, width = 100000, at= rr-0,add=T,border=NA,col=col,drawRect = F)
+      points(x=rr,y=mean(rct),col="red",pch=19,cex = 1)
+      summary$val[dp]<- mean(rct)
+      
+    }else{
+      if(length(unique(rct))==1){
+        points(x=rr,y=mean(rct),col="red",pch=19,cex = 1)
+        summary$val[dp]<- mean(rct)
+      }else{
+        points(x=rr,y=0,col="black",pch=4,cex = 1)
+        summary$val[dp]<- 0
+      }
+    }
+    
+    #nos is a special case
+    if(ptype == "nos"){
+      summary$val[dp] <- sum(reps$nobs)
+    }
+    
+    
+    dp <- dp + 1
+    
+  
+    #to emphasise timesteps by point size, do this: 
+    #if(!(rr%%200000))
+    #  points(x=rr,y=mean(rct),col="red",pch=19,cex = 1.5)
+    
+  }
+  text(text,x=xtitlepos,y=ytitlepos,srt=90,cex = 2)
+  
+  return(summary)
+}
+```
+
+OK, now we have the function, things are easier to plot. 
+
+
+```{r}
+pdfw = 10
+#beta  <- T
+#kplot <- F
+#lplot <- T
+
+#We'll need to do all these to reply to Paulien's email: 
+#load("rp1705smsp3.RData");  pltyp <- "beta";  mytitle = "box-box3"
+#load("rp1705smsp3.RData");  pltyp <- "k";  mytitle = "box-box3"
+#load("rp1705smsp3.RData");  pltyp <- "len";  mytitle = "box-box3"
+#load("rp1705smsp3.RData");  pltyp <- "plen";  mytitle = "box-box3"
+load("rp1705smsp3.RData");  pltyp <- "nos";  mytitle = "box-box3"
+
+
+#load("rp1705smspr3.RData");  pltyp <- "beta";  mytitle = "box-rand3"
+#load("rp1705smspr3.RData");  pltyp <- "k";  mytitle = "box-rand3"
+#load("rp1705smspr3.RData");  pltyp <- "len";  mytitle = "box-rand3"
+#load("rp1705smspr3.RData");  pltyp <- "plen";  mytitle = "box-rand3"
+#load("rp1705smspr3.RData");  pltyp <- "nos";  mytitle = "box-rand3"
+
+
+
+#TODO: These variables are global, and used within onevio() - fix this!
+if(pltyp == "beta"){
+  mytitle = sprintf("%s_BETA_nsteps",mytitle)
+  myylim = c(0,500)
+  myylab = "Beta (reaction time)"
+  ytitlepos = 250 # if beta
+}
+if(pltyp == "k"){
+  mytitle = sprintf("%s_K_bindprob",mytitle)
+  myylab = "1/ka (time to bind)"
+  myylim = c(0,6)
+  ytitlepos = 3
+}
+if(pltyp == "len"){
+  mytitle = sprintf("%s_length",mytitle)
+  myylab = "length"
+  myylim = c(0,150)
+  ytitlepos = 75
+}
+if(pltyp == "plen"){
+  mytitle = sprintf("%s_plength",mytitle)
+  myylab = "length"
+  myylim = c(0,150)
+  ytitlepos = 75
+}
+if(pltyp == "nos"){
+  mytitle = sprintf("%s_nos",mytitle)
+  myylab = "number of observations"
+  myylim = c(0,6500)
+  ytitlepos = 3250
+}
+
+
+pdf(file = sprintf("%s.pdf",mytitle), width = pdfw, height = (pdfw*1.33))
+
+op <- par(mfrow = c(2,2),
+          oma = c(5,5,2,0) + 0.1,
+          mar = c(0,0,1,1) + 0.1)
+
+par(mfrow = c(7,1))
+
+xtitlepos = -20000
+
+
+# ALL
+#ALL:
+sumall <- onevio(rundata,NULL,"All Reactions",0,20000,2000000,20000,pltyp,wex=7.5,col="blue")
+
+# REPS
+sumreps <- onevio(rundata,"pp_Replicator","Replicator",0,20000,2000000,20000,pltyp)
+
+# PARASITES
+sumpars <- onevio(rundata,"np_Parasite","Parasites",0,20000,2000000,20000,pltyp)
+
+# Hypercycles
+sumhyp <- onevio(rundata,"np_Hypercycle","Hypercycles",0,20000,2000000,20000,pltyp)
+
+# New Product
+sumnew <- onevio(rundata,"pp_NewProduct","New Product",0,20000,2000000,20000,pltyp)
+
+# No Product
+sumno <- onevio(rundata,"pp_NoProduct","No Product",0,20000,2000000,20000,pltyp)
+
+# Jumper
+sumjum <- onevio(rundata,"pp_Jumper","Jumper",0,20000,2000000,20000,pltyp)
+
+if(pltyp == "beta"){
+  pyl = "Beta (reaction time)"
+  title(xlab = "Timesteps",
+        ylab = pyl,
+        outer = TRUE, line = 3,cex.lab=1.5)
+}
+if(pltyp == "k"){
+  pyl = "K (1/bind probability)"
+  title(xlab = "Timesteps",
+        ylab = pyl,
+        outer = TRUE, line = 3,cex.lab=1.5)
+}
+if(pltyp == "len"){
+  pyl = "Active partner length"
+  title(xlab = "Timesteps",
+        ylab = pyl,
+        outer = TRUE, line = 3,cex.lab=1.5)
+}
+if(pltyp == "plen"){
+  pyl = "Passive partner length"
+  title(xlab = "Timesteps",
+        ylab = pyl,
+        outer = TRUE, line = 3,cex.lab=1.5)
+}
+
+par(op)
+dev.off()
+
+
+
+pdf(file = sprintf("%s_summary.pdf",mytitle), width = pdfw, height = (pdfw*0.5))
+par(mar=c(5,5,0.2,0.2))
+plot(sumall,type="l",lwd = 4,ylim=myylim,xlab="Timesteps",ylab=pyl)
+lines(sumreps, col="red",    lwd=2)
+lines(sumpars, col="green",  lwd=2)
+lines(sumhyp,  col="purple", lwd=2)
+lines(sumnew,  col="blue",   lwd=2)
+lines(sumno,   col="orange", lwd=2)
+lines(sumjum,  col="brown",  lwd=2)
+
+legend("topleft",ncol=2,
+       legend = c("All Reactions", "Replicators", "Parasites", "Hypercycles", "New Product", "No Product", "Jumpers"),
+       col    = c("black",         "red",         "green",     "purple",      "blue",        "orange",     "brown"),
+       lwd    = c(4,2,2,2,2,2,2)
+         )
+
+dev.off()
+
+
+```
+
+
+
+
+## Testing that parasites *are* parasites:
+
+
+
+## Using run 3 to study binding 
+
+
+

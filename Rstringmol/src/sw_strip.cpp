@@ -12,7 +12,7 @@ typedef struct {
 
 
 
-bool procH(char l1, char *s2, int l2, float *H, swt *swT, swPos *swp, bool forward = true){
+bool procH(char l1, char *s2, int l2, float *H, swt *swT, swPos *swp, bool forward = true, int *jpos = NULL, bool *jmatch = NULL){
 
   int jj,sj,oo = 0;
   float ms,is,ds,pmax=0.;
@@ -73,14 +73,25 @@ bool procH(char l1, char *s2, int l2, float *H, swt *swT, swPos *swp, bool forwa
       //DEBUG: Rprintf("s2[jj] = %c, H[jj] = %0.2f, hjminus1 = %0.2f\n",s2[sj],H[jj],Hjminus1);
       Hjminus1 = H[jj];
 
+      bool shiftjpos = false;
+
       //update H for new row at jj
       H[jj] = 0;
       if(ms > H[jj]){
         H[jj] = ms;
+        shiftjpos = true;
+        *jmatch = true;
       }
-      if(ds > H[jj])H[jj] = ds;
-      if(is > H[jj])H[jj] = is;
+      if(ds > H[jj]){
+        H[jj] = ds;
+      }
+      if(is > H[jj]){
+        H[jj] = is;
+        shiftjpos = true;
+      }
 
+      if(shiftjpos)
+        *jpos = *jpos - 1;
 
       //record the posn of the highest score:
       if(H[jj]>swp->maxscore){
@@ -151,10 +162,16 @@ swPos procStrip(char *s1, char *s2, align *A, swt *swT, int verbose){
 
   //Now process in "reverse" from the end point to get the start point..
   memset(H,0,(l2+1)*sizeof(float));
+
+  int jpos = pos.pos_jj;
+  bool jmatch = false;
+  int match = 0;
   for(i=pos.pos_ii;i>0;i--){
-    if(procH(s1[i-1],s2,pos.pos_jj,H,swT,&ros,false)){
+    if(procH(s1[i-1],s2,pos.pos_jj,H,swT,&ros,false,&jpos,&jmatch)){
       ros.pos_ii = i;
     }
+    if(jmatch)
+      match++;
     if(verbose)print_Hrow(s1[i-1],&(H[1]),l2);
   }
 
@@ -166,7 +183,8 @@ swPos procStrip(char *s1, char *s2, align *A, swt *swT, int verbose){
   A->e2 = pos.pos_jj;
   A->score = pos.maxscore;
   //Note that this is an upper bound on the match, but we don't use it anyway!
-  A->match = (A->e1 - A->s1) > (A->e2 - A->s2) ? (A->e1 - A->s1) : (A->e2 - A->s2);
+  //A->match = (A->e1 - A->s1) > (A->e2 - A->s2) ? (A->e1 - A->s1) : (A->e2 - A->s2);
+  A->match = match;
   A->prob = 0.0; //TODO: should really use get_bprob() here - would be clearer!
 
 
@@ -184,12 +202,6 @@ int SmithWatermanStrip(char *s1, char *s2, align *A, swt *swT, int verbose){
 
   //Forward processing to find the end
   procStrip(s1,s2,A,swT,verbose);
-
-  //Find the end, then reverse the strings
-
-
-  //Reverse processing to find the start
-
 
   return 0;
 }
