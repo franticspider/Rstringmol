@@ -28,7 +28,10 @@ load("rp1705smsp3.RData")
 
 par(mfrow=c(1,2))
 
-col <- rainbow(n=length(rundata)+10)
+#col <- rainbow(n=length(rundata)+10)
+require(rje)
+col <- cubeHelix(n=(1.2*length(rundata)))
+
 plot(NA,xlab="Active length", ylab = "Passive length",xlim=c(0,200),ylim=c(0,200),main="box-box 3")
   segments(x0=0,y0=0,x1=200,y1=200)
   segments(x0=0,y0=0,x1=200,y1=100)
@@ -44,7 +47,7 @@ br <- pr
   
 load("rp1705smspr3.RData")
   
-col <- rainbow(n=length(rundata)+ 10)
+#col <- rainbow(n=length(rundata)+ 10)
 plot(NA,xlab="Active length", ylab = "Passive length",xlim=c(0,200),ylim=c(0,200),main="box-rand 3")
   segments(x0=0,y0=0,x1=200,y1=200)
   segments(x0=0,y0=0,x1=200,y1=100)
@@ -55,7 +58,13 @@ for(rr in 1:length(rundata)){
   pr <- pr[pr$pp_Replicator,]
   points(x=pr$actlen,y=pr$paslen,pch=19,cex=0.2+(0.5 * log(pr$nobs)),col=col[rr])
 }
+ # legend(x="topleft", legend=c("min", "ave", "max"), 
+#     #fill=colorRampPalette(brewer.pal(8, "Oranges"))(3))
+ #    fill = col)
 ```
+
+See https://stackoverflow.com/questions/24221473/adding-a-continuous-color-gradient-legend-strip-to-plot if we want to draw a legend on figures like this
+
 
 There's a lot of data in these plots, so let me take a few bullet points to explian
 

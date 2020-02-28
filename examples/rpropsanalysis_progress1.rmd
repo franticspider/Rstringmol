@@ -607,6 +607,12 @@ if(pltyp == "plen"){
         ylab = pyl,
         outer = TRUE, line = 3,cex.lab=1.5)
 }
+if(pltyp == "nos"){
+  pyl = "Number of Observations"
+  title(xlab = "Timesteps",
+        ylab = pyl,
+        outer = TRUE, line = 3,cex.lab=1.5)
+}
 
 par(op)
 dev.off()
