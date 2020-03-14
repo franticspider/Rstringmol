@@ -1,14 +1,63 @@
 
 
 
-rconf_agents<- function(fn){
+
+#' Load the agent data from a stringmol .conf file
+#' fn is the file name
+#' verbose whether to run quietly or not
+#' summarize whether to compress the data into a summary of each species
+#' @export
+all_agents <- function(fn,verbose = F, getstate = F, summarize = F){
+
+  unbound.agents <- rconf_agents(fn,verbose)
+  if(getstate)unbound.agents$bound <- F
+
+  bound.agents <- rconf_rdata(fn,verbose)
+  ag <- bound.agents$actseq
+  pag <- bound.agents$passeq
+
+  bound.agents <- data.frame(spp = c(ag,pag),stringsAsFactors = F)
+  if(getstate)bound.agents$bound <- T
+
+  agents <- rbind(unbound.agents,bound.agents)
+
+  if(summarize){
+    tc <- table(agents)
+    agents <- data.frame(tc)
+    agents <- agents[order(agents$Freq,decreasing = T),]
+  }
+
+  return(agents)
+}
+
+
+
+
+
+#' Load the unbound agent data from a stringmol .conf file
+#' fn is the file name
+#' verbose whether to run quietly or not
+#' summarize whether to compress the data into a summary of each species
+#' @export
+rconf_agents<- function(fn,verbose = F,summarize=F){
 
   cf <- read.table(fn,as.is = T, fill = T, sep="\n",comment.char="",stringsAsFactors = F)
 
   agents <- cf[str_sub(cf[,1],1,5)=="AGENT",]
-  agstr <- str_sub(agents,8,str_length(agents)-4)
+  agstr <- as.data.frame(str_sub(agents,8,str_length(agents)-4),stringsAsFactors = F)
+  colnames(agstr)<- "spp"
   #ag_strlen <- str_length(agstr)
 
+  if(summarize){
+    aun <- as.data.frame(unique(agstr),stringsAsFactors=F)
+    colnames(aun)<- c("spp")
+    aun$count <- 0
+    for(aa in 1:nrow(aun)){
+      aun$count[aa] <- length(agstr[agstr$spp == aun$spp[aa],])
+    }
+    agstr <- aun
+    agstr <- agstr[order(agstr$count,decreasing = T),]
+  }
 
   return(agstr)
 

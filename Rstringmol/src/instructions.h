@@ -21,6 +21,14 @@
 #ifndef INSTRUCTIONS_H_
 #define INSTRUCTIONS_H_
 
+typedef struct td_icount{
+  int c_copy;
+  int c_over;
+  int c_togg;
+  int c_move;
+}icount;
+
+
 
 	char * HSearch(char *iptr, char *sp, swt *T, int *itog, int *ftog, int maxl, float *pbprob);
 	char * IfLabel(char *ip, char *rp, char *sp, swt *T, const int maxl, float *iprob);
