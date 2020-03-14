@@ -44,8 +44,8 @@ for(rr in 1:length(rundata)){
 }
 br <- pr
   
-  
 load("rp1705smspr3.RData")
+  
   
 #col <- rainbow(n=length(rundata)+ 10)
 plot(NA,xlab="Active length", ylab = "Passive length",xlim=c(0,200),ylim=c(0,200),main="box-rand 3")

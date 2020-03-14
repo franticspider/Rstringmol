@@ -655,7 +655,7 @@ plot.rnet<- function(fn,onlyreplicators=T){
 
 
 
-runproplist <- function(froot,from=20000,to=2000000,step=20000,outfn=NULL){
+runproplist <- function(froot,from=20000,to=2000000,step=20000,outfn=NULL,verbose = F){
 
   rundata <- list()
   dp <- 1
@@ -665,7 +665,7 @@ runproplist <- function(froot,from=20000,to=2000000,step=20000,outfn=NULL){
 
     #testinfn <- sprintf("~/Desktop/paulien/smsp/1705smsp/out3/out1_%d.conf",rr)
     testinfn <- sprintf("%s%d.conf",froot,rr)
-    message(sprintf("%d: file is %s",rr,testinfn))
+    if(verbose)message(sprintf("%d: file is %s",rr,testinfn))
 
     ug <- pairwise.properties(testinfn)
 

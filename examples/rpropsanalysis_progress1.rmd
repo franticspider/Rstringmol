@@ -320,7 +320,7 @@ dev.off()
 
 
 
-```{r fig.height=6, fig.width=24}
+```{r eval=FALSE, fig.height=6, fig.width=24, include=FALSE}
 require(Rstringmol)
 require(stringr)
 require(vioplot)
@@ -375,8 +375,9 @@ We want rows for:
 
 Let's get the full runs in the bag first: 
 
+*This code is not evaluated in the markdown as it takes too long to run*
 
-```{r}
+```{r eval=FALSE, include=TRUE}
 require(Rstringmol)
 source("../examples/vg_plus_rprops_functions.R")
 
@@ -402,7 +403,7 @@ The code below assumes that `rundata` holds data for the run of interest- I need
 require(vioplot)
 require(stringr)
 
-#Here's the basic plotting functin: 
+#Here's the basic plotting function: 
 # ptype is the switch btween 'beta', 'k' and 'length'#' Load mass spec data from a 2-column space-delimited text file
 #'
 #' @param data is the datafile - an Rstringmol data frame of properties 
@@ -419,6 +420,8 @@ require(stringr)
 #' @examples
 onevio <- function(data,cname,text,start,from,to,by,ptype,wex=15,col="black"){
   
+  dlen <- length(data)
+  
   #message("inside onevio()!")
   plot(NA,xlim=c(start,to),ylim=myylim,xaxt='n')
   dp <- 1
@@ -427,63 +430,67 @@ onevio <- function(data,cname,text,start,from,to,by,ptype,wex=15,col="black"){
   summary <- data.frame(time = times, val = 0)
   
   for(rr in seq(from,to,by)){
-    ng <- data[[dp]]
-    
-    if(is.null(cname)){
-      reps <- ng
-    }else{
-      reps <- ng[ ng[,cname] ,]
-    }
-    
-    if(ptype == "beta"){
-      rct <- rep(reps$nsteps,reps$nobs)
-    }
-    
-    if(ptype == "k"){
-      rct <- rep(1/reps$bprob,reps$nobs)
-      rct[rct>100]<-5
-    }
-    
-    if(ptype == "len"){
-      rct <- rep(str_length(reps$actseq),reps$nobs)
-    }
-    
-    if(ptype == "plen"){
-      rct <- rep(str_length(reps$passeq),reps$nobs)
-    }
-    
-    if(ptype == "nos"){
-      rct <- reps$nobs
-    }
-    
-    if(length(unique(rct))>1){
-      #vioplot( rct,wex= 15 * sum(reps$nobs),range = 1, width = 100000, at= rr-0,add=T,border=NA,col="black",drawRect = F)
-      vioplot( rct,wex= wex * sum(reps$nobs),range = 1, width = 100000, at= rr-0,add=T,border=NA,col=col,drawRect = F)
-      points(x=rr,y=mean(rct),col="red",pch=19,cex = 1)
-      summary$val[dp]<- mean(rct)
+    if(dp<=dlen){
       
-    }else{
-      if(length(unique(rct))==1){
+      ng <- data[[dp]]
+      
+      if(is.null(cname)){
+        reps <- ng
+      }else{
+        reps <- ng[ ng[,cname] ,]
+      }
+      
+      if(ptype == "beta"){
+        rct <- rep(reps$nsteps,reps$nobs)
+      }
+      
+      if(ptype == "k"){
+        rct <- rep(1/reps$bprob,reps$nobs)
+        rct[rct>100]<-5
+      }
+      
+      if(ptype == "len"){
+        rct <- rep(str_length(reps$actseq),reps$nobs)
+      }
+      
+      if(ptype == "plen"){
+        rct <- rep(str_length(reps$passeq),reps$nobs)
+      }
+      
+      if(ptype == "nos"){
+        rct <- reps$nobs
+      }
+      
+      if(length(unique(rct))>1){
+        #vioplot( rct,wex= 15 * sum(reps$nobs),range = 1, width = 100000, at= rr-0,add=T,border=NA,col="black",drawRect = F)
+        vioplot( rct,wex= wex * sum(reps$nobs),range = 1, width = 100000, at= rr-0,add=T,border=NA,col=col,drawRect = F)
         points(x=rr,y=mean(rct),col="red",pch=19,cex = 1)
         summary$val[dp]<- mean(rct)
+        
       }else{
-        points(x=rr,y=0,col="black",pch=4,cex = 1)
-        summary$val[dp]<- 0
+        if(length(unique(rct))==1){
+          points(x=rr,y=mean(rct),col="red",pch=19,cex = 1)
+          summary$val[dp]<- mean(rct)
+        }else{
+          points(x=rr,y=0,col="black",pch=4,cex = 1)
+          summary$val[dp]<- 0
+        }
       }
+      
+      #nos is a special case
+      if(ptype == "nos"){
+        summary$val[dp] <- sum(reps$nobs)
+      }
+      
+    }else{
+      break
     }
-    
-    #nos is a special case
-    if(ptype == "nos"){
-      summary$val[dp] <- sum(reps$nobs)
-    }
-    
-    
     dp <- dp + 1
+      
     
-  
-    #to emphasise timesteps by point size, do this: 
-    #if(!(rr%%200000))
-    #  points(x=rr,y=mean(rct),col="red",pch=19,cex = 1.5)
+      #to emphasise timesteps by point size, do this: 
+      #if(!(rr%%200000))
+      #  points(x=rr,y=mean(rct),col="red",pch=19,cex = 1.5)
     
   }
   text(text,x=xtitlepos,y=ytitlepos,srt=90,cex = 2)
@@ -497,6 +504,8 @@ OK, now we have the function, things are easier to plot.
 
 ```{r}
 pdfw = 10
+require(vioplot)
+require(Rstringmol)
 #beta  <- T
 #kplot <- F
 #lplot <- T
@@ -506,7 +515,7 @@ pdfw = 10
 #load("rp1705smsp3.RData");  pltyp <- "k";  mytitle = "box-box3"
 #load("rp1705smsp3.RData");  pltyp <- "len";  mytitle = "box-box3"
 #load("rp1705smsp3.RData");  pltyp <- "plen";  mytitle = "box-box3"
-load("rp1705smsp3.RData");  pltyp <- "nos";  mytitle = "box-box3"
+#load("rp1705smsp3.RData");  pltyp <- "nos";  mytitle = "box-box3"
 
 
 #load("rp1705smspr3.RData");  pltyp <- "beta";  mytitle = "box-rand3"
@@ -516,107 +525,163 @@ load("rp1705smsp3.RData");  pltyp <- "nos";  mytitle = "box-box3"
 #load("rp1705smspr3.RData");  pltyp <- "nos";  mytitle = "box-rand3"
 
 
+# ALL 8 FINISHED RUNS FOR BETA
+
+#load("rp1705smsp1.RData");  pltyp <- "beta";  mytitle = "box-box1"
+#load("rp1705smsp2.RData");  pltyp <- "beta";  mytitle = "box-box2"
+#load("rp1705smsp3.RData");  pltyp <- "beta";  mytitle = "box-box3"
+#load("rp1705smsp5.RData");  pltyp <- "beta";  mytitle = "box-box5"
+
+#load("rp1705smspr2.RData");  pltyp <- "beta";  mytitle = "box-rand2"
+#load("rp1705smspr3.RData");  pltyp <- "beta";  mytitle = "box-rand3"
+
+#load("rp1705sm2504.RData");  pltyp <- "beta";  mytitle = "slot-box4"
+#load("rp1705sm2505.RData");  pltyp <- "beta";  mytitle = "slot-box5"
+
+
+#load("rp1705sm2505.RData");  pltyp <- "beta";  mytitle = "slot-box5"
+
+# The run that terminated:
+#load("rp1705sm250r4.RData");  pltyp <- "beta";  mytitle = "slot-box5"
+
+#########################################################################
+# ALL 8 FINISHED RUNS FOR NOS
+
+#load("rp1705smsp1.RData");  pltyp <- "nos";  mytitle = "box-box1"
+#load("rp1705smsp2.RData");  pltyp <- "nos";  mytitle = "box-box2"
+#load("rp1705smsp3.RData");  pltyp <- "nos";  mytitle = "box-box3"
+#load("rp1705smsp5.RData");  pltyp <- "nos";  mytitle = "box-box5"
+
+#load("rp1705smspr2.RData");  pltyp <- "nos";  mytitle = "box-rand2"
+#load("rp1705smspr3.RData");  pltyp <- "nos";  mytitle = "box-rand3"
+
+#load("rp1705sm2504.RData");  pltyp <- "nos";  mytitle = "slot-box4"
+#load("rp1705sm2505.RData");  pltyp <- "nos";  mytitle = "slot-box5"
+load("rp1705sm250r4.RData");  pltyp <- "nos";  mytitle = "slot-rand4"
+
+
+#ALL mols (not just bound ones)
+
+#load("rp1705sm250r4.RData");  pltyp <- "div";  mytitle = "slot-rand4"
+
+
+
+
 
 #TODO: These variables are global, and used within onevio() - fix this!
 if(pltyp == "beta"){
-  mytitle = sprintf("%s_BETA_nsteps",mytitle)
+  myfilename = sprintf("%s_BETA_nsteps",mytitle)
   myylim = c(0,500)
   myylab = "Beta (reaction time)"
   ytitlepos = 250 # if beta
 }
+if(pltyp == "div"){
+  myfilename = sprintf("%s_diversity",mytitle)
+  myylim = c(0,1)
+  myylab = "Simpson's Diversity"
+  ytitlepos = myylim[2]/2 # if beta
+}
 if(pltyp == "k"){
-  mytitle = sprintf("%s_K_bindprob",mytitle)
+  myfilename = sprintf("%s_K_bindprob",mytitle)
   myylab = "1/ka (time to bind)"
   myylim = c(0,6)
   ytitlepos = 3
 }
 if(pltyp == "len"){
-  mytitle = sprintf("%s_length",mytitle)
+  myfilename = sprintf("%s_length",mytitle)
   myylab = "length"
   myylim = c(0,150)
   ytitlepos = 75
 }
 if(pltyp == "plen"){
-  mytitle = sprintf("%s_plength",mytitle)
+  myfilename = sprintf("%s_plength",mytitle)
   myylab = "length"
   myylim = c(0,150)
   ytitlepos = 75
 }
 if(pltyp == "nos"){
-  mytitle = sprintf("%s_nos",mytitle)
+  myfilename = sprintf("%s_nos",mytitle)
   myylab = "number of observations"
   myylim = c(0,6500)
   ytitlepos = 3250
 }
 
-
-pdf(file = sprintf("%s.pdf",mytitle), width = pdfw, height = (pdfw*1.33))
-
-op <- par(mfrow = c(2,2),
-          oma = c(5,5,2,0) + 0.1,
-          mar = c(0,0,1,1) + 0.1)
-
-par(mfrow = c(7,1))
-
-xtitlepos = -20000
-
-
-# ALL
-#ALL:
-sumall <- onevio(rundata,NULL,"All Reactions",0,20000,2000000,20000,pltyp,wex=7.5,col="blue")
-
-# REPS
-sumreps <- onevio(rundata,"pp_Replicator","Replicator",0,20000,2000000,20000,pltyp)
-
-# PARASITES
-sumpars <- onevio(rundata,"np_Parasite","Parasites",0,20000,2000000,20000,pltyp)
-
-# Hypercycles
-sumhyp <- onevio(rundata,"np_Hypercycle","Hypercycles",0,20000,2000000,20000,pltyp)
-
-# New Product
-sumnew <- onevio(rundata,"pp_NewProduct","New Product",0,20000,2000000,20000,pltyp)
-
-# No Product
-sumno <- onevio(rundata,"pp_NoProduct","No Product",0,20000,2000000,20000,pltyp)
-
-# Jumper
-sumjum <- onevio(rundata,"pp_Jumper","Jumper",0,20000,2000000,20000,pltyp)
-
-if(pltyp == "beta"){
-  pyl = "Beta (reaction time)"
-  title(xlab = "Timesteps",
-        ylab = pyl,
-        outer = TRUE, line = 3,cex.lab=1.5)
+if(pltyp!="div"){
+pdf(file = sprintf("%s.pdf",myfilename), width = pdfw, height = (pdfw*1.33))
+  
+  op <- par(mfrow = c(2,2),
+            oma = c(5,5,2,0) + 0.1,
+            mar = c(0,0,1,1) + 0.1)
+  
+  par(mfrow = c(7,1))
+  
+  xtitlepos = -20000
+  
+  
+  # ALL
+  #ALL:
+  sumall <- onevio(rundata,NULL,"All Reactions",0,20000,2000000,20000,pltyp,wex=7.5,col="blue")
+  
+  # REPS
+  sumreps <- onevio(rundata,"pp_Replicator","Replicator",0,20000,2000000,20000,pltyp)
+  
+  # PARASITES
+  sumpars <- onevio(rundata,"np_Parasite","Parasites",0,20000,2000000,20000,pltyp)
+  
+  ## Hypercycles
+  #sumhyp <- onevio(rundata,"np_Hypercycle","Hypercycles",0,20000,2000000,20000,pltyp)
+  # MUTUAL REPLICATORS
+  sumhyp <- onevio(rundata,"np_MutualRepl","Mutual Repls",0,20000,2000000,20000,pltyp)
+  
+  
+  # New Product
+  sumnew <- onevio(rundata,"pp_NewProduct","New Product",0,20000,2000000,20000,pltyp)
+  
+  # No Product
+  sumno <- onevio(rundata,"pp_NoProduct","No Product",0,20000,2000000,20000,pltyp)
+  
+  # Jumper
+  sumjum <- onevio(rundata,"pp_Jumper","Jumper",0,20000,2000000,20000,pltyp)
+  
+  #add the x axis
+  axis(1)
+  
+  if(pltyp == "beta"){
+    pyl = "Beta (reaction time)"
+    title(xlab = "Timesteps",
+          ylab = pyl,
+          outer = TRUE, line = 3,cex.lab=1.5)
+  }
+  if(pltyp == "k"){
+    pyl = "K (1/bind probability)"
+    title(xlab = "Timesteps",
+          ylab = pyl,
+          outer = TRUE, line = 3,cex.lab=1.5)
+  }
+  if(pltyp == "len"){
+    pyl = "Active partner length"
+    title(xlab = "Timesteps",
+          ylab = pyl,
+          outer = TRUE, line = 3,cex.lab=1.5)
+  }
+  if(pltyp == "plen"){
+    pyl = "Passive partner length"
+    title(xlab = "Timesteps",
+          ylab = pyl,
+          outer = TRUE, line = 3,cex.lab=1.5)
+  }
+  if(pltyp == "nos"){
+    pyl = "Number of Observations"
+    title(xlab = "Timesteps",
+          ylab = pyl,
+          outer = TRUE, line = 3,cex.lab=1.5)
+  }
+  
+  title(main = sprintf("%s %s",mytitle,pyl),outer = T)
+  
+  par(op)
+  dev.off()
 }
-if(pltyp == "k"){
-  pyl = "K (1/bind probability)"
-  title(xlab = "Timesteps",
-        ylab = pyl,
-        outer = TRUE, line = 3,cex.lab=1.5)
-}
-if(pltyp == "len"){
-  pyl = "Active partner length"
-  title(xlab = "Timesteps",
-        ylab = pyl,
-        outer = TRUE, line = 3,cex.lab=1.5)
-}
-if(pltyp == "plen"){
-  pyl = "Passive partner length"
-  title(xlab = "Timesteps",
-        ylab = pyl,
-        outer = TRUE, line = 3,cex.lab=1.5)
-}
-if(pltyp == "nos"){
-  pyl = "Number of Observations"
-  title(xlab = "Timesteps",
-        ylab = pyl,
-        outer = TRUE, line = 3,cex.lab=1.5)
-}
-
-par(op)
-dev.off()
-
 
 
 pdf(file = sprintf("%s_summary.pdf",mytitle), width = pdfw, height = (pdfw*0.5))
@@ -630,7 +695,7 @@ lines(sumno,   col="orange", lwd=2)
 lines(sumjum,  col="brown",  lwd=2)
 
 legend("topleft",ncol=2,
-       legend = c("All Reactions", "Replicators", "Parasites", "Hypercycles", "New Product", "No Product", "Jumpers"),
+       legend = c("All Reactions", "Replicators", "Parasites", "Mutual Reps", "New Product", "No Product", "Jumpers"),
        col    = c("black",         "red",         "green",     "purple",      "blue",        "orange",     "brown"),
        lwd    = c(4,2,2,2,2,2,2)
          )
@@ -640,14 +705,143 @@ dev.off()
 
 ```
 
+# Diversity calc
+
+```{r}
+source("../Rstringmol/R/rconf_data.R")
+diversitydata <- function(froot,dfn=NULL){
+
+  sdi <- data.frame(t =  seq(20000,2000000,20000), di = 0)
+
+  cdata <- list()
+  
+  for(rr in 1:nrow(sdi)){
+    
+    fn = sprintf("%s%d.conf",froot,sdi$t[rr])
+    if(file.exists(fn)){
+    
+      ag <- all_agents(fn,getstate = F,summarize = T)
+      
+      ag$cum <- 0
+      ag$cum[1] <- ag$Freq[1]
+      
+      for(cc in 2:nrow(ag))
+        ag$cum[cc]<-ag$cum[cc-1]+ag$Freq[cc]
+      
+      ag$cum <- ag$cum/sum(ag$Freq)
+      
+      un <- ag$Freq*(ag$Freq-1)
+      sdi$di[rr] <- 1 - (sum(un)/(sum(ag$Freq)*(sum(ag$Freq)-1)))
+
+      cdata[[rr]] <- ag      
+    }
+  }
+  
+  #plot(x=sdi$t,y=sdi$di,type="l",xlab="Timesteps",ylim=c(0.5,1),ylab="Simpson's diversity")  
+  if(!is.null(dfn))
+    save(cdata,file=dfn)
+  
+  return(cdata)   
+}
+```
+
+
+This next doesn't do anything...
+
+```{r eval=TRUE, include=TRUE}
+cd <- diversitydata("~/Desktop/paulien/smsp/1705smsp/out3/out1_")
+```
+
+Here's the diversity plot code: 
+
+
+```{r}
+#' threshold the number of species, ranked by abundance
+thrspp <- function(datl,thr){
+  
+  sdi <- data.frame(t =  seq(20000,2000000,20000), di = 0)
+  for(rr in 1:length(datl)){
+    ag <- datl[[rr]]
+    ag <- ag[ag$cum<thr,]
+    
+    if(nrow(ag)>0){
+      un <- ag$Freq*(ag$Freq-1)
+      sdi$di[rr] <- 1 - (sum(un)/(sum(ag$Freq)*(sum(ag$Freq)-1)))
+    }
+  }
+  return(sdi)
+}
+
+
+diversityplot <- function(cd){
+  
+  lin <- thrspp(cd,1)
+  plot(x=lin$t,y=lin$di,type="l",xlab="Timesteps",ylim=c(0,1),xlim=c(0,2399000),ylab="Simpson's diversity")  
+  
+  tvals <- c(0.75,0.5,0.25,0.1)
+  cols <- rainbow(length(tvals))
+  ci <- 1
+  for(th in tvals){
+    #message(sprintf("th is %0.2f",th))
+    lin <- thrspp(cd,th)
+    lines(x=lin$t,y=(lin$di-(th*0)),col=cols[ci])
+    ci <- ci+1
+  }
+  
+  legend("bottomright",legend=c("100%","75%","50%","25%","10%"),lty=1,col=c("black",cols))
+}  
+
+diversityplot(cd)
+
+```
 
 
 
-## Testing that parasites *are* parasites:
 
 
 
-## Using run 3 to study binding 
+```{r}
+
+#par(mfrow=c(4,2))
+
+dodp <- function(fr,dfn=NULL){
+  cd <- diversitydata(fr,dfn)
+  diversityplot(cd)
+}
+
+
+
+dodp("~/Desktop/paulien/smsp/1705smsp/out1/out1_","div1705smsp1.Rdata")
+dodp("~/Desktop/paulien/smsp/1705smsp/out2/out1_","div1705smsp2.Rdata")
+dodp("~/Desktop/paulien/smsp/1705smsp/out3/out1_","div1705smsp3.Rdata")
+dodp("~/Desktop/paulien/smsp/1705smsp/out5/out1_","div1705smsp5.Rdata")
+
+dodp("~/Desktop/paulien/smsp/1705smspr/out2/out1_","div1705smspr2.Rdata")
+dodp("~/Desktop/paulien/smsp/1705smspr/out3/out1_","div1705smspr3.Rdata")
+
+dodp("~/Desktop/paulien/smsp/1705sm250/out4/out1_","div1705sm2504.Rdata")
+dodp("~/Desktop/paulien/smsp/1705sm250/out5/out1_","div1705sm2505.Rdata")
+
+dodp("~/Desktop/paulien/smsp/1705sm250r/out3/out1_","div1705sm250r3.Rdata")
+```
+
+
+
+
+
+
+```{r}
+
+dodp("~/Desktop/paulien/smsp/1705sm250r/out3/out1_")
+```
+
+
+
+
+
+
+
+
 
 
 

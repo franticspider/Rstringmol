@@ -1,0 +1,303 @@
+---
+title: "Completed Runs, and analysis plots"
+author: "Simon Hickinbotham"
+date: "21 July 2017"
+output: 
+  html_document: 
+    number_sections: no
+---
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Summary
+
+# Detail
+
+- in all these, the first video has cells coloured by molecule length and the second has cells coloured by species number
+- Timing - 4 seconds shows approximately 100,000 timesteps
+
+## Analysis code:
+
+
+
+
+```{r include=FALSE}
+require(rje)
+
+#source code: 
+source("../Rstringmol/R/diversityplot.R")
+source("../Rstringmol/R/violinplots.R")
+
+
+APLenPlot <- function(rundata,title){
+  #col <- rainbow(n=length(rundata)+ 10)
+  col <- cubeHelix(n=(1.2*length(rundata)))
+  plot(NA,xlab="Active length", ylab = "Passive length",xlim=c(0,200),ylim=c(0,200),main=title,asp=1)
+    segments(x0=0,y0=0,x1=200,y1=200)
+    segments(x0=0,y0=0,x1=200,y1=100)
+    segments(x0=0,y0=0,x1=100,y1=200)
+    segments(x0=65,y0=0,x1=65,y1=200,col="red")
+  for(rr in 1:length(rundata)){
+    pr <- rundata[[rr]]
+    pr <- pr[pr$pp_Replicator,]
+    points(x=pr$actlen,y=pr$paslen,pch=19,cex=0.2+(0.5 * log(pr$nobs)),col=col[rr])
+  }
+}
+
+#' Function to generate *all* the plots below each youTube vid
+plotplots <- function(rd,divd,title){
+  load(rd)
+  par(mfrow=c(4,1),
+            oma = c(5,5,2,0) + 0.1,
+            mar = c(0,8,3,11) + 0.1)
+  APLenPlot(rundata,title)
+  
+  par(mar = c(0,0,4,4)+0.1)
+  
+  sumvp(rundata,"nos",myylim=c(0,6000))
+  title("Numbers of bound molecules")
+  sumvp(rundata,"beta")
+  title("Reaction time (beta)")
+  
+  
+  load(divd)
+  diversityplot(cdata)
+  title("Simpson's diversity")
+  
+  #remove the loaded datasets
+  rm(rundata)
+  rm(cdata)
+}
+
+```
+
+
+
+----
+
+# Run 1: 125x100, block seed
+
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/UxZ3c6NDEe4" frameborder="0" allowfullscreen></iframe>
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/WuAv_-iipec" frameborder="0" allowfullscreen></iframe>
+
+```{r echo=FALSE, fig.height=16, fig.width=8.5}
+plotplots("rp1705smsp1.RData","div1705smsp1.Rdata","box-box run 1")
+```
+
+
+
+
+- *not extinct*
+- *sudden transition to short replicator at  ~ 8s (t=200,000)*
+
+Below is the first of the new images I've managed to generate with R. The new plots that describe the reaction type are on the top row. These show where the reaction types are happending and how many of each reaction are observed. Note that unbound molecules are not plotted on this figure, so there will be more black cells in this plot than those on the bottom row. 
+
+The bottom plots are the length and species images that were used to generate the movies - unfortunately these are rotated with respect to the movies, but hopefully you can switch between them ok. 
+
+The plot for t=200,000 shows the structure of a typical wave event that happens soon after initialisation: 
+
+- The leading edge of the wave is almost entirely self-replicators (dark blue), with the occasional mutation thrown in. 
+- Behind that is a ragged line of parasitic reactions (red). It's interesting to see how the reaction plot compares with the length plot - it gives a clearer perspective of how the parasitism interacts with the replication
+- Early parasites often self-bind, but these produce no product as shown in grey on the trailing edge of the wave. 
+- Parasites get better at losing their self-self binding characteristics, so the trailing edge loses its greyness and turns red. 
+
+
+[short replicators at t=200,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000010.png)
+
+
+#### *longer replicator emerges at ~34s (t=800,000)*
+
+- this is best viewed at 0.25 speed from about 30s. 
+- is parasitised, but able to reproduction ratio between replicators/parasites is larger than that for the shorter replicator. 
+- appears to also be some hypercycle activity
+- Cannot invade short replicator patches
+- Short replicators are trapped between parasite fringe and 'wall' of longer replicators - they go extinct. 
+- A new short replicator emerges which contains the same 'ratio' strategy. 
+
+
+[longer replicators at t=800,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000041.png)
+
+
+#### *hypercycles at ~43s (t=1,000,000)* (equal length - see species video)
+
+Hypercycles dominate at this point - hence the rise of non-self replicators. 
+
+[Hypercycles at t=1,000,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000050.png)
+
+
+
+#### *long parasites emerge at ~1:00 (t=1,400,000)*
+
+These are indicated by the yellow colour in the 'length' plot, bottom left. It is quite difficult to ascertain whether there principle mode of operation is parasitic, as the reaction colouring seems to suggest a variety of different stratigies, and possibly a set of different species at different lengths. Indeed, some of these longer species are 'jumpers' as well! - this is a ripe candidate for explanation in the paper!
+
+[long parasites at t=1,560,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000078.png)
+
+
+---- 
+
+
+
+# run 2
+
+
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/R2DbrIDl-og" frameborder="0"  allowfullscreen></iframe>
+<iframe width="400" height="500" src="https://www.youtube.com/embed/qzMC4aN7SRg" frameborder="0"  allowfullscreen></iframe>
+
+```{r echo=FALSE, fig.height=10, fig.width=8.5}
+plotplots("rp1705smsp2.RData","div1705smsp2.Rdata","box-box 1")
+```
+
+#### *possible hypercycle at 12s* ; *long period of co-existence of short and long replicator from t=300,000 to 420,000*
+
+
+[short/long replicator coexistence at t=320,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out2R/rtypes0000016.png)
+
+
+#### *jumpers at 36s, t=880,000*
+[short/long replicator coexistence at t=320,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out2R/rtypes0000044.png)
+
+
+#### *arena flood at 48s
+
+
+Note a 'ring' of parasites also occurring in this
+
+[arena flood at t=1,160,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out2R/rtypes0000068.png)
+
+###run 3
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/8onxqVtAKEs" frameborder="0" allowfullscreen></iframe>
+<iframe width="400" height="500" src="https://www.youtube.com/embed/BtkpgIMrgpc" frameborder="0"  allowfullscreen></iframe>
+
+#### *long period of co-existence of short and long replicator, t=70,000 to 720,000*
+
+[short and long replicator, t=70,000 to 720,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000018.png)
+
+#### *long period of short replicator with parasites, t=740,000 to 1,500,000; jumpers at 0:58*
+
+[short replicator and jumper](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000071.png)
+#### *flood at 1:08 - t = 1,520,000 after emergence of long replicator*
+
+
+[short and long replicator, t=70,000 to 720,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out3R/rtypes0000076.png)
+
+
+
+
+
+### run 4
+
+- *extinction at t ~= 20 000*
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/J7acWGHluHo" frameborder="0" allowfullscreen></iframe><iframe  width="400" height="500" src="https://www.youtube.com/embed/kgdbIM8fdFU" frameborder="0" allowfullscreen></iframe>
+
+
+### run 5 
+
+- jumpers at 0:10s
+- flood at 0:24s
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/_3BKWf8KeTs" frameborder="0"  allowfullscreen></iframe>
+<iframe width="400" height="500" src="https://www.youtube.com/embed/1a-Iy97dLlU" frameborder="0"  allowfullscreen></iframe>
+
+#### Flood
+
+[flood](/home/sjh/Desktop/paulien/smsp/1705smsp/out5R/rtypes0000028.png)
+
+#### Jumpers
+
+[jumper](/home/sjh/Desktop/paulien/smsp/1705smsp/out5R/rtypes0000038.png)
+
+---
+
+##125x100, random seed
+
+### run 1
+
+- *extinction at t ~= 90 000*
+
+
+<iframe  width="400" height="500" src="https://www.youtube.com/embed/Z0G_KV9Q8yc" frameborder="0"  allowfullscreen></iframe><iframe  width="400" height="500" src="https://www.youtube.com/embed/dKdyzjv6lWI" frameborder="0" allowfullscreen></iframe>
+
+### run 2
+
+- *not extinct*
+- jumpers at 0:28s
+- long parasites at 0:49s - these die out at 1:21s
+
+<iframe  width="400" height="500" src="https://www.youtube.com/embed/g59Z_i73U38" frameborder="0"  allowfullscreen>
+</iframe><iframe  width="400" height="500" src="https://www.youtube.com/embed/Eieme6UgmXc" frameborder="0" allowfullscreen></iframe>
+
+
+### run 3
+
+- *not extinct*
+- hypercycles at 0:15s
+- hypercycles persist, but in some periods the partners are of equal length so the characteristic pattern isn't visible in the 'length' movie.
+- some partners in hypercycles are long (coloured white)
+- long parasites also? check this!
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/X-denaujGw0" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe><iframe width="400" height="500" src="https://www.youtube.com/embed/CxZmAquvJlI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+### run 4
+
+- *extinction at t ~= 120 000*
+
+
+<iframe 
+width="400" height="500" src="https://www.youtube.com/embed/MYXhXIGPSG8" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe><iframe 
+width="400" height="500" src="https://www.youtube.com/embed/gDsgWCQsBaM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+### run 5 
+
+- *extinction at t ~= 90 000*
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/ZrrMa7mlBYA" frameborder="0"  allowfullscreen></iframe><iframe width="400" height="500" src="https://www.youtube.com/embed/gc1O-Cno_fg" frameborder="0" allowfullscreen></iframe> 
+
+----
+
+## 250x50, block seed
+
+### run 4
+
+- *not extinct*
+- *hypercycles at 9s, but they go extinct at 11s*
+- extreme jumping at 43s
+- *greater complexity emerges at 1:10s*
+
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/-xLd_C2Cuas" frameborder="0"  allowfullscreen></iframe>
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/sbFVzCjbihw" frameborder="0"  allowfullscreen></iframe>
+
+###run 5 
+
+- *not extinct*
+- *juming genes emerge throughout*
+- *longer replicater emerges at 35s*
+
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/Tbuwcpt1uEw" frameborder="0" allowfullscreen></iframe>
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/tRATTpQnmLU" frameborder="0" allowfullscreen></iframe>
+
+
+
+---
+
+## 250x50, random seed
+
+### run 3
+*extinction at t ~= 340 000*
+
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/SuMCD-EcAQQ" frameborder="0" allowfullscreen></iframe>
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/_QsuVtPg93o" frameborder="0" allowfullscreen></iframe>
