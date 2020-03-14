@@ -12,4 +12,4 @@
 #     --log-file=~/valgrind.txt - write the output to a file
 # -f testthat.R means that R will start and execute the file testthat.R. an alternative would be -e "source('testthat.R')"
 
-R -d "valgrind --tool=memcheck --leak-check=full --show-reachable=yes --log-file=~/valgrind.txt" -f testthat.R 
+R -d "valgrind --tool=memcheck --leak-check=full --show-reachable=yes --log-file=../../withoutR/valgrind/valgrind.txt" -f testthat.R 

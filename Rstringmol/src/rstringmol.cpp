@@ -31,14 +31,12 @@ const unsigned int maxl = 2000;
 const unsigned int maxl0 = maxl+1;
 const int granular_1 = 0; //Whether we are doing granular stringmol or not
 
-//function headers for things we've borrowed from stringPM
+//function headers for things we've borrowed from stringPM - each of these should be moved to the right place
 
+//move to a new 'agents' file
 int     append_ag(s_ag **list, s_ag *ag);
 int     rewind_bad_ptrs(s_ag* act);
 int     check_ptrs(s_ag* act);
-int     h_pos(s_ag *pag, char head);
-int     hcopy(s_ag *act);
-int     cleave(s_ag *act,s_ag **nexthead);
 s_ag *  make_ag(int alab, int agct = 0);
 s_ag *  make_mol(std::string seq);
 float   get_bprob(align *sw);
@@ -50,6 +48,12 @@ void    print_ptr_offset(FILE *fp, char *S, char *p,int F, char c);
 void    print_exec(FILE *fp, s_ag *act);
 int     free_ag(s_ag *pag);
 void    free_swt(swt *table);
+
+//move to instructions.cpp
+int     h_pos(s_ag *pag, char head);
+int     hcopy(s_ag *act);
+int     cleave(s_ag *act,s_ag **nexthead);
+
 
 
 
@@ -1013,7 +1017,7 @@ void free_swt(swt *table){
 /****************************************
  Procedure: doComplement
  *****************************************/
-//' Carry out a Smith-Waterman alignment
+//' Get the complement of a string
 //'
 //' @param input the input string (Assume error checking in R...)
 //' @param verbose whether to print output or not
@@ -1021,7 +1025,7 @@ void free_swt(swt *table){
 // [[Rcpp::export]]
 Rcpp::String doComplement(Rcpp::String input, bool verbose = false) {
 
-  Rprintf("Inside doCmplement\n");
+  Rprintf("Inside doComplement\n");
 
   std::string string0 = input.get_cstring();
 
@@ -1154,6 +1158,10 @@ List doSWAlign(Rcpp::StringVector seqVector, bool strip = false, bool verbose = 
 
 
 /****************************************
+ *
+ * OBSOLETE!!! USE "doReactionFP()" for now until we are happy that this works
+ * TODO: Make the core code between these two functions *common*
+ *
 Procedure: doReaction
 *****************************************/
 //' React 2 stringmols together - determine whether the run is deterministic or not
@@ -1184,7 +1192,12 @@ List doReaction(Rcpp::StringVector seqVector, bool verbose = false, const int cl
             _["errcode"] = 0,
 					  _["deterministicBind"] = false,
 					  _["deterministicExec"] = true,
-					  _["product"] = ((String) "")
+					  _["product"] = ((String) ""),
+            //Execution counts:
+            _["ccopy"] = 0, //Copy operators
+            _["cover"] = 0, //Copy operators that overwrite (W is occupied)
+            _["cmove"] = 0, //Move operators (possibly refinable to which ptr is moved)
+            _["ctogg"] = 0  //toggle operators (possibly refinable to which ptr is moved)
 				);
   if(seqVector.length() != 2){
     Rprintf("ERROR: 2 stringmols required, %d given\n",seqVector.length());
@@ -1281,6 +1294,10 @@ List doReaction(Rcpp::StringVector seqVector, bool verbose = false, const int cl
   //swt	*blosum;
   free_swt(blosum);
 
+  //Lresult["ccs"].insert(3,1);
+  NumericVector vv;// = Lresult["ccs"];
+  vv.insert(3,2);
+  Lresult["ccs"] = vv;
 
   return Lresult;
 }
@@ -1292,7 +1309,7 @@ List doReaction(Rcpp::StringVector seqVector, bool verbose = false, const int cl
 //////////////////////
 
 /****************************************
- Procedure: doReaction
+ Procedure: doReactionFP
  *****************************************/
 //' React 2 stringmols together - determine whether the run is deterministic or not - write to a file
 //'
@@ -1326,7 +1343,6 @@ void doReactionFP(Rcpp::StringVector seqVector,  Rcpp::StringVector fnVector, bo
     Rprintf("ERROR: Too many tmpfiles, exiting doReactionFP\n");
     return;
   }
-
 
   std::string fileName = Rcpp::as<std::string>(fnVector[0]);
 
@@ -1405,24 +1421,6 @@ void doReactionFP(Rcpp::StringVector seqVector,  Rcpp::StringVector fnVector, bo
 
   fprintf(fp,"m0status,%d\n",m0->status);
   fprintf(fp,"m1status,%d\n",m1->status);
-
-
-  /*
-  Lresult["bprob"] = (bprob);
-
-
-  //use set_exec to determine the active and passive strings
-  Lresult["deterministicBind"] = set_exec(m0,m1,&sw);
-
-  Lresult["m0status"] = ((int) m0->status);
-  Lresult["m1status"] = ((int) m1->status);
-
-  Lresult["deterministicExec"] = true;
-  */
-
-
-
-
 
   int count = 0;
   const int climit = 1000;
