@@ -5,7 +5,7 @@
 
 #' run a Stringmol reaction and get results via a file.
 #' @export
-runReactionFP <- function(reactants,verbose = F){
+runReactionFP <- function(reactants,verbose = F,remove=T){
 
 
   result <- list()
@@ -55,10 +55,20 @@ runReactionFP <- function(reactants,verbose = F){
     else
       result$deterministicExec <- FALSE
 
+    result$ccopy <- as.numeric(data[data[1]=="ccopy",2])
+    result$cmove <- as.numeric(data[data[1]=="cmove",2])
+    result$cover <- as.numeric(data[data[1]=="cover",2])
+    result$ctogg <- as.numeric(data[data[1]=="ctogg",2])
+
+
+    result$nprod <- as.numeric(data[data[1]=="nprod",2])
 
 
     #delete the file
-    file.remove(fn)
+    if(remove)
+      file.remove(fn)
+    else
+      message(sprintf("Created file %s",fn))
 
     return (result)
   }

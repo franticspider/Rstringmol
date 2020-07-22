@@ -23,14 +23,17 @@
 
 typedef struct td_icount{
   int c_copy;
+  int c_move;
   int c_over;
   int c_togg;
-  int c_move;
 }icount;
 
 
+void init_counter(icount *ct);
 
-	char * HSearch(char *iptr, char *sp, swt *T, int *itog, int *ftog, int maxl, float *pbprob);
-	char * IfLabel(char *ip, char *rp, char *sp, swt *T, const int maxl, float *iprob);
+int hcopy(s_ag *act, icount *ct);
+
+char * HSearch(char *iptr, char *sp, swt *T, int *itog, int *ftog, float *pbprob);
+char * IfLabel(char *ip, char *rp, char *sp, swt *T, float *iprob);
 
 #endif /* INSTRUCTIONS_H_ */

@@ -18,42 +18,38 @@ using namespace Rcpp;
 
 #include "stringmanip.h"
 #include "alignment.h"
-#include "instructions.h"
 
 #include "SMspp.h" //Contains the definition of s_ag - the basic species unit
 
 #include "rsmData.h"
+#include "instructions.h"
 
 #include "sw_strip.h"
 
 //set in stringPM.cpp
-const unsigned int maxl = 2000;
-const unsigned int maxl0 = maxl+1;
+//const unsigned int maxl = 2000;
+//const unsigned int maxl0 = maxl+1;
 const int granular_1 = 0; //Whether we are doing granular stringmol or not
 
-//function headers for things we've borrowed from stringPM - each of these should be moved to the right place
+//function headers for things we've borrowed from stringPM
 
-//move to a new 'agents' file
 int     append_ag(s_ag **list, s_ag *ag);
 int     rewind_bad_ptrs(s_ag* act);
 int     check_ptrs(s_ag* act);
+//int     h_pos(s_ag *pag, char head);
+//int     hcopy(s_ag *act);
+int     cleave(s_ag *act,s_ag **nexthead);
 s_ag *  make_ag(int alab, int agct = 0);
 s_ag *  make_mol(std::string seq);
 float   get_bprob(align *sw);
 float   get_sw(s_ag *a1, s_ag *a2, align *sw, swt *blosum, bool usestrip);
 bool    set_exec(s_ag *A, s_ag *B, align *sw);
 int     unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp *pp);
-bool    exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead);
+bool    exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead, icount *ic);
 void    print_ptr_offset(FILE *fp, char *S, char *p,int F, char c);
 void    print_exec(FILE *fp, s_ag *act);
 int     free_ag(s_ag *pag);
 void    free_swt(swt *table);
-
-//move to instructions.cpp
-int     h_pos(s_ag *pag, char head);
-int     hcopy(s_ag *act);
-int     cleave(s_ag *act,s_ag **nexthead);
-
 
 
 
@@ -69,6 +65,14 @@ int     cleave(s_ag *act,s_ag **nexthead);
 // [[Rcpp::export]]
 NumericVector timesTwelve(NumericVector x) {
   return x * 12;
+}
+
+
+//Let's see what happens if we do this...
+// [[Rcpp::export]]
+double mtrand(){
+  float rng = rand0to1();
+  return (double) rng;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -216,183 +220,9 @@ int             check_ptrs(s_ag* act){
 
 
 
-//int stringPM::h_pos(s_ag *pag, char head){
-int h_pos(s_ag *pag, char head){
-
-  char *ph;
-  char *ps;
-
-  if(pag->status != B_ACTIVE)
-    printf("ERROR: attempting head position for inactive string");
-
-  switch(head){
-  case 'w':
-    ph = pag->w[pag->wt];
-    if(pag->wt)
-      ps = pag->S;
-    else
-      ps = pag->pass->S;
-    break;
-  case 'f':
-    ph = pag->f[pag->ft];
-    if(pag->ft)
-      ps = pag->S;
-    else
-      ps = pag->pass->S;
-    break;
-  case 'i':
-    ph = pag->i[pag->it];
-    if(pag->it)
-      ps = pag->S;
-    else
-      ps = pag->pass->S;
-    break;
-  case 'r':
-    ph = pag->r[pag->rt];
-    if(pag->rt)
-      ps = pag->S;
-    else
-      ps = pag->pass->S;
-    break;
-  }
-
-  return ph-ps;
-
-}
 
 
 
-
-//int stringPM::hcopy(s_ag *act){
-int hcopy(s_ag *act){
-
-  //s_ag *pass;
-  //pass = act->pass;
-  //int cidx;
-  //float rno;
-  int safe = 1;// this gets set to zero if any of the tests fail..
-
-  act->len = strlen(act->S);
-  act->pass->len = strlen(act->pass->S);
-
-  int p;
-  if( (p = h_pos(act,'w'))>=(int) maxl){
-
-    //#ifdef DODEBUG
-    Rprintf("Write head out of bounds: %d\n",p);
-    //#endif
-
-    //just to make sure no damage is done:
-    if(act->wt)
-      act->S[maxl]='\0';
-    else
-      act->pass->S[maxl]='\0';
-
-    act->i[act->it]++;
-
-    safe = 0;
-    return -1;
-  }
-  if(h_pos(act,'r')>=(int) maxl){
-    Rprintf("Read head out of bounds\n");
-
-    act->i[act->it]++;
-
-    safe = 0;
-    return -2;
-  }
-
-
-
-  if(*(act->r[act->rt]) == 0){
-    //possibly return a negative value and initiate a b
-    safe = 0;
-    //return -3;
-  }
-
-  //if(h_pos(act,'w')>=maxl){
-  //	//We are at the end of a copy...
-  //	//...so just increment *R
-  //	act->r[act->rt]++;
-  //	safe = 0;
-  //}
-
-  if(safe){
-    //MUTATION: (NOT NEEDED IN RSTRINGMOL ATM)
-    /*
-    rno=rand0to1();
-    if(rno<indelrate){//INDEL
-
-      //should follow the blosum table for this....
-      rno=rand0to1();
-      if(rno<0.5){//insert
-        //first do a straight copy..
-        *(act->w[act->wt])=*(act->r[act->rt]);
-
-        //no need to test for granular here since we are inserting...
-        act->w[act->wt]++;
-
-        //Then pick a random instruction:
-        cidx = (float) rand0to1() * blosum->N;
-
-        //insert the random instruction
-        *(act->w[act->wt])=blosum->key[cidx];
-        if(granular_1==0){
-          act->w[act->wt]++;
-        }
-      }
-      else{//delete
-        act->i[act->it]++;
-      }
-
-      if(granular_1==0){
-        act->r[act->rt]++;
-      }
-
-    }
-    else{
-      if(rno<subrate+indelrate){//INCREMENTAL MUTATION
-        cidx = sym_from_adj(*(act->r[act->rt]),blosum);
-        *(act->w[act->wt])=cidx;
-      }
-      else{//NO MUTATION
-        *(act->w[act->wt])=*(act->r[act->rt]);
-      }
-      if(granular_1==0){
-        act->w[act->wt]++;
-        act->r[act->rt]++;
-      }
-    }
-     */
-
-
-    //If no mutation, it's easy:
-    *(act->w[act->wt])=*(act->r[act->rt]);
-    act->w[act->wt]++;
-    act->r[act->rt]++;
-
-
-
-  }
-  //update lengths
-  act->len = strlen(act->S);
-  act->pass->len = strlen(act->pass->S);
-
-
-
-
-  //Increment the instruction pointer
-  act->i[act->it]++;
-
-
-#ifdef VERBOSE
-  if(mut)
-    printf("Mutant event %d. new string is:\n%s\n\n",mut,act->wt?act->S:act->pass->S);
-#endif
-  act->biomass++;
-  ///biomass++;
-  return 0;
-}
 
 
 
@@ -418,8 +248,8 @@ int             cleave(s_ag *act,s_ag **nexthead){
     //Copy the cleaved string to the agent
     char *cs;
 
-    c->S =(char *) malloc(maxl0*sizeof(char));
-    memset(c->S,0,maxl0*sizeof(char));
+    c->S =(char *) malloc(MAXL0*sizeof(char));
+    memset(c->S,0,MAXL0*sizeof(char));
 
     cs = csite->S;
     cpy = strlen(cs);
@@ -568,8 +398,8 @@ s_ag * make_ag(int alab, int agct){
 s_ag * make_mol(std::string seq){
   s_ag * pag;
   pag = make_ag('X');
-  pag->S =(char *) malloc(maxl0*sizeof(char));
-  memset(pag->S,0,maxl0*sizeof(char));
+  pag->S =(char *) malloc(MAXL0*sizeof(char));
+  memset(pag->S,0,MAXL0*sizeof(char));
   strncpy(pag->S,seq.c_str(),strlen(seq.c_str()));
   pag->len = strlen(pag->S);
   return pag;
@@ -586,6 +416,7 @@ float get_bprob(align *sw){
   float bprob = 0.;
   //This is the old bind prob, with a modifier for short strings:
 
+  //l is the shorter alignment
   int l = sw->e1-sw->s1 < sw->e2-sw->s2 ? sw->e1-sw->s1 : sw->e2-sw->s2;
   if(l<=2)
     bprob=0;
@@ -722,7 +553,7 @@ int             unbind_ag(s_ag * pag, char sptype, int update, l_spp *pa, l_spp 
 
 
 //int stringPM::exec_step(s_ag *act, s_ag *pass){
-bool             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
+bool             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead, icount *ic){
 
   char  *tmp;
   int   dac=0;
@@ -742,7 +573,7 @@ bool             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
       cs = act->S;
     else
       cs = act->pass->S;
-    tmp = HSearch(act->i[act->it],cs,blosum,&(act->it),&(act->ft),maxl,&pbprob);
+    tmp = HSearch(act->i[act->it],cs,blosum,&(act->it),&(act->ft),&pbprob);
     act->f[act->ft] = tmp;
     act->i[act->it]++;
     break;
@@ -766,6 +597,7 @@ bool             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
   case '>':
     tmp=act->i[act->it];
     tmp++;
+    ic->c_move++;
     switch(*tmp){
     case 'A':
       act->it = act->ft;
@@ -796,7 +628,7 @@ bool             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
     ************/
   case '='://h-copy
     //Rprintf("executing h-copy\n");
-    if(hcopy(act)<0){
+    if(hcopy(act,ic)<0){
       unbind_ag(act,'A',1,act->spp,pass->spp);
       unbind_ag(pass,'P',1,act->spp,pass->spp);
     }
@@ -838,6 +670,7 @@ bool             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
   case '^'://p-toggle: toggle active pointer
     tmp=act->i[act->it];
     tmp++;
+    ic->c_togg++;
     switch(*tmp){
     case 'A':
       act->it = 1-act->it;
@@ -859,7 +692,7 @@ bool             exec_step(s_ag *act, s_ag *pass, swt *blosum, s_ag **nexthead){
     *  IFLABEL *
     ************/
   case '?'://If-label
-    act->i[act->it]=IfLabel(act->i[act->it],act->r[act->rt],act->S,blosum,maxl,&pbprob);
+    act->i[act->it]=IfLabel(act->i[act->it],act->r[act->rt],act->S,blosum,&pbprob);
     break;
 
 
@@ -1017,7 +850,7 @@ void free_swt(swt *table){
 /****************************************
  Procedure: doComplement
  *****************************************/
-//' Get the complement of a string
+//' Carry out a Smith-Waterman alignment
 //'
 //' @param input the input string (Assume error checking in R...)
 //' @param verbose whether to print output or not
@@ -1025,14 +858,14 @@ void free_swt(swt *table){
 // [[Rcpp::export]]
 Rcpp::String doComplement(Rcpp::String input, bool verbose = false) {
 
-  Rprintf("Inside doComplement\n");
+  Rprintf("Inside doCmplement\n");
 
   std::string string0 = input.get_cstring();
 
   char *instr,*comp;
 
-  instr = (char *) malloc(maxl0*sizeof(char));
-  memset(instr,0,maxl0*sizeof(char));
+  instr = (char *) malloc(MAXL0*sizeof(char));
+  memset(instr,0,MAXL0*sizeof(char));
 
   strncpy(instr,string0.c_str(),strlen(string0.c_str()));
 
@@ -1156,13 +989,34 @@ List doSWAlign(Rcpp::StringVector seqVector, bool strip = false, bool verbose = 
 
 
 
+/****************************************
+ Procedure: count_spp
+ *****************************************/
+
+int nagents(s_ag *head, int state){
+  s_ag *pag;
+  int count=0;
+  pag = head;
+  while(pag!=NULL){
+    switch(state){
+    case -1:
+      count++;
+      break;
+    default:
+      if(pag->status == state)
+        count++;
+      /* no break */
+    }
+    pag=pag->next;
+  }
+  return count;
+}
+
 
 /****************************************
- *
- * OBSOLETE!!! USE "doReactionFP()" for now until we are happy that this works
- * TODO: Make the core code between these two functions *common*
- *
 Procedure: doReaction
+ WARNING: this function causes segfaults in R if called too many times - must be a memory leak
+ in Lresult list - valgrind doesn't seem to spot it, so it'll take some work to track it down
 *****************************************/
 //' React 2 stringmols together - determine whether the run is deterministic or not
 //'
@@ -1180,6 +1034,9 @@ List doReaction(Rcpp::StringVector seqVector, bool verbose = false, const int cl
   swt	*blosum;
   blosum = NULL;
 
+  icount ic;
+  init_counter(&ic);
+
 
   List Lresult = List::create(_["product"] = "empty",
             _["status"] = ((String) "none"),
@@ -1193,12 +1050,15 @@ List doReaction(Rcpp::StringVector seqVector, bool verbose = false, const int cl
 					  _["deterministicBind"] = false,
 					  _["deterministicExec"] = true,
 					  _["product"] = ((String) ""),
-            //Execution counts:
-            _["ccopy"] = 0, //Copy operators
-            _["cover"] = 0, //Copy operators that overwrite (W is occupied)
-            _["cmove"] = 0, //Move operators (possibly refinable to which ptr is moved)
-            _["ctogg"] = 0  //toggle operators (possibly refinable to which ptr is moved)
+					  _["nprod"] = 0,
+					  //
+					  _["ccopy"] = 0,
+            _["cmove"] = 0,
+            _["cover"] = 0,
+            _["ctogg"] = 0
 				);
+
+
   if(seqVector.length() != 2){
     Rprintf("ERROR: 2 stringmols required, %d given\n",seqVector.length());
     Lresult["status"] = "bad number of input strings";
@@ -1252,14 +1112,14 @@ List doReaction(Rcpp::StringVector seqVector, bool verbose = false, const int cl
   while( count <= climit){
     if(verbose)Rprintf("\n========== STEP %d ==========\n",count);
     if(m0->status == B_ACTIVE){
-      NDStep = exec_step(m0,m0->pass,blosum,&product);
+      NDStep = exec_step(m0,m0->pass,blosum,&product,&ic);
       if(verbose)print_exec(stdout,m0);
       Lresult["mActive"]  = ((String) m0->S);
       Lresult["mPassive"] = ((String) m1->S);
     }
 
     if(m1->status == B_ACTIVE){
-      NDStep = exec_step(m1,m1->pass,blosum,&product);
+      NDStep = exec_step(m1,m1->pass,blosum,&product,&ic);
       if(verbose)print_exec(stdout,m1);
       Lresult["mActive"]  = ((String) m1->S);
       Lresult["mPassive"] = ((String) m0->S);
@@ -1284,6 +1144,12 @@ List doReaction(Rcpp::StringVector seqVector, bool verbose = false, const int cl
   Lresult["m1status"] = ((int) m1->status);
 
   Lresult["status"] = "finished";
+  Lresult["ccopy"] = ic.c_copy;
+  Lresult["cmove"] = ic.c_move;
+  Lresult["cover"] = ic.c_over;
+  Lresult["ctogg"] = ic.c_togg;
+
+  Lresult["nprod"] = nagents(product,-1);
 
   //Tidy up the memory:
   free_ag(m0);
@@ -1294,10 +1160,6 @@ List doReaction(Rcpp::StringVector seqVector, bool verbose = false, const int cl
   //swt	*blosum;
   free_swt(blosum);
 
-  //Lresult["ccs"].insert(3,1);
-  NumericVector vv;// = Lresult["ccs"];
-  vv.insert(3,2);
-  Lresult["ccs"] = vv;
 
   return Lresult;
 }
@@ -1329,6 +1191,8 @@ void doReactionFP(Rcpp::StringVector seqVector,  Rcpp::StringVector fnVector, bo
 
   rsmData result;
 
+  icount ic;
+  init_counter(&ic);
   //Rprintf("Testing fnVector stuff\n");
 
 
@@ -1343,6 +1207,7 @@ void doReactionFP(Rcpp::StringVector seqVector,  Rcpp::StringVector fnVector, bo
     Rprintf("ERROR: Too many tmpfiles, exiting doReactionFP\n");
     return;
   }
+
 
   std::string fileName = Rcpp::as<std::string>(fnVector[0]);
 
@@ -1422,6 +1287,7 @@ void doReactionFP(Rcpp::StringVector seqVector,  Rcpp::StringVector fnVector, bo
   fprintf(fp,"m0status,%d\n",m0->status);
   fprintf(fp,"m1status,%d\n",m1->status);
 
+
   int count = 0;
   const int climit = 1000;
   //run exec_setp until the reactants dissassociate
@@ -1433,7 +1299,7 @@ void doReactionFP(Rcpp::StringVector seqVector,  Rcpp::StringVector fnVector, bo
   while( count <= climit){
     if(verbose)Rprintf("\n========== STEP %d ==========\n",count);
     if(m0->status == B_ACTIVE){
-      NDStep = exec_step(m0,m0->pass,blosum,&product);
+      NDStep = exec_step(m0,m0->pass,blosum,&product,&ic);
       if(verbose)print_exec(stdout,m0);
       //Lresult["mActive"]  = ((String) m0->S);
       //Lresult["mPassive"] = ((String) m1->S);
@@ -1442,7 +1308,7 @@ void doReactionFP(Rcpp::StringVector seqVector,  Rcpp::StringVector fnVector, bo
     }
 
     if(m1->status == B_ACTIVE){
-      NDStep = exec_step(m1,m1->pass,blosum,&product);
+      NDStep = exec_step(m1,m1->pass,blosum,&product,&ic);
       if(verbose)print_exec(stdout,m1);
       //Lresult["mActive"]  = ((String) m1->S);
       //Lresult["mPassive"] = ((String) m0->S);
@@ -1479,18 +1345,12 @@ void doReactionFP(Rcpp::StringVector seqVector,  Rcpp::StringVector fnVector, bo
   else
    fprintf(fp,"deterministicExec,FALSE\n");
 
+  fprintf(fp,"ccopy,%d\n",ic.c_copy);
+  fprintf(fp,"cmove,%d\n",ic.c_move);
+  fprintf(fp,"cover,%d\n",ic.c_over);
+  fprintf(fp,"ctogg,%d\n",ic.c_togg);
 
-  /*
-  if(product != NULL){
-    Lresult["product"] = ((String) product->S);
-  }
-  Lresult["count"] = count;
-  Lresult["m0status"] = ((int) m0->status);
-  Lresult["m1status"] = ((int) m1->status);
-
-  Lresult["status"] = "finished";
-  */
-
+  fprintf(fp,"nprod,%d",nagents(product,-1));
 
   //Tidy up the memory:
   free_ag(m0);

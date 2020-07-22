@@ -1,0 +1,14 @@
+---
+title: "Checking with Valgrind"
+author: "Simon Hickinbotham"
+date: "14/03/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+ 
+ This is based on the tutorial at https://kevinushey.github.io/blog/2015/04/05/debugging-with-valgrind/
+ 
+ There's a script in the `tests` folder of the Rstringmol package that has a script called `valgrind.sh`
