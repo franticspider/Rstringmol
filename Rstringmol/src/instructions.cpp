@@ -24,6 +24,9 @@
 #include <string.h>
 #include <math.h>
 
+#include <Rcpp.h>
+using namespace Rcpp;
+
 #include "memoryutil.h"
 #include "randutil.h"
 
@@ -31,11 +34,219 @@
 #include "stringmanip.h"
 #include "alignment.h"
 
+#include "SMspp.h"
+#include "rsmData.h"
+
+#include "instructions.h"
 
 //extern const int  maxl;
 
 //Use this to control whether h-search is stochastic or not
 #define SOFT_SEARCH
+
+
+
+//Forward function declarations
+int     h_pos(s_ag *pag, char head);
+
+
+////////counting functions
+
+void init_counter(icount *ct){
+  ct->c_copy=0;
+  ct->c_move=0;
+  ct->c_over=0;
+  ct->c_togg=0;
+}
+
+
+
+
+
+
+//int stringPM::h_pos(s_ag *pag, char head){
+int h_pos(s_ag *pag, char head){
+
+  char *ph;
+  char *ps;
+
+  if(pag->status != B_ACTIVE)
+    printf("ERROR: attempting head position for inactive string");
+
+  switch(head){
+  case 'w':
+    ph = pag->w[pag->wt];
+    if(pag->wt)
+      ps = pag->S;
+    else
+      ps = pag->pass->S;
+    break;
+  case 'f':
+    ph = pag->f[pag->ft];
+    if(pag->ft)
+      ps = pag->S;
+    else
+      ps = pag->pass->S;
+    break;
+  case 'i':
+    ph = pag->i[pag->it];
+    if(pag->it)
+      ps = pag->S;
+    else
+      ps = pag->pass->S;
+    break;
+  case 'r':
+    ph = pag->r[pag->rt];
+    if(pag->rt)
+      ps = pag->S;
+    else
+      ps = pag->pass->S;
+    break;
+  }
+
+  return ph-ps;
+
+}
+
+
+
+//int stringPM::hcopy(s_ag *act){
+int hcopy(s_ag *act, icount * ct){
+
+  //s_ag *pass;
+  //pass = act->pass;
+  //int cidx;
+  //float rno;
+  int safe = 1;// this gets set to zero if any of the tests fail..
+
+  act->len = strlen(act->S);
+  act->pass->len = strlen(act->pass->S);
+
+  int p;
+
+  //If wptr is too far, just increment iptr
+  if( (p = h_pos(act,'w'))>=(int) MAXL){
+
+    //#ifdef DODEBUG
+    Rprintf("Write head out of bounds: %d\n",p);
+    //#endif
+
+    //just to make sure no damage is done:
+    if(act->wt)
+      act->S[MAXL]='\0';
+    else
+      act->pass->S[MAXL]='\0';
+
+    act->i[act->it]++;
+
+    safe = 0;
+    return -1;
+  }
+
+    //If rptr is too far, just increment iptr
+  if(h_pos(act,'r')>=(int) MAXL){
+    Rprintf("Read head out of bounds\n");
+
+    act->i[act->it]++;
+
+    safe = 0;
+    return -2;
+  }
+
+  //If rptr is not pointing at an opcode
+  if(*(act->r[act->rt]) == 0){
+    //possibly return a negative value and initiate a b
+    safe = 0;
+    //return -3;
+  }
+
+  //if(h_pos(act,'w')>=maxl){
+  //	//We are at the end of a copy...
+  //	//...so just increment *R
+  //	act->r[act->rt]++;
+  //	safe = 0;
+  //}
+
+  if(safe){
+    //MUTATION: (NOT NEEDED IN RSTRINGMOL ATM)
+    /*
+     rno=rand0to1();
+     if(rno<indelrate){//INDEL
+
+     //should follow the blosum table for this....
+     rno=rand0to1();
+     if(rno<0.5){//insert
+     //first do a straight copy..
+     *(act->w[act->wt])=*(act->r[act->rt]);
+
+     //no need to test for granular here since we are inserting...
+     act->w[act->wt]++;
+
+     //Then pick a random instruction:
+     cidx = (float) rand0to1() * blosum->N;
+
+     //insert the random instruction
+     *(act->w[act->wt])=blosum->key[cidx];
+     if(granular_1==0){
+     act->w[act->wt]++;
+     }
+     }
+     else{//delete
+     act->i[act->it]++;
+     }
+
+     if(granular_1==0){
+     act->r[act->rt]++;
+     }
+
+     }
+     else{
+     if(rno<subrate+indelrate){//INCREMENTAL MUTATION
+     cidx = sym_from_adj(*(act->r[act->rt]),blosum);
+     *(act->w[act->wt])=cidx;
+     }
+     else{//NO MUTATION
+     *(act->w[act->wt])=*(act->r[act->rt]);
+     }
+     if(granular_1==0){
+     act->w[act->wt]++;
+     act->r[act->rt]++;
+     }
+     }
+     */
+
+    if(ct !=NULL){
+      ct->c_copy++;
+      if(*(act->w[act->wt])!=0){
+        ct->c_over++;
+      }
+    }
+
+    //If no mutation, it's easy:
+    *(act->w[act->wt])=*(act->r[act->rt]);
+    act->w[act->wt]++;
+    act->r[act->rt]++;
+
+  }
+  //update lengths
+  act->len = strlen(act->S);
+  act->pass->len = strlen(act->pass->S);
+
+  //Increment the instruction pointer
+  act->i[act->it]++;
+
+#ifdef VERBOSE
+  if(mut)
+    printf("Mutant event %d. new string is:\n%s\n\n",mut,act->wt?act->S:act->pass->S);
+#endif
+  act->biomass++;
+  ///biomass++;
+  return 0;
+}
+
+
+
+
 
 int LabLength(char *ip, const int maxl){
 
@@ -55,14 +266,15 @@ int LabLength(char *ip, const int maxl){
 ////////////////////
 // $: H-Search    //
 ////////////////////
-char * HSearch(char *iptr, char *sp, swt *T, int *itog, int *ftog,const int maxl, float *pbprob){
+char * HSearch(char *iptr, char *sp, swt *T, int *itog, int *ftog, float *pbprob){
 
-	char *ip,*tp,tmp[maxl];
+	char *ip,*tp,tmp[MAXL];
 	ip = iptr;
 	int i,len=0;
 	align A;
 
-	memset(tmp,0,maxl*sizeof(char));
+	//create space for the match
+	memset(tmp,0,MAXL*sizeof(char));
 
 	/*NOTE: We are currently searching from the start of the string with the active flow pointer.
 	Perhaps we should start AT the flow pointer, and "loop around" to the beginning of the string if
@@ -88,10 +300,15 @@ char * HSearch(char *iptr, char *sp, swt *T, int *itog, int *ftog,const int maxl
 		ip++;
 	}
 	*/
-	len = LabLength(ip, maxl);
+
+	//get the length of the label
+	len = LabLength(ip, MAXL);
+
+	//set the default positions if there's no match:
 	tp = iptr+len;
 	ip=iptr+1;
 
+  //special case if len is zero - different behaviour to if len is 1 or 2, which is also different to if len is >2
 	if(!len){
 		//Ensure that the toggles are set:
 		*ftog = *itog;
@@ -110,9 +327,11 @@ char * HSearch(char *iptr, char *sp, swt *T, int *itog, int *ftog,const int maxl
 #ifndef SOFT_SEARCH
 	//TODO: this will always match if any symbols match. There is no stochastic element..
 	//match will only be zero if NO symbols match
-	if(A.match)
+	if(A.match){
 #else
 	int l = A.e1-A.s1 < A.e2-A.s2 ? A.e1-A.s1 : A.e2-A.s2;
+
+	//if l is too short, bprob is zero which means the soft search will never match
 	if(l<=2){
 	  //printf("l<=2, so bprob = 0\n");
 		bprob=0;
@@ -128,10 +347,12 @@ char * HSearch(char *iptr, char *sp, swt *T, int *itog, int *ftog,const int maxl
 	//printf("Hsearch: s = %f;  bprob = %f\n",s,bprob);
 
 	float rno = rand0to1();
-	if(rno<bprob)//search success!
+	if(rno<bprob){//search success!
 #endif
 		return tp + A.e2 - (tp-sp);
+	}
 
+	// if 'l' is 1 or 2, we *always* get to here
 	//Ensure that the toggles are set - if no match found, we currenty move *F to *I - might leave it on the opposite string if it was there in the 1st place...:
 	*ftog = *itog;
 	return tp;
@@ -142,10 +363,10 @@ char * HSearch(char *iptr, char *sp, swt *T, int *itog, int *ftog,const int maxl
 ////////////////////
 // ?: If-Label    //
 ////////////////////
-char * IfLabel(char *ip, char *rp, char *sp, swt *T, const int maxl, float *iprob){
+char * IfLabel(char *ip, char *rp, char *sp, swt *T, float *iprob){
 
-	char tmp[maxl],tmp2[maxl];
-	int i,len = LabLength(ip, maxl);
+	char tmp[MAXL],tmp2[MAXL];
+	int i,len = LabLength(ip, MAXL);
 	ip++;
 	align A;
 
@@ -169,8 +390,8 @@ char * IfLabel(char *ip, char *rp, char *sp, swt *T, const int maxl, float *ipro
 
 	default: //use an alignment to move the pointers
 
-		memset(tmp ,0,maxl*sizeof(char));
-		memset(tmp2,0,maxl*sizeof(char));
+		memset(tmp ,0,MAXL*sizeof(char));
+		memset(tmp2,0,MAXL*sizeof(char));
 		strncpy(tmp,ip,len);
 		//generate the complement:
 		for(i=0;i<len;i++)

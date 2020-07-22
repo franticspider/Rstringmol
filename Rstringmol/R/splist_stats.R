@@ -15,8 +15,8 @@ splist_stats <- function(fn,tmin=0,verbose=F){
   xx <- read.table(fn,stringsAsFactors = F,fill=T,sep=",")
 
   if(ncol(xx)==5){
-    #TODO: Handle this more elegantly
-    message(sprintf("RESTART DETECTED - check file %s",fn))
+    #This happens after restart
+    if(verbose)message(sprintf("RESTART DETECTED - check file %s",fn))
 
     colnames(xx) <- c("spp","act","pass","n3","seq")
     xx$spp <- as.numeric(xx$spp)
@@ -24,12 +24,25 @@ splist_stats <- function(fn,tmin=0,verbose=F){
     xx$pass <- as.numeric(xx$pass)
     xx$n3 <- as.numeric(xx$n3)
 
-    return(xx)
+    yy=data.frame(spp=xx$spp,act=xx$act,pass=xx$pass,float=rep(0,nrow(xx)),
+                  obsn=xx$n3,obst1=rep(-1,nrow(xx)),n3=rep(0,nrow(xx)),
+                  seq=xx$seq,restart=rep(T,nrow(xx)))
+
+    return(yy)
   }
   else{
 
     #get the origin molecule(s)
     origin <- xx[xx[,2]==-1,]
+    colnames(origin) <- c("spp","act","pass","n3","seq")
+    origin=data.frame(spp=origin$spp,
+                      act=origin$act,
+                      pass=origin$pass,
+                      float=rep(0,nrow(origin)),
+                      obsn=origin$n3,
+                      obst1=rep(-1,nrow(origin)),
+                      n3=rep(0,nrow(origin)),
+                      seq=origin$seq,stringsAsFactors = F)
 
     #message(sprintf("%d origin molecules found",nrow(origin)))
 
@@ -44,6 +57,10 @@ splist_stats <- function(fn,tmin=0,verbose=F){
     xx$obsn <- as.numeric(xx$obsn)
     xx$obst1 <- as.numeric(xx$obst1)
     xx$n3 <- as.numeric(xx$n3)
+
+    xx<-rbind(xx,origin)
+
+    xx$restart=F
 
     if(verbose)message(sprintf("%d species found",length(unique(xx$spp))))
 
