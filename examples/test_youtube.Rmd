@@ -19,9 +19,9 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-#Summary
+# Summary
 
-##Experiments
+## Experiments
 
 - two arena shapes: 250x50 and 125x100
 - two seeding patterns - random pairs and blocks
@@ -37,7 +37,7 @@ knitr::opts_chunk$set(echo = TRUE)
 - What is the range of novel behaviours? How often does each instance emerge?
 
 
-##Progress
+## Progress
 
 - **125x100, block seed** 4 of 5 ran to t=2,000,000; 1 extinct at t~=80,000
 - **125x100, random seed** 2 of 5 ran to t=2,000,000; 2 extinct at t~=90,000; 1 extinct at t~=120,000
@@ -45,7 +45,7 @@ knitr::opts_chunk$set(echo = TRUE)
 - **250x50, random seed:** All 5 exinct at t = 50,000, 80,000, 90,000, 120,000 and 340,000
 - **evoevo** 3 of 5 ran from 1m to 2m; extinctions at t = 1,610,000 and 1,710,000
 
-##Observations
+## Observations
 
 ### *as predicted*:
 
@@ -67,14 +67,14 @@ knitr::opts_chunk$set(echo = TRUE)
     
 ----
 
-#Detail
+# Detail
 
 - in all these, the first video has cells coloured by molecule length and the second has cells coloured by species number
 - Timing - 4 seconds shows approximately 100,000 timesteps
 
-##125x100, block seed
+## 125x100, block seed
 
-###run 1
+### run 1
 
 
 
@@ -129,13 +129,7 @@ These are indicated by the yellow colour in the 'length' plot, bottom left. It i
 [long parasites at t=1,560,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out1R/rtypes0000078.png)
 
 
-
-
-
-
-###run 2
-
-
+### run 2
 
 <iframe width="400" height="500" src="https://www.youtube.com/embed/R2DbrIDl-og" frameborder="0"  allowfullscreen></iframe>
 <iframe width="400" height="500" src="https://www.youtube.com/embed/qzMC4aN7SRg" frameborder="0"  allowfullscreen></iframe>
@@ -158,7 +152,7 @@ Note a 'ring' of parasites also occurring in this
 
 [arena flood at t=1,160,000](/home/sjh/Desktop/paulien/smsp/1705smsp/out2R/rtypes0000068.png)
 
-###run 3
+### run 3
 
 <iframe width="400" height="500" src="https://www.youtube.com/embed/8onxqVtAKEs" frameborder="0" allowfullscreen></iframe>
 <iframe width="400" height="500" src="https://www.youtube.com/embed/BtkpgIMrgpc" frameborder="0"  allowfullscreen></iframe>
@@ -204,7 +198,7 @@ Note a 'ring' of parasites also occurring in this
 
 ---
 
-##125x100, random seed
+## 125x100, random seed
 
 ### run 1
 

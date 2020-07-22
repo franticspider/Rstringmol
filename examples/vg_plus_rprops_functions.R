@@ -186,43 +186,46 @@ lookup.reaction <- function(rlist,actseq,passeq,single = T){
 
 
 
-network.properties <- function(pwp,mustexist=F){
+network.properties <- function(nwp,mustexist=F){
 
-  pwp$np_MutualRepl <- F
-  pwp$np_Parasite <- F
-  pwp$np_Hypercycle <- F
+  nwp$np_MutualRepl <- F
+  nwp$np_Parasite <- F
+  nwp$np_Hypercycle <- F
 
-  for(rr in 1:nrow(pwp)){
+  for(rr in 1:nrow(nwp)){
 
     # Make sure sequences are not the same:
-    if(pwp$actseq[rr]!=pwp$passeq[rr]){
+    if(nwp$actseq[rr]==nwp$passeq[rr]){
+      if(nwp$pp_Replicator[rr]){
+        nwp$np_MutualRepl[rr]<-T
+        nwp$np_Hypercycle<-F
+      }
+    }else{
 
       # Declare it as a parasite *unless* it does mutual replication
-      if(pwp$pp_Replicator[rr]){
+      if(nwp$pp_Replicator[rr]){
 
-        pwp$np_Parasite[rr]<- T
+        nwp$np_Parasite[rr]<- T
         #pwp$np_MutualRepl[rr] <- F # Not needed - already set above
 
         if(mustexist){
-          flip <- lookup.reaction(pwp, actseq = pwp$passeq[rr], passeq = pwp$actseq[rr])
+          flip <- lookup.reaction(nwp, actseq = nwp$passeq[rr], passeq = nwp$actseq[rr])
         }
         else{
           #TODO: tidy this up!
-          flip <- runReactionFP(c(pwp$passeq[rr],pwp$actseq[rr]))
-          flur <- setup.pwprops(pwp$passeq[rr],pwp$actseq[rr])
+          flip <- runReactionFP(c(nwp$passeq[rr],nwp$actseq[rr]))
+          flur <- setup.pwprops(nwp$passeq[rr],nwp$actseq[rr])
           flip <- calc.pwprops(flur,1,flip)
         }
 
-
-
         if(!is.null(flip)){
           if(flip$pp_Replicator[1]){
-            pwp$np_Parasite[rr]<- F
-            pwp$np_MutualRepl[rr] <- T
+            nwp$np_Parasite[rr]<- F
+            nwp$np_MutualRepl[rr] <- T
 
             # Gather the info to detect a hypercycle
-            actact <- lookup.reaction(pwp, actseq = pwp$actseq[rr], passeq = pwp$actseq[rr],single=T)
-            paspas <- lookup.reaction(pwp, actseq = pwp$passeq[rr], passeq = pwp$passeq[rr],single=T)
+            actact <- lookup.reaction(nwp, actseq = nwp$actseq[rr], passeq = nwp$actseq[rr],single=T)
+            paspas <- lookup.reaction(nwp, actseq = nwp$passeq[rr], passeq = nwp$passeq[rr],single=T)
 
             #booleans to hold whether self-copy happens:
             asc <- F
@@ -242,20 +245,35 @@ network.properties <- function(pwp,mustexist=F){
             }
 
             if(!asc && !psc)
-              pwp$np_Hypercycle[rr] <- T
+              nwp$np_Hypercycle[rr] <- T
+          }
+        }
+      }
+      else{
+        #We need the flip nonreplicators to see if the converse reaction is replicating
+        if(mustexist){
+          flip <- lookup.reaction(nwp, actseq = nwp$passeq[rr], passeq = nwp$actseq[rr])
+        }
+        else{
+          #TODO: tidy this up!
+          flip <- runReactionFP(c(nwp$passeq[rr],nwp$actseq[rr]))
+          flur <- setup.pwprops(nwp$passeq[rr],nwp$actseq[rr])
+          flip <- calc.pwprops(flur,1,flip)
+        }
+        if(!is.null(flip)){
+          if(flip$pp_Replicator[1]){
+            nwp$np_Parasite[rr]<- T
           }
         }
       }
     }
   }
-  return(pwp)
+  return(nwp)
 }
 
 
 print.props<- function(ur){
 
-  if(ur$pp_obligate)
-    message("Reaction is Obligate")
   if(ur$pp_NoProduct)
     message("Reaction has No Product")
   if(ur$pp_NewProduct)
@@ -342,7 +360,6 @@ setup.pwprops <- function(actseq,passeq){
   ur$product <- ""
 
   #These are the properties agreed with Susan
-  ur$pp_obligate <- F
 
   ur$pp_NoProduct <-F
   ur$pp_NewProduct <-F
@@ -366,6 +383,14 @@ setup.pwprops <- function(actseq,passeq){
 }
 
 
+is.pp_selfpres <- function(ur){
+  if(!ur$pp_ActiveMod[1] && !ur$pp_PassiveMod[1])
+    return(T)
+  else
+    return(F)
+}
+
+
 pairwise.properties <- function(fn){
 
   fdata <- rconf_rdata(fn)
@@ -384,7 +409,9 @@ pairwise.properties <- function(fn){
   ur$product <- ""
 
   #These are the properties agreed with Susan
-  ur$pp_obligate <- F
+  ur$pp_ActiveMod <- F
+  ur$pp_PassiveMod <- F
+  #NB selfPres <- ActivePres & PassivePres
 
   ur$pp_NoProduct <-F
   ur$pp_NewProduct <-F
@@ -404,13 +431,23 @@ pairwise.properties <- function(fn){
   ur$actlen <- str_length(ur$actseq)
   ur$paslen <- str_length(ur$passeq)
 
+  ur$ccopy <-0
+  ur$cmove <-0
+  ur$cover <-0
+  ur$ctogg <-0
+
+  ur$oneway <-F
+
   for (rr in 1:nrow(ur)){
     #################################################
     # Reaction properties
 
     #rt <- reaction_type(ur$actseq[rr],ur$passeq[rr])
     # Run the reaction(s):
+
     result <- runReactionFP(c(ur$actseq[rr],ur$passeq[rr]))
+    #result <- doReaction(c(ur$actseq[rr],ur$passeq[rr]))
+
     # conv <- result
     # if(ur$actseq[rr] != ur$passeq[rr]){
     #   if(result$deterministicBind){
@@ -421,9 +458,24 @@ pairwise.properties <- function(fn){
     #     conv <- runReactionFP(c(ur$passeq[rr],ur$actseq[rr]))
     #   }
     # }
+    if(ur$actseq[rr] != result$mActive)
+      ur$pp_ActiveMod[rr] <- T
+
+    if(ur$passeq[rr] != result$mPassive)
+      ur$pp_PassiveMod[rr] <- T
+
+
+    ur$oneway[rr] <- result$deterministicBind
+
+    ur$ccopy[rr] <- result$ccopy
+    ur$cmove[rr] <- result$cmove
+    ur$cover[rr] <- result$cover
+    ur$ctogg[rr] <- result$ctogg
 
     ur$bprob[rr] <- result$bprob
     ur$nsteps[rr] <- result$count
+
+    ur$nprod[rr] <- result$nprod
 
     if(result$product == "empty")
       ur$pp_NoProduct[rr] <- T
@@ -440,8 +492,10 @@ pairwise.properties <- function(fn){
     }else{
       if(result$product == result$mPassive)
         ur$pp_Replicator[rr] <- T
-      if(result$product == result$mActive)
+      if(result$product == result$mActive){
         ur$pp_AutoReplicator[rr] <- T
+        ur$pp_Replicator[rr] <- T
+      }
     }
 
 
@@ -660,8 +714,6 @@ runproplist <- function(froot,from=20000,to=2000000,step=20000,outfn=NULL,verbos
   rundata <- list()
   dp <- 1
   for(rr in seq(from,to,step)){
-
-
 
     #testinfn <- sprintf("~/Desktop/paulien/smsp/1705smsp/out3/out1_%d.conf",rr)
     testinfn <- sprintf("%s%d.conf",froot,rr)

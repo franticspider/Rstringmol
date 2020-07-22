@@ -377,7 +377,7 @@ Let's get the full runs in the bag first:
 
 *This code is not evaluated in the markdown as it takes too long to run*
 
-```{r eval=FALSE, include=TRUE}
+```{r eval=T, include=TRUE}
 require(Rstringmol)
 source("../examples/vg_plus_rprops_functions.R")
 
@@ -392,12 +392,17 @@ rundata <- runproplist("~/Desktop/paulien/smsp/1705smspr/out3/out1_",outfn = "rp
 
 rundata <- runproplist("~/Desktop/paulien/smsp/1705sm250/out4/out1_",outfn = "rp1705sm2504.RData")
 rundata <- runproplist("~/Desktop/paulien/smsp/1705sm250/out5/out1_",outfn = "rp1705sm2505.RData")
-
-
 ```
 
 
-The code below assumes that `rundata` holds data for the run of interest- I need to develop the code a bit more to make this easier to edit!
+```{r}
+require(Rstringmol)
+source("../examples/vg_plus_rprops_functions.R")
+rundata <- runproplist("~/Desktop/paulien/smsp/1705sm250r/out3/out1_",outfn = "rp1705sm250r3.RData",to = 320000)
+```
+
+
+The code below assumes that `rundata` holds data for the run of interest- I need to develop the code a bit more to make this easier to edit! See SummaryPlotsV2.Rmd etc. for how I've done this
 
 ```{r}
 require(vioplot)

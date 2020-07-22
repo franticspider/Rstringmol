@@ -35,7 +35,14 @@ test_that("FP inexact execution is inexact",{
   rm(result)
 })
 
+test_that("Copy Operator counters count",{
+  result <- runReactionFP(c("OOOO$BLUB>C^B=========OYHOXXX","BBBBYY"))
+  #TODO: need to count calls to '=' that don't fire at all (both R and W pointers are off-string)
+  expect_equal(result$ccopy, 6)
+  expect_equal(result$cover, 3)
 
+
+})
 
 test_that("FPnon-deterministic bind is detected",{
 
@@ -84,3 +91,14 @@ test_that("TOGGLE '^' toggles and COPY '=' copies",{
 
   rm(result)
 })
+
+
+test_that("count of products works",{
+  ms <- "OOOOOOOOBBBBBBBBE$BLU^B>C=====%=====%OYH"
+
+  rs <- runReactionFP(c(ms,ms))
+
+  expect_equal(rs$nprod,2)
+
+})
+

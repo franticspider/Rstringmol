@@ -5,7 +5,11 @@ timesTwelve <- function(x) {
     .Call(`_Rstringmol_timesTwelve`, x)
 }
 
-#' Get the complement of a string
+mtrand <- function() {
+    .Call(`_Rstringmol_mtrand`)
+}
+
+#' Carry out a Smith-Waterman alignment
 #'
 #' @param input the input string (Assume error checking in R...)
 #' @param verbose whether to print output or not

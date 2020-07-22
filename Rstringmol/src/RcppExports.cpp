@@ -16,6 +16,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mtrand
+double mtrand();
+RcppExport SEXP _Rstringmol_mtrand() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(mtrand());
+    return rcpp_result_gen;
+END_RCPP
+}
 // doComplement
 Rcpp::String doComplement(Rcpp::String input, bool verbose);
 RcppExport SEXP _Rstringmol_doComplement(SEXP inputSEXP, SEXP verboseSEXP) {
@@ -69,6 +79,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_Rstringmol_timesTwelve", (DL_FUNC) &_Rstringmol_timesTwelve, 1},
+    {"_Rstringmol_mtrand", (DL_FUNC) &_Rstringmol_mtrand, 0},
     {"_Rstringmol_doComplement", (DL_FUNC) &_Rstringmol_doComplement, 2},
     {"_Rstringmol_doSWAlign", (DL_FUNC) &_Rstringmol_doSWAlign, 3},
     {"_Rstringmol_doReaction", (DL_FUNC) &_Rstringmol_doReaction, 3},

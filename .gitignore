@@ -46,6 +46,11 @@ examples/*.html
 examples/*.pdf
 examples/*.dat
 examples/*.txt
+examples/*.RDS
+examples/*.Rdata
+examples/*.RData
+examples/*.png
+examples/**
 
 # pdf files in Rstringmol folder
 Rstringmol/*.pdf
