@@ -411,7 +411,7 @@ pairwise.properties <- function(fn){
   #These are the properties agreed with Susan
   ur$pp_ActiveMod <- F
   ur$pp_PassiveMod <- F
-  #NB selfPres <- ActivePres & PassivePres
+  ur$pp_SelfPres <- F
 
   ur$pp_NoProduct <-F
   ur$pp_NewProduct <-F
@@ -463,6 +463,8 @@ pairwise.properties <- function(fn){
 
     if(ur$passeq[rr] != result$mPassive)
       ur$pp_PassiveMod[rr] <- T
+
+    ur$pp_SelfMod[rr] <- ur$pp_PassiveMod[rr] | ur$pp_ActiveMod[rr]
 
 
     ur$oneway[rr] <- result$deterministicBind
