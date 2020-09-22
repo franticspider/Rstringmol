@@ -923,7 +923,7 @@ List doSWAlign(Rcpp::StringVector seqVector, bool strip = false, bool verbose = 
                               _["bprob"] = 0.0
   );
   if(seqVector.length() != 2){
-    Rprintf("ERROR: 2 stringmols required, %d given\n",seqVector.length());
+    warning("WARNING: exactly 2 stringmols required in doSWAlign (rstringmol.cpp), %d given\n",seqVector.length());
     Lresult["status"] = ((String) "bad number of input strings");
     Lresult["errcode"] = SM_ERR_BADNSTRINGS;
 
@@ -1060,7 +1060,8 @@ List doReaction(Rcpp::StringVector seqVector, bool verbose = false, const int cl
 
 
   if(seqVector.length() != 2){
-    Rprintf("ERROR: 2 stringmols required, %d given\n",seqVector.length());
+    // stop("ERROR: 2 stringmols required, %d given\n",seqVector.length());
+    warning("WARNING: exactly 2 stringmols required in doReaction (rstringmol.cpp), %d given\n",seqVector.length());
     Lresult["status"] = "bad number of input strings";
     Lresult["errcode"] = SM_ERR_BADNSTRINGS;
 
@@ -1233,7 +1234,8 @@ void doReactionFP(Rcpp::StringVector seqVector,  Rcpp::StringVector fnVector, bo
                                           _["mPassive"] = "unset",
                                           _["errcode"] = 0);
   if(seqVector.length() != 2){
-    Rprintf("ERROR: 2 stringmols required, %d given\n",seqVector.length());
+    //stop("ERROR: 2 stringmols required, %d given\n",seqVector.length());
+    warning("WARNING: exactly 2 stringmols required in doReactionFP (rstringmol.cpp), %d given\n",seqVector.length());
     Lresult["status"] = "bad number of input strings";
     Lresult["errcode"] = SM_ERR_BADNSTRINGS;
 

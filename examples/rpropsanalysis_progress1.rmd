@@ -383,7 +383,7 @@ source("../examples/vg_plus_rprops_functions.R")
 
 
 rundata <- runproplist("~/Desktop/paulien/smsp/1705smsp/out1/out1_",outfn = "rp1705smsp1.RData")
-rundata <- runproplist("~/Desktop/paulien/smsp/1705smsp/out2/out1_",outfn = "rp1705smsp2.RData")
+rundata <- runproplist("~/Desktop/paulien/smsp/1705smsp/out2/out1_",outfn = "rp1705smsp2v2.RData")
 rundata <- runproplist("~/Desktop/paulien/smsp/1705smsp/out3/out1_",outfn = "rp1705smsp3.RData")
 rundata <- runproplist("~/Desktop/paulien/smsp/1705smsp/out5/out1_",outfn = "rp1705smsp5.RData")
 

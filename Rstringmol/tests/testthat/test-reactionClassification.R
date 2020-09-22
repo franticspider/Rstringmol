@@ -5,7 +5,39 @@
 context("Reaction classification")
 
 
+
+
+
+
+# Helper function to run pairwise props
+pwc <- function(ain,pin,d.r){
+  fdata <- data.frame(actseq = ain, passeq = pin, stringsAsFactors = F)
+  ur<-pairwise.properties(fdata,dummy.result = d.r)#,dummy.result=dummy.result)
+  return(ur)
+}
+
+
+test_that("Self-preserving and self-modifying are correctly identified",{
+
+  # NOTE! We might not have to use genuine reactions to test all this - so we can put sequences in for hypotheticals
+
+  ain <- "AAAA"
+  pin <- "NNNN"
+  d.r <- runReactionFP(c(ain,pin))
+
+  ur <- pwc(ain,pin,d.r)
+
+  expect_true(ur$pp_NoProduct)
+  expect_false(ur$pp_SelfMod)
+
+})
+
+
+
+# OBSOLETE! use pairwise.properties instead
 test_that("self-self reactions are classified correctly",{
+
+  skip("obsolete method to be deleted when pairwise.properties and network.properties are running")
 
   mA <- "ABAAABAA"
   m1 <- "NMMMNNNN"
