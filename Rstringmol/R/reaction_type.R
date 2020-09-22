@@ -2,7 +2,8 @@
 
 
 
-
+# TODO: do we need these?
+# OBSOLETE!!!
 # List of reaction types - not sure this is the best place for them...
 rtypes = c(
   "SelfSelfNoProduct",
@@ -15,6 +16,7 @@ rtypes = c(
   "Macromutation"
 )
 
+# TODO: do we need these?
 rcols = c("grey",
           "blue",
           "orange",
@@ -46,6 +48,268 @@ print_mols <- function(type,
 
 
 
+
+
+
+
+
+
+
+############################################
+## DETECTION REACTION PROPERTIES
+
+
+
+#' Identify the network-level properties in a reaction
+#'
+#' @param fdata data frame containing actseq and passeq fields
+#' @param dummy.result an optional result of runReactionFP passed in (for testing)
+#' @export
+pairwise.properties <- function(fdata,dummy.result=NULL){
+
+  #create a data frame of unique reactions for this file:
+  ur <- unique(data.frame(actseq = fdata$actseq, passeq = fdata$passeq, stringsAsFactors = F))
+
+  #ur$type <- "unknown"
+  ur$product <- ""
+
+  #These are the properties agreed with Susan
+  ur$pp_ActiveMod <- F
+  ur$pp_PassiveMod <- F
+  ur$pp_SelfMod <- F
+
+  ur$pp_NoProduct <-F
+  ur$pp_NewProduct <-F
+
+  ur$pp_biolRep <-F
+  ur$pp_SelfReplicator <-F
+  ur$pp_Repl1 <- F # formerly ActiveReplicator <-F
+  ur$pp_Repl2 <- F # formerly PassiveReplicator <- F
+
+  ur$pp_Jumper <-F
+
+  ur$actlen <- str_length(ur$actseq)
+  ur$paslen <- str_length(ur$passeq)
+  ur$outputA <- ""
+  ur$outputP <- ""
+
+  ur$ccopy <-0
+  ur$cmove <-0
+  ur$cover <-0
+  ur$ctogg <-0
+
+  ur$bprob <-0
+  ur$nsteps <- 0
+
+  ur$nprod <- 0
+
+  ur$oneway <-F
+
+  for (rr in 1:nrow(ur)){
+    #################################################
+    # Reaction properties
+
+    #rt <- reaction_type(ur$actseq[rr],ur$passeq[rr])
+    # Run the reaction(s):
+
+    if(is.null(dummy.result))
+      result <- runReactionFP(c(ur$actseq[rr],ur$passeq[rr]))
+    else{
+      message("Calculating properties based on external result")
+      result <- dummy.result
+    }
+
+    ur$oneway[rr] <- result$deterministicBind
+
+    if(ur$actseq[rr] != result$mActive)
+      ur$pp_ActiveMod[rr] <- T
+
+    if(ur$passeq[rr] != result$mPassive)
+      ur$pp_PassiveMod[rr] <- T
+
+    ur$pp_SelfMod[rr] <- ur$pp_PassiveMod[rr] | ur$pp_ActiveMod[rr]
+
+    if(result$product == "empty")
+      ur$pp_NoProduct[rr] <- T
+    else{
+      if(result$product != ur$actseq[rr] & result$product != ur$passeq[rr])
+        ur$pp_NewProduct[rr] <- T
+    }
+
+    ur$ccopy[rr] <- result$ccopy
+    ur$cmove[rr] <- result$cmove
+    ur$cover[rr] <- result$cover
+    ur$ctogg[rr] <- result$ctogg
+
+    ur$bprob[rr] <- result$bprob
+    ur$nsteps[rr] <- result$count
+
+    ur$nprod[rr] <- result$nprod
+    ur$outputA[rr] <- result$mActive
+    ur$outputP[rr] <- result$mPassive
+
+    #####################################################
+    #Replicator types
+
+    # Count the inputs copies of active and passive as described in the tech report
+    actin<-1
+    pasin<-1
+    if(ur$actseq[rr]==ur$passeq[rr]){
+      actin <- actin+1
+      pasin <- pasin+1
+    }
+
+    act <- 0
+    if(ur$actseq[rr]==result$mActive)  act <- act + 1
+    if(ur$actseq[rr]==result$mPassive) act <- act + 1
+    if(ur$actseq[rr]==result$product)  act <- act + 1
+    if(act>actin)ur$pp_Repl1[rr] <-T
+
+    pct <- 0
+    if(ur$passeq[rr]==result$mActive)  pct <- pct + 1
+    if(ur$passeq[rr]==result$mPassive) pct <- pct + 1
+    if(ur$passeq[rr]==result$product)  pct <- pct + 1
+    if(pct>pasin)ur$pp_Repl2[rr] <-T
+
+
+    ur$pp_biolRep[rr] <- ur$pp_Repl1[rr] | ur$pp_Repl2[rr]
+    # The technical repl property is now "networked": see tech report
+    # Here we are using pp_biolRep as a naive term - NOT TO BE USED TO BUILD OTHER PROPERTIES
+    # We can still spot self-replicators here:
+    if((ur$pp_Repl1[rr] | ur$pp_Repl2[rr]) & (ur$actseq[rr]==ur$passeq[rr])){
+      ur$pp_SelfReplicator[rr] <- T
+    }
+
+    Jumper1 <- F
+    Jumper2 <- F
+    if(result$mActive != ur$actseq[rr] & ur$actseq[rr] == result$product)
+      Jumper1 <- T
+    if(result$mPassive != ur$passeq[rr] & ur$passeq[rr] == result$product)
+      Jumper2 <- T
+    if(Jumper1 | Jumper2)
+      ur$pp_Jumper[rr] <- T
+
+    ur$product[rr] <- result$product
+    ur$dexec[rr] <- result$deterministicExec
+    ur$dbind[rr] <- result$deterministicBind
+    ur$nobs[rr] <- nrow(fdata[fdata$actseq == ur$actseq[rr]
+                              & fdata$passeq == ur$passeq[rr],])
+  }
+
+  return(ur)
+}
+
+
+#' Identify the network-level properties in a reaction
+#'
+#' @param fn the file name
+#' @export
+network.properties <- function(nwp){
+
+  nwp$np_Parasite <- F
+  nwp$np_MutualRepl <- F
+  nwp$np_Hypercycle <- F
+
+  for(rr in 1:nrow(nwp)){
+     #Run the 'flip' reaction
+     if(nwp$actseq[rr] == nwp$passeq[rr]){
+       if(nwp$pp_SelfReplicator){
+         nwp$np_MutualRepl[rr] <- T
+       }
+     }else{
+       flipdata <- data.frame(actseq=nwp$passeq[rr],passeq=nwp$actseq[rr],stringsAsFactors = F)
+       flip <- pairwise.properties(flipdata)
+
+       #PARASITE
+       passive.parasite <- F
+       if(nwp$pp_Repl2[rr] & ! nwp$pp_Repl1[rr])
+         if(!flip$pp_Repl2)
+           passive.parasite <- T
+
+       active.parasite <- F
+       if(!nwp$pp_Repl1[rr] & nwp$pp_Repl2[rr])
+         if(!flip$pp_Repl1)
+           active.parasite <- T
+
+       nwp$np_Parasite[rr] <- active.parasite | passive.parasite
+
+
+       #MUTUAL
+
+       #HYPERCYCLE
+     }
+  }
+  return(nwp)
+}
+
+
+
+
+############################################
+## PARSING BIG DATA FILES
+
+
+#' Create a data structure from a *.conf* file for passing into the standard *pairwise.properties* function
+#'
+#' @param fn the file name
+#' @export
+pairwise.properties.from.conf <- function(fn){
+
+  fdata <- rconf_rdata(fn)
+  fdata$actseq <- as.character(fdata$actseq)
+  fdata$passeq <- as.character(fdata$passeq)
+
+  ur <- pairwise.properties(fdata)
+
+  return(ur)
+}
+
+
+
+
+#' Obtain the reaction properties of all the reactions in a stringmol run
+#'
+#' @param froot the pathway to the data files
+#' @param from the first timestep
+#' @param to the last timestep
+#' @param step the timestep increment
+#' @param outfn the name of an R data object to save it to
+#' @param verbose verbose output
+#' @export
+runproplist <- function(froot,from=20000,to=2000000,step=20000,outfn=NULL,verbose = F){
+
+  rundata <- list()
+  dp <- 1
+  for(rr in seq(from,to,step)){
+
+    #testinfn <- sprintf("~/Desktop/paulien/smsp/1705smsp/out3/out1_%d.conf",rr)
+    testinfn <- sprintf("%s%d.conf",froot,rr)
+    if(verbose)message(sprintf("%d: file is %s",rr,testinfn))
+
+    ug <- pairwise.properties.from.conf(testinfn)
+
+    ng <- network.properties(ug)
+
+    rundata[[dp]] <- ng
+
+    dp <- dp + 1
+
+  }
+
+  if(!is.null(outfn)){
+    save(rundata,file=outfn)
+  }
+
+  return(rundata)
+
+}
+
+
+#############################################
+## DEPRECIATED FUNCTIONS
+
+
+## DEPRECIATED FUNCTION
 #' Determine the type of stringmol reaction
 #'
 #' @param act the active stringmol
@@ -58,6 +322,10 @@ reaction_typeFP_old <- function(act,
                                 pas,
                                 verbose = F,
                                 detail = F) {
+
+
+  .Deprecated(msg = "'reaction_typeFP_old' will be removed in the next version")
+
   #pro <- doReaction(c(act,pas))
   pro <- runReactionFP(c(act, pas))
   conv <- runReactionFP(c(pas, act))
@@ -165,6 +433,8 @@ reaction_type <- function(act,pas,
                           detail = F) {
 
 
+  .Deprecated(msg = "'reaction_typ' will be removed in the next version")
+
   if(is.null(result))
     result <- runReactionFP(c(act,pas))
 
@@ -212,3 +482,5 @@ reaction_type <- function(act,pas,
   #pro$product = "BBBBBBB"
   return(result)
 }
+
+

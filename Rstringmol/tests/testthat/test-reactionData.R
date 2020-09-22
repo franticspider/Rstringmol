@@ -1,6 +1,6 @@
 
 
-context("molecule-molecule interactions")
+context("molecule-molecule interactions (non-FP)")
 
 
 test_that("doReaction fails gracefully",{

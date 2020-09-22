@@ -4,7 +4,7 @@
 \alias{runReactionFP}
 \title{run a Stringmol reaction and get results via a file.}
 \usage{
-runReactionFP(reactants, verbose = F)
+runReactionFP(reactants, verbose = F, remove = T)
 }
 \description{
 run a Stringmol reaction and get results via a file.
