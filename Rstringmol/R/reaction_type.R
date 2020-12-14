@@ -172,13 +172,19 @@ pairwise.properties <- function(fdata,dummy.result=NULL){
     if(pct>pasin)ur$pp_Repl2[rr] <-T
 
 
-    ur$pp_biolRep[rr] <- ur$pp_Repl1[rr] | ur$pp_Repl2[rr]
     # The technical repl property is now "networked": see tech report
     # Here we are using pp_biolRep as a naive term - NOT TO BE USED TO BUILD OTHER PROPERTIES
+    ur$pp_biolRep[rr] <- ur$pp_Repl1[rr] | ur$pp_Repl2[rr]
+
     # We can still spot self-replicators here:
     if((ur$pp_Repl1[rr] | ur$pp_Repl2[rr]) & (ur$actseq[rr]==ur$passeq[rr])){
       ur$pp_SelfReplicator[rr] <- T
     }
+
+
+    #####################################################
+    #Jumper types
+
 
     Jumper1 <- F
     Jumper2 <- F
@@ -188,6 +194,10 @@ pairwise.properties <- function(fdata,dummy.result=NULL){
       Jumper2 <- T
     if(Jumper1 | Jumper2)
       ur$pp_Jumper[rr] <- T
+
+
+    #####################################################
+    # Other useful data from the reaction:
 
     ur$product[rr] <- result$product
     ur$dexec[rr] <- result$deterministicExec
@@ -204,39 +214,63 @@ pairwise.properties <- function(fdata,dummy.result=NULL){
 #'
 #' @param fn the file name
 #' @export
-network.properties <- function(nwp){
+network.properties <- function(nwp,dummy.reverse.pwp = NULL){
 
+  nwp$np_Parasite2 <- F
+  nwp$np_Parasite1 <- F
   nwp$np_Parasite <- F
+
   nwp$np_MutualRepl <- F
   nwp$np_Hypercycle <- F
 
   for(rr in 1:nrow(nwp)){
      #Run the 'flip' reaction
      if(nwp$actseq[rr] == nwp$passeq[rr]){
-       if(nwp$pp_SelfReplicator){
+       #Can't be a parasite - no need to change
+       #Can't be a hypercycle - no need to change
+       if(nwp$pp_SelfReplicator[rr]){
          nwp$np_MutualRepl[rr] <- T
        }
      }else{
-       flipdata <- data.frame(actseq=nwp$passeq[rr],passeq=nwp$actseq[rr],stringsAsFactors = F)
-       flip <- pairwise.properties(flipdata)
+        if(is.null(dummy.reverse.pwp)){
+          flipdata <- data.frame(actseq=nwp$passeq[rr],passeq=nwp$actseq[rr],stringsAsFactors = F)
+          flip <- pairwise.properties(flipdata)
+        }else{
+          flip <- dummy.reverse.pwp
+        }
 
        #PARASITE
-       passive.parasite <- F
-       if(nwp$pp_Repl2[rr] & ! nwp$pp_Repl1[rr])
-         if(!flip$pp_Repl2)
-           passive.parasite <- T
+       if(nwp$pp_Repl2[rr] & ! (nwp$pp_Repl1[rr] | flip$pp_Repl2)){
+           nwp$np_Parasite2[rr] <- T
+       }
 
-       active.parasite <- F
-       if(!nwp$pp_Repl1[rr] & nwp$pp_Repl2[rr])
-         if(!flip$pp_Repl1)
-           active.parasite <- T
+       if(nwp$pp_Repl1[rr] & ! (nwp$pp_Repl2[rr] | flip$pp_Repl1)){
+         nwp$np_Parasite1[rr] <- T
+       }
 
-       nwp$np_Parasite[rr] <- active.parasite | passive.parasite
+       nwp$np_Parasite[rr] <- nwp$np_Parasite2[rr] | nwp$np_Parasite1[rr]
+
 
 
        #MUTUAL
 
+       if(( nwp$pp_Repl2[rr] | flip$pp_Repl1) & (nwp$pp_Repl1[rr] | flip$pp_Repl2)){
+         nwp$np_MutualRepl[rr]<-T
+       }
+
+
+
        #HYPERCYCLE
+       if(nwp$np_MutualRepl[rr]){
+         ina <- data.frame(actseq=nwp$actseq[rr],passeq=nwp$actseq[rr],stringsAsFactors = F)
+         pwpa <- pairwise.properties(ina)
+         inp <- data.frame(actseq=nwp$passeq[rr],passeq=nwp$passeq[rr],stringsAsFactors = F)
+         pwpp <- pairwise.properties(inp)
+
+         if(nwp$np_MutualRepl[rr] & !pwpa$pp_SelfReplicator & !pwpp$pp_SelfReplicator)
+           nwp$np_Hypercycle[rr] <- T
+
+       }
      }
   }
   return(nwp)
@@ -265,6 +299,19 @@ pairwise.properties.from.conf <- function(fn){
 }
 
 
+
+#' Obtain the reaction properties from an active and passive sequence
+#'
+#' @param actseq the active sequence
+#' @param passeq the passive sequence
+#' @export
+propfromseqs <- function(actseq,passeq){
+
+  fd <- data.frame(actseq=actseq,passeq=passeq,stringsAsFactors = F)
+  pwp <- pairwise.properties(fd)
+  ng <- network.properties(pwp)
+  return(ng)
+}
 
 
 #' Obtain the reaction properties of all the reactions in a stringmol run
