@@ -17,7 +17,43 @@ pwc <- function(ain,pin,d.r){
 }
 
 
+# Helper function to run network props
+nwc <- function(ain,pin,d.r,rd.r){
+  fdata <- data.frame(actseq = ain, passeq = pin, stringsAsFactors = F)
+  ur<-pairwise.properties(fdata,dummy.result = d.r)#,dummy.result=dummy.result)
+
+  nr<-network.properties(ur,rd.r)
+
+  return(nr)
+}
+
+
 test_that("Self-preserving and self-modifying are correctly identified",{
+
+  # NOTE! We might not have to use genuine reactions to test all this - so we can put sequences in for hypotheticals
+
+  ain <- "AAAA"
+  pin <- "NNNN"
+  d.r <- runReactionFP(c(ain,pin))
+
+  ur <- pwc(ain,pin,d.r)
+  expect_false(ur$pp_SelfMod)
+
+  # Change output 1 - pp_SelfMod should now be true
+  d.r$mActive <- "AAAAX"
+  ur <- pwc(ain,pin,d.r)
+  expect_true(ur$pp_SelfMod)
+
+  # Change output 2 - pp_SelfMod should now be true
+  d.r$mActive <- ain
+  d.r$mPassive <- "NNNNX"
+  ur <- pwc(ain,pin,d.r)
+  expect_true(ur$pp_SelfMod)
+
+})
+
+
+test_that("No-product and New-product properties are correctly identified",{
 
   # NOTE! We might not have to use genuine reactions to test all this - so we can put sequences in for hypotheticals
 
@@ -28,105 +64,178 @@ test_that("Self-preserving and self-modifying are correctly identified",{
   ur <- pwc(ain,pin,d.r)
 
   expect_true(ur$pp_NoProduct)
-  expect_false(ur$pp_SelfMod)
+
+
+  # Generate a copy of mol1:
+  d.r$product <- ain
+  ur <- pwc(ain,pin,d.r)
+  expect_false(ur$pp_NewProduct)
+
+  # Generate a copy of mol2:
+  d.r$product <- pin
+  ur <- pwc(ain,pin,d.r)
+  expect_false(ur$pp_NewProduct)
+
+  # generate a new product
+  d.r$product <- "PRODUCT"
+  ur <- pwc(ain,pin,d.r)
+  expect_true(ur$pp_NewProduct)
 
 })
 
 
 
-# OBSOLETE! use pairwise.properties instead
-test_that("self-self reactions are classified correctly",{
+test_that("Replicator properties are correctly identified",{
 
-  skip("obsolete method to be deleted when pairwise.properties and network.properties are running")
+  # NOTE! We might not have to use genuine reactions to test all this - so we can put sequences in for hypotheticals
 
-  mA <- "ABAAABAA"
-  m1 <- "NMMMNNNN"
-  np1 <- "$=?>G^AQC"
-  rep1 <- "$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYH"
+  ain <- "AAAA"
+  pin <- "NNNN"
+  d.r <- runReactionFP(c(ain,pin))
+
+  ur <- pwc(ain,pin,d.r)
+
+  expect_true(ur$pp_NoProduct)
+
+  # Generate a copy of mol2:
+  d.r$product <- pin
+  ur <- pwc(ain,pin,d.r)
+  expect_true(ur$pp_Repl2)
+
+  # modify the outputs so that there's no increase in number - repl is F
+  d.r$product <- pin
+  d.r$mPassive <- "XXXX"
+  ur <- pwc(ain,pin,d.r)
+  expect_false(ur$pp_Repl2)
+
+  # outputs are swapped inputs, but a new copy is produced:
+  d.r$product <- pin
+  d.r$mActive <- pin
+  d.r$mPassive <- ain
+  ur <- pwc(ain,pin,d.r)
+  expect_true(ur$pp_Repl2)
+
+  # no new products but both outputs are mol2: repl2 is T
+  d.r$product <- "empty"
+  d.r$mActive <- pin
+  d.r$mPassive <- pin
+  ur <- pwc(ain,pin,d.r)
+  expect_true(ur$pp_Repl2)
 
 
-  # SELF-SELF Reactions
-  # Test no bind
-  result <- doReaction(c(mA,mA))
-  typ <- reaction_type(mA,mA)
-  expect_true(typ$type == "SelfSelfNoProduct",info = sprintf("no bind: output is \"%s\"",typ$type))
+  # Generate a copy of mol1:
+  d.r$product <- ain
+  d.r$mActive <- ain
+  d.r$mPassive <- pin
+  ur <- pwc(ain,pin,d.r)
+  expect_true(ur$pp_Repl1)
 
-  # Test replicator
-  result <- doReaction(c(rep1,rep1))
-  typ <- reaction_type(rep1,rep1)
-  expect_true(typ$type == "SelfSelfReplicator",info = sprintf("replictor: output is \"%s\"",typ$type))
+  # modify the outputs so that there's no increase in number - repl is F
+  d.r$product <- ain
+  d.r$mActive <- "XXXX"
+  d.r$mPassive <- pin
+  ur <- pwc(ain,pin,d.r)
+  expect_false(ur$pp_Repl1)
 
-  # Test no product
-  result <- doReaction(c(np1,np1))
-  typ <- reaction_type(np1,np1,result)
-  expect_true(typ$type == "SelfSelfNoProduct",info = sprintf("no product: output is \"%s\"",typ$type))
+  # outputs are swapped inputs, but a new copy is produced:
+  d.r$product <- ain
+  d.r$mActive <- pin
+  d.r$mPassive <- ain
+  ur <- pwc(ain,pin,d.r)
+  expect_true(ur$pp_Repl1)
 
-  # Test replicator different product
-  result <- doReaction(c(rep1,rep1))
-  result$product = "DIFFERENTPRODUCT"
-  typ <- reaction_type(rep1,rep1,result)
-  expect_true(typ$type == "SelfSelfDifferentProduct",info = sprintf("different product: output is \"%s\"",typ$type))
-
-  # Test Macromutation
-  result <- doReaction(c(rep1,rep1))
-  result$mActive = "MACROMUTATION"
-  typ <- reaction_type(rep1,rep1,result)
-  expect_true(typ$type == "Macromutation",info = sprintf("macromutation: output is \"%s\"",typ$type))
+  # no new products but both outputs are mol2: repl2 is T
+  d.r$product <- "empty"
+  d.r$mActive <- ain
+  d.r$mPassive <- ain
+  ur <- pwc(ain,pin,d.r)
+  expect_true(ur$pp_Repl1)
 
 })
 
-test_that("non-self reactions are classified correctly",{
 
-  mA <- "ABAAABAA"
-  m1 <- "NMMMNNNN"
+test_that("Auto-Replicator properties are correctly identified",{
+  ain <- "AAAA"
+  d.r <- runReactionFP(c(ain,ain))
 
-  result <- doReaction(c(mA,m1))
-  conv <- doReaction(c(m1,mA))
+  # 'standard' version
+  d.r$product <- ain
+  d.r$mActive <- ain
+  d.r$mPassive <- ain
+  ur <- pwc(ain,ain,d.r)
+  expect_true(ur$pp_SelfReplicator)
 
-  expect_equal(result$bprob, 0.458261, tolerance=1e-6)
-  expect_true(result$product == "empty")
+  # fails:
+  d.r$product  <- ain
+  d.r$mActive  <- "XXXX"
+  d.r$mPassive <- ain
+  ur <- pwc(ain,ain,d.r)
+  expect_false(ur$pp_SelfReplicator)
 
-  # Test no bind
-  # Simple way is to set bprob to zero
-  dummy <- result
-  dummy$bprob <- 0
-  typ <- reaction_type(mA,m1,dummy)
-  expect_true(typ$type == "NonSelfNoProduct",info = sprintf("no bind: output is \"%s\"",typ$type))
+  # fails:
+  d.r$product  <- "XXXX"
+  d.r$mActive  <- ain
+  d.r$mPassive <- ain
+  ur <- pwc(ain,ain,d.r)
+  expect_false(ur$pp_SelfReplicator)
 
-  # Test replicator
-  rep1 <- "$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYH"
-  rep2 <- "$=?>G^AQD$=?>G^BQC$=?>E$BLUO%}PYH"
-  result <- runReactionFP(c(rep1,rep2))
-  conv <- runReactionFP(c(rep2,rep1))
-  typ <- reaction_type(rep1,rep2,result,conv)
-  expect_true(typ$type == "NonSelfReplicator",info = sprintf("non-self replicator: output is \"%s\"",typ$type))
+  # fails:
+  d.r$product  <- ain
+  d.r$mActive  <- ain
+  d.r$mPassive <- "XXXX"
+  ur <- pwc(ain,ain,d.r)
+  expect_false(ur$pp_SelfReplicator)
 
+})
 
-  # Test parasite
-  rep1 <- "$=?>$EBUB^B$=?>$AVBO%}HOB"
-  rep2 <- "$=?>$B"
-  result <- runReactionFP(c(rep1,rep2))
-  conv <- runReactionFP(c(rep2,rep1))
-  typ <- reaction_type(rep1,rep2,result,conv)
-  expect_true(typ$type == "Parasite",info = sprintf("non-self replicator: output is \"%s\"",typ$type))
-
-
-
-  # Test no product
-  result <- runReactionFP(c(mA,m1))
-  typ <- reaction_type(mA,m1,result)
-  expect_true(typ$type == "NonSelfNoProduct",info = sprintf("no bind: output is \"%s\"",typ$type))
-
-  # Test different product (faking it)
-  rep1 <- "$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYH"
-  rep2 <- "$=?>G^AQC$=?>G^BQC$=?>E$BLUO%}PYHPYH"
-  result <- runReactionFP(c(rep1,rep2))
-  result$product <- "DIFFERENT^PRODUCT"
-  typ <- reaction_type(rep1,rep2,result)
-  expect_true(typ$type == "NonSelfDifferentProduct",info = sprintf("non-self replicator: output is \"%s\", product is \"%s\"",typ$type,result$product))
+# TODO: Test jumper reactions here to keep order with the paper
 
 
+test_that("Parasitic properties are correctly identified",{
 
+  # NOTE: this one is a *genuine* parasitic reaction, not a 'dummy'
+  ain <- "$=?>$EBUB^B$=?>$AVBO%}HOB"
+  pin <- "$=?>$B"
+  d.r <- runReactionFP(c(ain,pin))
+  rd.r <- runReactionFP(c(pin,ain))
+  rd.p <- pwc(pin,ain,rd.r)
+
+  ur <- nwc(ain,pin,d.r,rd.p)
+
+  expect_true(ur$np_Parasite2)
+  expect_true(ur$np_Parasite)
+})
+
+
+
+test_that("Mutual replicator properties are correctly identified",{
+
+  # NOTE: this one is a *genuine* mutual reaction, not a 'dummy'
+  ain <- "$=?>$EBUB^B$=?>$AVBO%}HOB"
+  pin <- "$=?>$EBUB^B$=?>$AVBOX%}HOB"
+  d.r <- runReactionFP(c(ain,pin))
+  rd.r <- runReactionFP(c(pin,ain))
+  rd.p <- pwc(pin,ain,rd.r)
+
+  ur <- nwc(ain,pin,d.r,rd.p)
+
+  expect_true(ur$np_MutualRepl)
+})
+
+
+test_that("Hypercycle properties are correctly identified",{
+
+  # NOTE: this one is a *genuine* hypercycle reaction, not a 'dummy'
+  ain <- "UUZSNSHJBLRWVR$BLUBO^B>C$=?>$DBLUP%}OYH"
+  pin <- "HHMYURFUVJKJRJLUWR$BLUCO^B>C$=?>$DBLU%}OYH"
+  d.r <- runReactionFP(c(ain,pin))
+  rd.r <- runReactionFP(c(pin,ain))
+  rd.p <- pwc(pin,ain,rd.r)
+
+  ur <- nwc(ain,pin,d.r,rd.p)
+
+  expect_true(ur$np_MutualRepl)
+  expect_true(ur$np_Hypercycle)
 })
 
 
