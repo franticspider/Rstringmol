@@ -1,0 +1,368 @@
+---
+title: 'Flood study: box-rand3'
+author: "Simon Hickinbotham"
+date: "25/03/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+**Summary** 
+
+- hypercycle-based run
+- no floods are observed
+- long replicators dominate throughout
+- an alternative mechanism for the dual "short and long" replicator cohort has occurred here
+
+----
+
+# Introduction
+
+This is the second study on the `box-rand` configuration. Only two of the five ran to t=2m, and the run here is from trial 3. 
+This notebook follows from the notebooks covering the  `box-box` configurations, I'll try not to duplicate the observations there. 
+
+Here are the movies of the run - the key dynamic to watch is the emergence of longer parasites after about 40s.
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/X-denaujGw0" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe><iframe width="400" height="500" src="https://www.youtube.com/embed/CxZmAquvJlI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+
+
+## Picking the Time slices:
+
+We are going to use the opcode firing measures to identify the flood periods. So let's create a plot and draw vertical lines for each time point we want to look at: 
+
+```{r,echo=FALSE, fig.width=10, message=F, warning=TRUE, r,warning=F}
+require(Rstringmol)
+source("../Rstringmol/R/opcodeFiringPlot.R")
+
+t1 <-  240000
+t2 <-  600000
+t3 <-  860000
+t4 <- 1240000
+t5 <- 1740000 #1840000 
+t6 <- 2000000
+
+load("rp1705smspr3.RData")
+ylim=c(0,520000)
+opcode.firing.plot(rundata, title = "Opcode firing for 'box rand replicate 3'")
+segments(x0=t1,y0=0,y1=ylim[2],col="blue",lty=3)
+segments(x0=t2,y0=0,y1=ylim[2],col="red",lty=3)
+segments(x0=t3,y0=0,y1=ylim[2],col="orange",lty=3)
+segments(x0=t4,y0=0,y1=ylim[2],col="green",lty=3)
+segments(x0=t5,y0=0,y1=ylim[2],col="pink",lty=3)
+segments(x0=t6,y0=0,y1=ylim[2],col="purple",lty=3)
+
+text(labels = c("t1","t2","t3","t4","t5","t6"),x=c(t1,t2,t3,t4,t5,t6),y=240000)
+```
+
+As you can see, there are a number of distinct time points of interest. From here on we'll call them **t1** to **t6** going from ealiest to latest (left to right). We can look at the "length" images for these times to see what the spatial distribution is (this was identified as a factor in the flooding for the box-box3 run): 
+
+
+```{r fig.height=6, fig.width=10,echo=F,eval=T}
+par(mfrow=c(2,3))
+library(png)
+imnos<- c(t1,t2,t3,t4,t5,t6)
+for(ii in 1:length(imnos)){
+  par(mar=c(0,0,0,0))
+  plot(NA,xlim=c(0,100),ylim=c(0,125),axes=F,main=sprintf("\nt%d = %d",ii,imnos[ii]),asp = 1,xlab="",ylab="")
+  imname = sprintf("~/Desktop/paulien/smsp/1705smspr/out3png/lenframe%07d.png",imnos[ii])
+  img <- readPNG(source = imname)
+  rasterImage(image=img,xleft = 0,xright = 100,ybottom = 0,ytop=125, interpolate = F)
+}
+
+```
+
+These plots are intriguing becuase the molecules get longer and longer - the whole system has a different feel to the previous ones we've looked at. Let's have a look at the same timesteps coloured by species id: 
+
+```{r fig.height=6, fig.width=10,echo=F,eval=T}
+par(mfrow=c(2,3))
+library(png)
+imnos<- c(t1,t2,t3,t4,t5,t6)
+for(ii in 1:length(imnos)){
+  par(mar=c(0,0,0,0))
+  plot(NA,xlim=c(0,100),ylim=c(0,125),axes=F,main=sprintf("\nt%d = %d",ii,imnos[ii]),asp = 1,xlab="",ylab="")
+  imname = sprintf("~/Desktop/paulien/smsp/1705smspr/out3png/sppframe%07d.png",imnos[ii])
+  img <- readPNG(source = imname)
+  rasterImage(image=img,xleft = 0,xright = 100,ybottom = 0,ytop=125, interpolate = F)
+}
+
+```
+
+This clearly shows that we've got hypercycle activity throughout this run once it emerges. 
+
+Some points about these pictures - although many of these observations apply to more than one time:
+
+- **t1:** This is the only period in this run where hypercycles do not dominate
+- **t2:** Hypercycles parasitised by short molecules
+- **t3:** Long parasites become more prevalent
+- **t4:** short replictor with different length parasites
+- **t5:** mix of two parasites? One long, one short
+- **t6:** bimodal distribution of replicator lengths
+
+
+
+```{r include=FALSE, message=F, echo=F, cache = T}
+
+# RUN THIS CODE TO CREATE THE DATA STRUCTURES USED BELOW (THE 'get.cum' FUNCTION SHOULD GO INTO THE r CODEBASE)
+
+get.cum <- function(dat,thr){
+  dat <- dat[order(dat$nobs,decreasing = T),]
+  dat$cum <- 0
+  dat$cum[1] <- dat$nobs[1]
+  for(rr in 2:nrow(dat)){
+    dat$cum[rr] <- dat$cum[rr-1] + dat$nobs[rr]
+  }
+  sdn <- sum(dat$nobs)
+  message(sprintf("thr = %f * %d = %f",thr,sdn,(thr*sdn)))
+  dat <- dat[dat$cum < (thr*sum(dat$nobs)),]
+  return(dat)
+}
+
+```
+
+
+Let's go through each time point and see what we can discover
+
+## T1: seed replicator behaviour
+
+Below is a summary of the ten most common reactions at t1:
+
+```{r echo=FALSE}
+
+dts <- function(time,rd){
+  dt <- rd[[time/20000]]
+  dt <- dt[order(dt$nobs,decreasing = T),]
+  return(dt)
+}
+
+
+dttab <- function(dt,pp=T,ns=F,hc=F){
+  rownames(dt) <- c()
+  if(ns){
+    nsv <- dt$nsteps 
+  }
+  if(hc){
+    hcv <- dt$np_Hypercycle
+  }
+  if(pp){
+    dt <- dt[,c("nobs","actseq","passeq","pp_SelfReplicator","np_Parasite")]
+    colnames(dt) <- c("n","active","passive","sR","P")
+  }else{
+    dt <- dt[,c("nobs","actseq","pp_SelfReplicator","np_Parasite")]
+    colnames(dt) <- c("n","active","sR","P")
+  }
+  if(ns){
+    dt$s <- nsv
+  }
+  if(hc){
+    dt$hc <- hcv
+  }
+  return(dt)
+}
+
+topn <- function(time,rd,pp=T){
+  dt <- dts(time,rd)
+  dt <- dttab(dt,pp)
+  return(dt)
+}
+
+
+dt1 <- dts(t1,rundata)
+head(dttab(dt1,pp=T,ns=T),n=10)
+
+```
+
+Here, "n" is the number of observations. The columns "sR" and "P" show whether the reactions are self-replicating or parasitic respectively. 
+
+Execution follows the same path as the 'seed' replicator as shown below (*not to scale*)
+
+
+```{r seedrep,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1);
+
+  %Names
+  \draw (0, 0.85) node[right] {Active string};
+  \draw (0,-0.85) node[right] {Passive string};
+
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+
+  %'active molecule'
+  \fill[black!40!white] (0,0.5) rectangle (6.4,0.7);
+  % copy loop:
+  \fill[red!40!white] (4.7,0.5) rectangle (5.2,0.7);
+  %bind site
+  \draw[red] (1.7,0.5) rectangle (3.0,0.7);
+
+  % 'Execution:' 
+  \fill[green] (1.65,0.4) circle (0.05);
+  \draw[->] (1.7,0.4) -- (4.7,0.4);
+
+  \fill[red] (4.75,0.4) circle (0.05);
+  \draw[-> , draw=red] (4.7,0.4) -- (5.2,0.4); 
+
+  \draw[->] (5.2,0.4) -- (5.9,0.4);
+  \fill (5.95,0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \filldraw[black!40!white] (0,-0.5) rectangle (6.4,-0.7);
+  %bind site
+  \draw[red] (0,-0.5) rectangle (1.6,-0.7);
+
+
+\end{tikzpicture}
+```
+
+Let's just check the most numerous parasitic reactions:
+
+```{r echo=FALSE}
+
+head(dttab(dt1[dt1$np_Parasite,]),n=10)
+```
+In these early stages, parasites mostly form by single point mutations in the bind site that influence whether a molecule can ever be active when bound to a replicator. 
+Parasitic reactions account for `r 100*sum(dt1$nobs[dt1$np_Parasite])/sum(dt1$nobs)`% of all reactions at t1. 
+
+
+## T2: short replicator
+
+Here's the top ten reactions at t2 -- you can see that a transition to shorter replicators happened: 
+
+```{r echo=FALSE}
+dt2 <- dts(t2,rundata)
+head(dttab(dt2,pp=T,ns=T,hc=T),n=10)
+```
+
+I've added a column "hc" to this table to indicate if the reaction is part of a hypercycle, and you can see that most of them are. The `HHM` motif at the start of one partner binds to the `UUZ` motif at the start of the other (note row 8 is misclassified - there's a glitch in the detection of hypercycle property which I need to check). 
+
+Let's see what the parasites of these replicators look like: 
+
+```{r echo=FALSE}
+head(dttab(dt2[dt2$np_Parasite,],pp=T,ns=T,hc=T),n=10)
+```
+
+You can see that there are "`UUZ`" parasites and "`HHM`" parasites, each class parasitising one half of the hypercycle. Note also that the "`UUZ`" parasites are mostly shorter, so there's an imbalance in the parasitic rates that each hypercycle partner has to survive -- it seems a bit like the network of interactions is sort of doubled here, but further study needed to fully understand what is going on in terms of rates I think.
+
+
+
+
+# Status at t3 (orange)
+
+Not much change from t2 here - but worth reporting what is present becuase things have changed by t4...
+
+```{r echo=FALSE,size="tiny"}
+dt3 <- topn(t3,rundata,pp=T)
+dt3a <- dts(t3,rundata)
+head(dt3,n=10)
+```
+
+`r 100*sum(dt3$n[dt3$P])/sum(dt3$n)`% of reactions are parasitic - here's the top ten: 
+
+```{r echo=FALSE}
+head(dt3[dt3$P,],n=10)
+```
+
+
+
+# Status at t4 (green)
+
+Looking at the images for t4 we can see that a range of different parasite lengths are now functioning. 
+
+Let's look at the most numerous reactions: 
+
+
+```{r echo=FALSE,size="tiny"}
+dt4 <- dts(t4,rundata)
+head(dttab(dt4,pp=T,ns=T,hc=T),n=10)
+#head(dt4,n=10)
+```
+
+Apologies again for the layout of this table - caused by extremely long passive molecules in these reactions. But it's good that we are able to isolate reactions like this.
+
+- The most common reaction involves the `UUZ`-`HHM` bind and is a strightforward replicating reaction - a shortened version of the replicator in t1. This is a hypercycle because the neither partner self-replicates. 
+- `UUZ` is involved in seven of the top ten reactions, but `HHM` is only involved in two. 
+- This fits the parasitic imbalance we saw at t3 - `HHM` is parasitised by a shorter parasite, so it diversifies due to greater selection pressure, but it is obliged to keep the `HHM` motif, much as other replicators were obliged to keep the `$=?>` motif. Here, the complementary bind makes life harder for parasites.
+
+The parasitic reactions are even more bizarre (and even harder to lay out!): 
+
+```{r echo=FALSE,size="tiny"}
+head(dttab(dt4[dt4$np_Parasite,],pp=T,ns=T,hc=T),n=20)
+```
+
+The challenge here is to explain the reactions with long molecules, since their competitive advantage is counterintuitive -- shorter replicators should win the game, but local context is changing the balance. 
+
+I think it works like this: 
+
+If we look back at the most common reaction involving a long molecule - we'll call the long molecule `HHM_long` for convenience - again this is a straightforward replication reaction. `HMM_long` doesn't self-replicate, but it *does* copy `UUZ`. So we see that the system has again slowed down its overall replication rate in order to combat parasitism, its just that in a hypercycle context it is the *combination* of mutual replication rates that govern the overall reproduction rate of the system. 
+
+Then if we look at the parasite table, we see that 14 of the 20 most popular parasitc reactions have the `HHM` motif as the active partner.
+
+Conclusion - hypercycles complicate things, but we are seeing a familiar mix of slow and fast replication strategies to combat the spread of parasitism throughout the arena. 
+
+The increase in opcode firing is not due to new behaviours - it is simply because there is more program to execute per reaction. The proportions of opcode firings is fairly constant. 
+
+Note also that there is no "self-scan" in these reaction dynamics - partly I guess because the hypercycle is based on complementary binding. this appears to have forced the system to use molecule length as the brake on the replication rate. I'm guessing this helps us to argue that this is an underlying principle of R-P systems (plus Paulien has observed it before) - not some feature of the opcode/sequence combination that we've used in stringmol. 
+
+
+```{r eval=FALSE, include=FALSE}
+require(vioplot)
+vioplot(dt4$nsteps,h = 2,drawRect = F)
+```
+
+# Status at t5 and t6
+
+T5 is a  time point where the opcode firings dip for a while. Is there a transition going on? Well, having looked long and hard at the reactions, I think not - I think this is one of those situations where the spatial distribution and the ratio of the two hypercycle partners forces replication to dip for a while. I'm going to conclude for now that the observations for t4 apply equally to t5 and t6. To back this up, here are some violin plots of the execution times of the six periods: 
+
+
+```{r include=FALSE}
+dt5 <- dts(t5,rundata)
+d5r <- dt5[dt5$pp_SelfReplicator,]
+head(dttab(dt5,pp=T,ns=T,hc = T),n=10)
+```
+
+
+```{r include=FALSE}
+#... and the top 20 parasitic reactions: 
+head(dttab(dt5[dt5$np_Parasite,],pp=T,ns=T),n=10)
+```
+
+
+
+
+```{r eval=FALSE, include=FALSE}
+dt5p <- dt5[dt5$passeq == dt5$actseq[1],]
+head(dttab(dt5p,pp=T,ns=T,hc=T),n=20)
+```
+
+
+
+
+
+```{r eval=T, include=FALSE}
+#The common reactions at t6 are: 
+dafter6 <- rundata[[t6/20000]]
+dafter6 <- dafter6[order(dafter6$nobs,decreasing = T),]
+head(dttab(dafter6,pp=T,ns=T,hc=T),n=30)
+```
+
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+require(vioplot)
+wexs = c(sum(dt1$nobs),sum(dt2$nobs),sum(dt3a$nobs),sum(dt4$nobs),sum(dt5$nobs),sum(dafter6$nobs))
+vioplot(dt1$nsteps,dt2$nsteps,dt3a$nsteps,dt4$nsteps,dt5$nsteps,dafter6$nsteps,h = 2,drawRect = F,wex=wexs/2500,xlab="time point",ylab="execution time")
+
+```
+
+You can see that t4,t5 and t6 are very similar. There's a *lot* of very short reactions - these are 'no product' binds. There are always a few reactions with execution time of 1000 - these are reactions that never end and hit the artificial limit of the analysis code (in the actual runs these reactions would persist until the pair were removed by decay). Apart from these two extremes, there is a 'core' short replication time of about 150, and then 'accessory' replicators that deal with parasites by being slow. 
+
+To conclude: here we have a different way of executing the "efficiency via complexity" strategy we've seen in other runs. I think the fact that there exists more than one way of implementing this strategy in stringmol (and that evolution found them) is an exciting result. 

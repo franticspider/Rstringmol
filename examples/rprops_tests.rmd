@@ -1,0 +1,169 @@
+---
+title: 'Flood study: box-box2'
+author: "Simon Hickinbotham"
+date: "25/03/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+We need to test that we've got all the reaction properties classifying correctly. The problem is that we want to classify reactions that emerge, but we can't test the functions that classify them without knowing what the evolved reactions do - a chicken-and-egg type problem. This document details the steps taken to ensure that each property works correctly - we'll put the examples we find in the test suite for `Rstringmol`. 
+
+
+# Setting up
+
+Since the focus of the paper is on a particular run, we'll use that as the main dataset. Classifying the reactions takes a while, but we can load a preloaded one like this: 
+
+```{r}
+load("../examples/rp1705smsp2v2.RData")
+```
+
+This loads a data object called `rundata`. If code has been rewritten recently, then we can re-run the analysis like this: 
+
+```{r eval=FALSE, include=T}
+wd <- getwd();setwd("~/git/Rstringmol/Rstringmol/");devtools::test();setwd(wd)
+#source("../examples/vg_plus_rprops_functions.R")
+rundata <- runproplist("~/Desktop/paulien/smsp/1705smsp/out2/out1_",outfn = "rp1705smsp2v2.RData")
+```
+
+The `rundata` object has properties for all reactions in each of the 50 logged time points. We need to find examples of each property to make sure our tests are working, which we'll detail below. We'll work mostly on the 49th set of reactions, which equates to "t6" in the paper. The thinking here is that this is deep in the simulation, when we are so far from the seed replicase that we have lots of properties to evaluate. 
+
+```{r}
+pr49 <- rundata[[49]]
+```
+
+
+# Pairwise properties: 
+
+## Active-mod
+
+Here are five examples of the input and output state of the active molecule where the `ActiveMod` property holds (I've chosen examples where the output is *short* for display purposes: 
+
+```{r}
+dt1 <- pr49[pr49$pp_ActiveMod,c("actseq","outputA")] 
+colnames(dt1)<-c("in","out")
+#head(dt1)
+dt1[c(1,3:6),]
+```
+
+A quick visual check shows that these are all correct. Note that the last entry is an interesting candidate - it is a self-self 'jumper' reaction, so it's a good test for the other reaction properties. 
+
+Let's check also those for which activeMod is false: 
+
+```{r}
+dt1 <- pr49[!pr49$pp_ActiveMod,c("actseq","outputA")] 
+colnames(dt1)<-c("in","out")
+#head(dt1)
+dt1[c(1,3:6),]
+```
+
+OK good, that one works. 
+
+# PassiveMod
+
+```{r}
+dt1 <- pr49[pr49$pp_PassiveMod,c("passeq","outputP")] 
+colnames(dt1)<-c("passive in","passive out")
+#head(dt1)
+dt1
+```
+
+
+```{r}
+dt1 <- pr49[!pr49$pp_PassiveMod,c("passeq","outputP")] 
+colnames(dt1)<-c("passive in","passive out")
+#head(dt1)
+dt1[c(1:5),]
+```
+
+## Self Mod
+
+.. this should be a combination of the above - but note there are 53 `ActiveMod` reactions and only 6 `PassiveMod` reactions - which makes sense when you consider where program execution starts...
+
+
+```{r}
+dt1 <- pr49[pr49$pp_SelfMod,c("actseq","outputA", "passeq","outputP")] 
+colnames(dt1)<-c("active in","active out","passive in","passive out")
+#head(dt1)
+dt1[sample(nrow(dt1),5),]
+```
+
+## Self Pres
+
+Self-pres is the logical opposite of self-mod, so we won't take this one any further
+
+## No Product
+
+
+```{r}
+dt1 <- pr49[pr49$pp_NoProduct,c("actseq", "passeq","product")] 
+colnames(dt1)<-c("active in","passive in","product")
+#head(dt1)
+dt1[sample(nrow(dt1),5),]
+```
+
+
+## New Product
+
+
+```{r}
+dt1 <- pr49[pr49$pp_NewProduct,c("actseq", "passeq","product")] 
+colnames(dt1)<-c("active in","passive in","product")
+#head(dt1)
+dt1[sample(nrow(dt1),5),]
+```
+
+
+## Passive-Repl
+
+Let's see if we can find non "auto-repl" examples of this:
+
+```{r}
+dt1 <- pr49[pr49$pp_Repl2 & !pr49$pp_SelfReplicator,c("actseq", "passeq","product")] 
+colnames(dt1)<-c("active in","passive in","product")
+#head(dt1)
+dt1[sample(nrow(dt1),5),]
+```
+
+## Active-Repl
+
+Let's see if we can find non "auto-repl" examples of this:
+
+```{r}
+dt1 <- pr49[pr49$pp_Repl1 & !pr49$pp_SelfReplicator,c("actseq", "passeq","product")] 
+colnames(dt1)<-c("active in","passive in","product")
+#head(dt1)
+dt1
+```
+
+# Generating data for the other runs: 
+
+```{r}
+rundata <- runproplist("~/Desktop/paulien/smsp/1705smsp/out1/out1_",outfn = "rp1705smsp1v2.RData")
+```
+
+```{r}
+rundata <- runproplist("~/Desktop/paulien/smsp/1705smsp/out3/out1_",outfn = "rp1705smsp3v2.RData")
+```
+
+```{r}
+rundata <- runproplist("~/Desktop/paulien/smsp/1705smsp/out5/out1_",outfn = "rp1705smsp5v2.RData")
+```
+
+```{r}
+rundata <- runproplist("~/Desktop/paulien/smsp/1705smspr/out2/out1_",outfn = "rp1705smspr2v2.RData")
+```
+
+```{r}
+rundata <- runproplist("~/Desktop/paulien/smsp/1705smspr/out3/out1_",outfn = "rp1705smspr3v2.RData")
+```
+
+```{r}
+rundata <- runproplist("~/Desktop/paulien/smsp/1705sm250/out4/out1_",outfn = "rp1705smsp2504v2.RData")
+```
+
+```{r}
+rundata <- runproplist("~/Desktop/paulien/smsp/1705sm250/out5/out1_",outfn = "rp1705smsp2505v2.RData")
+```
+
+

@@ -1,0 +1,590 @@
+---
+title: "Ancestries"
+author: "Simon Hickinbotham"
+date: "10/06/2020"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+*this builds on `ancestries.Rmd` and `ancestries-V2.rmd` and `ancestries-v3.rmd` to be able to understand the phylogeny of parasitism 
+
+# Issues
+
+- Find `birtht` for "lost" spp (where `trace==F`)
+
+# Functions
+
+We need a function to parse the 'raw' splist files: 
+
+
+```{r message=FALSE, warning=FALSE, eval = T}
+require(Rstringmol)
+source("../Rstringmol/R/splist_stats.R")
+
+makemanc <- function(froot){
+  
+  manc <- list()
+  ll=1
+  for(tt in seq(2000000,20000,-20000)){
+    df <- splist_stats(fn=sprintf("%ssplist%d.dat",froot,tt),verbose = F)
+    df$rectime <- tt
+    manc[[ll]] <- df
+    ll <- ll + 1
+  }
+  
+  require(data.table)
+  manc <- rbindlist(manc)
+  #unfortunately rbindlist converts strings to factors, so we have to fix that: 
+  manc <- data.frame(lapply(manc, as.character), stringsAsFactors=FALSE)
+  manc$spp <- as.numeric(manc$spp)
+  manc$act <- as.numeric(manc$act)
+  manc$pass <- as.numeric(manc$pass)
+  manc$obsn <- as.numeric(manc$obsn)
+  manc$obst1 <- as.numeric(manc$obst1)
+  manc$rectime <- as.numeric(manc$rectime)
+  manc$restart <- as.logical(manc$restart)
+  
+  return(manc)
+}
+
+
+#manc1705smsp2 <- makemanc("~/Desktop/paulien/smsp/1705smsp/out2/")
+
+#save(manc1705smsp2, file = "manc1705smsp2.Rdata")
+
+  
+#save(manc,file="manc1705smsp3.Rdata")
+```
+
+Here's a function that gets the top $N$ molecules from the top 10 reactions at t=2m: 
+
+```{r}
+makeanchead <- function(rundata,rdmanc,verbose = F){
+  r2m <- rundata[[2000000/20000]]
+  r2m <- r2m[order(r2m$nobs,decreasing = T),]
+  
+  seqs <- unique(c(r2m$actseq[1:10],r2m$passeq[1:10]))
+  
+  # Create the basic data frame
+  rdhead <- data.frame(idx=NA,seq=seqs,t=2000000,birtht=0,actparent=NA,pasparent=NA,stringsAsFactors = F)
+  rdhead$gen <- 0
+  rdhead$trace <- T
+  
+  for(pp in 1:nrow(rdhead)){
+    time = 2000000
+    idx<-0
+    found<-F
+    while(!found){
+      
+      anc<-rdmanc[rdmanc$rectime == time,]
+      parents <- anc[anc$seq == rdhead$seq[pp],]  
+      
+      if(nrow(parents)>1){
+        if(max(parents$obst1)>0){
+          found <- T
+          if(verbose)message(sprintf("Found parents of seq %s at time %d: %d and %d in splist %d",rdhead$seq[pp], parents$obst1[1], parents$act[1], parents$pass[1],time))
+          
+          rdhead$idx[pp]<- parents$spp[1]
+          rdhead$birtht[pp]<-parents$obst1[1]
+          rdhead$actparent[pp] <- parents$act[1]
+          rdhead$pasparent[pp] <- parents$pass[1]
+                  
+          break
+        }
+      }
+      
+      time = time - 20000
+      if(time<1)break
+    }
+  }
+  return(rdhead)
+  
+}
+
+#REMEMBER The object in the following file is called "rundata"
+#load("rp1705smsp3.RData")
+#load("manc1705smsp3.Rdata")
+#anchead <- makeanchead(rundata,manc)
+
+#load("rp1705smsp2.RData")
+#load("manc1705smsp2.Rdata")
+#anchead <- makeanchead(rundata,manc1705smsp2)
+
+
+#TODO: rewrite the code below so that we don't have to do this: 
+#manc <- manc1705smsp2
+
+```
+
+
+Here are some helper functions that we can use to find our way around:     
+    
+```{r}
+
+getsppidx <- function(seq,data){
+  spent <- unique(data$spp[data$seq == seq])
+  
+  if(length(spent)>1){
+    for(rr in 1:length(spent))
+    message(sprintf("WARNING! More than one spp number found for %s - value %d is %d",seq,rr,spent[rr]))
+  }
+  return(min(as.numeric(spent)))
+  
+}
+
+#TODO: Check that this works generally
+getidxdata <- function(idx,data){
+  spent <- unique(data[data$spp == idx,])
+  
+  rtimes <- unique(spent$rectime)
+  
+  spent <- spent[spent$rectime == min(rtimes),]
+  return(spent[1,])
+  
+}
+
+
+getseq <- function(idx,data){
+  spent <- unique(data$seq[data$spp == idx])
+  
+  if(length(spent)>1)
+    message(sprintf("WARNING! More than one spp number found for %s - values are %d",seq,spent))
+  
+  return(spent[1])
+  
+}
+
+# NB 'data' is HUGE here - copying this will slow things down a lot!
+getparentidx <- function(idx,data){
+  c <- data[data$spp == idx,]
+  c <- c[c$restart==F,]
+  c <- c[c$rectime == min(c$rectime),]
+  
+  # Assume first entry is the original reaction
+  res <- list()
+  res$actp <-c$act[1]
+  res$passp <-c$pass[1]
+  res$t <-c$obst1[1]
+  
+  return(res)
+}
+```
+
+...and here's a function for finding the sequences for the previous generation. 
+
+```{r message=FALSE, warning=FALSE}
+require(knitr)
+source("../examples/ancestries.R")
+#pd <- anctable(anchead,2000000,manc,ngen=1)
+```
+
+Here's the function to plot the phylogeny:  
+   
+   
+```{r, message=F}
+require(stringr)
+require(colorRamps)
+plotphyl <- function(phyl,colbylen=T,ymax=2000000){
+  
+  plot(x=phyl$actparent,y=phyl$birtht,
+       ylim = c(min(phyl$birtht),ymax),
+       xlim=range(c(phyl$idx,phyl$actparent,phyl$pasparent)),
+       pch=19,col="red",cex=1.5,xlab="Species number",ylab="time")
+  
+  
+  if(colbylen){
+    #rect(xleft = min(c(phyl$idx,phyl$actparent,phyl$pasparent)),xright = max(c(phyl$idx,phyl$actparent,phyl$pasparent)),ybottom = min(phyl$birtht),ytop=2000000,col="black")
+    
+    rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = "black")
+    #par(bg = "black")
+  }
+  
+  
+  points(x=phyl$actparent,y=phyl$birtht,pch=19,col="red")
+  points(x=phyl$pasparent,y=phyl$birtht,pch=19,col="blue")
+  
+  segments(x0=phyl$idx,x1=phyl$actparent,y0=phyl$birtht,lwd=2,col="red")
+  segments(x0=phyl$idx,x1=phyl$pasparent,y0=phyl$birtht,col="blue")
+  
+  if(colbylen){
+    phyl$len <- str_length(phyl$seq)
+    lr <- max(phyl$len)
+    
+    #cols<-heat.colors(n = 65)
+    #FROM setupSM.cpp in strimgmol library
+    cols <- matlab.like(70)
+    
+    for(pp in 1:nrow(phyl)){
+      if(phyl$len[pp]<70)
+        cpp <- cols[phyl$len[pp]]
+      else
+        cpp = "white"
+      segments(x0=phyl$idx[pp],y0=phyl$birtht[pp],y1=phyl$t[pp],col=cpp)
+      points(x=phyl$idx[pp],y=phyl$t[pp],      pch=19,col=cpp)
+      points(x=phyl$idx[pp],y=phyl$birtht[pp], pch=19,col=cpp)
+      
+    }
+    
+    
+  }
+  else{
+    points(x=phyl$idx,y=phyl$t,pch=19,col="green")
+    points(x=phyl$idx,y=phyl$birtht,pch=19,col="green")
+    segments(x0=phyl$idx,y0=phyl$birtht,y1=phyl$t,col="green")
+  }
+  
+}
+
+#plotphyl(pd[pd$birtht>-1,],colbylen = T)
+```
+
+   
+Now let's add the nextgen function, which does a bit of tidying up outside the anctable function: 
+
+
+```{r fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+source("../examples/ancestries.R")
+```   
+
+Finally a function to make the 'big' phlogeny: 
+
+```{r}
+
+```
+
+  
+
+
+# box-box run 2
+Make the master ancestry file: 
+  
+```{r}
+fn <- "manc1705smsp2.RDS"
+if(!file.exists(fn)){
+  manc1705smsp2 <- makemanc("~/Desktop/paulien/smsp/1705smsp/out2/")
+  saveRDS(manc1705smsp2,fn)
+}else{
+  manc1705smsp2 <- readRDS(fn)
+}
+
+```
+  
+Make the 'head' of the ancestry: 
+
+```{r}
+
+load("rp1705smsp2.RData")
+anchead <- makeanchead(rundata,manc1705smsp2)
+```
+
+Make the phylogeny: 
+```{r fig.height=10, fig.width=10}
+pfn<- "phyl1705smsp2.RDS"
+if(!file.exists(pfn)){
+  phyl1705smsp2 <- makephyl(manc1705smsp2,anchead, verbose = F)
+  saveRDS(phyl1705smsp2,pfn)
+}else{
+  phyl1705smsp2  <- readRDS(pfn)
+}
+
+#SPECIAL CASE: We have to set trace<-F for one extra molecule: 
+#phyl1705smspr2$trace[phyl1705smspr2$idx==285937]<-F
+
+plotphyl(phyl1705smsp2[phyl1705smsp2$trace & !is.na(phyl1705smsp2$idx),])
+```
+
+# New definitions and parasitic runs
+
+The first thing we need to do is select a set of parasites. I suggest we pick the most common parasite in each Time slice and see if we can get the parasite-lineage for each. 
+
+Let's start by finding parasite at $t=20000$
+
+```{r}
+
+getpseq <- function(time,rundata){
+  
+  set1 <- rundata[[time/20000]]
+  parasites <- set1[set1$np_Parasite1 | set1$np_Parasite2,]
+  parasites <- parasites[order(parasites$nobs,decreasing = T),]
+  if(parasites$np_Parasite2[1]){
+    pseq <- parasites$passeq[1]
+  }else{
+    pseq <- parasites$actseq[1]
+  }
+  return(pseq)
+}
+
+
+
+time = 700000
+load("../examples/rp1705smsp2v2.RData")
+pseq <- getpseq(time,rundata)
+
+```
+
+Note that the most common parasitic *reaction* is differnt to the most common *parasite* - since a parasitic molecule can be bound to many different replicators - this is a detail we can return to later. 
+
+Now we need to find the originating reaction and its associated data
+
+```{r}
+idx <- getsppidx(pseq,manc1705smsp2)
+idata <- getidxdata(idx,manc1705smsp2)
+rdhead <- data.frame(idx=idx,seq=idata$seq,t=idata$rectime,birtht=idata$obst1,actparent=idata$act,pasparent=idata$pass,stringsAsFactors = F)
+rdhead$gen<-0
+rdhead$trace<-T
+#rdhead <- data.frame(idx=NA,seq=seqs,t=2000000,birtht=0,actparent=NA,pasparent=NA,stringsAsFactors = F)
+```
+
+Now we can trace the ancestry of this beast: 
+
+```{r fig.height=6, fig.width=6}
+pp <- makephyl(manc1705smsp2,rdhead, verbose = F)
+
+plotphyl(pp[pp$trace & !is.na(pp$idx),],ymax=1250000)
+```
+
+OK, given that we can get a phylogeny, we now need to determine which reactions are parasitic or not.. let's do that now
+
+```{r}
+require(Rstringmol)
+source("../Rstringmol/R/reaction_type.R")
+ppparasitic <- function(pp,ancdata,verbose=F){
+
+  pp$actseq <- ""
+  pp$passeq <- ""
+  pp$parasitic1 <- F
+  pp$parasitic2 <- F
+  for(rr in 1:nrow(pp)){
+    if(verbose)message(sprintf("row %d, actidx=%d, pasidx=%d",rr,as.integer(pp$actparent[rr]),as.integer(pp$pasparent[rr])))
+    if(!is.na(pp$actparent[rr]) && !is.na(pp$pasparent[rr])){
+      if(pp$actparent[rr]>0){
+        pp$actseq[rr] <- getseq(pp$actparent[rr],ancdata)
+        pp$passeq[rr] <- getseq(pp$pasparent[rr],ancdata)
+        
+        
+        if(!is.na(pp$actseq[rr]) && !is.na(pp$passeq[rr])){
+          if(verbose)message(sprintf("row %d, actseq=%s, passeq=%s",rr,pp$actseq[rr],pp$passeq[rr]))
+          props <- propfromseqs(pp$actseq[rr],pp$passeq[rr])
+          
+          if(props$np_Parasite1[1])pp$parasitic1[rr]<-T
+          if(props$np_Parasite2[1])pp$parasitic2[rr]<-T
+          
+          if(verbose)message(sprintf("%d:g%02d\t%s\t%s\t:\t%s\t%s",rr,pp$gen[rr],pp$parasitic1[rr],pp$parasitic2[rr],pp$actseq[rr],pp$passeq[rr]))
+        }else{
+          message(sprintf("Can't trace parents: seq is NA"))
+        }
+      }else{
+        message(sprintf("Can't trace parents: idx is -1"))
+      }
+    }else{
+        message(sprintf("Can't trace parents: actparent is NA"))
+    }
+  }
+  return(pp)
+}
+
+pp <- ppparasitic(pp,manc1705smsp2, verbose=T)
+```
+
+This shows that we can generate all properties we need to trace something back, but we need really to terminate the trace when one of the generations is not a parasite. Let's try and do this now:
+
+```{r}
+ppdepth <- function(pp){
+  pp$paraparent <- F
+  pp$paraparent[pp$gen==1] <-T
+  for(gg in 1:max(pp$gen)){
+    found <- F
+    for(rr in 1:nrow(pp)){
+      if(pp$gen[rr]==gg){
+        if(pp$parasitic2[rr]){
+          found<-T
+        }
+        if(pp$parasitic1[rr]){
+          found<-T
+        }
+      }
+    }
+    if(!found){
+      return(gg)
+    }
+  }
+  return(max(pp$gen))
+}
+
+depth <- ppdepth(pp)
+
+message(sprintf("Parasite not found at generation %d",depth))
+```
+
+The above function calculates the *maximum* generational depth a parasite can have - but longer lineages would need to be checked to ensure that there is a generation-to-generation link.
+
+Let's use this crude metric to go through an entire dataset just to get a feel for how many long lineages there might be...
+
+```{r eval=FALSE, include=FALSE}
+for(tt in seq(20000,2000000,20000)){
+  pseq <- getpseq(tt,rundata)
+  
+  idx <- getsppidx(pseq,manc1705smsp2)
+  idata <- getidxdata(idx,manc1705smsp2)
+  rdhead <- data.frame(idx=idx,seq=idata$seq,t=idata$rectime,birtht=idata$obst1,actparent=idata$act,pasparent=idata$pass,stringsAsFactors = F)
+  rdhead$gen<-0
+  rdhead$trace<-T
+  
+  pp <- makephyl(manc1705smsp2,rdhead, verbose = F)
+  
+  if(!is.null(pp)){
+    pp <- ppparasitic(pp,manc1705smsp2)
+    depth <- ppdepth(pp)
+    message(sprintf("t=%d, depth=%d, seq = %s",tt,depth,pseq))
+  }else{
+    message(sprintf("ERROR t=%d: missing record for sequence %s",tt,pseq))
+  }
+}
+```
+
+```{r}
+
+parasitedepth<- function(frundata,fancdata,tseq= seq(20000,2000000,20000)){
+  firstrow<-T
+  
+  for(tt in tseq){
+    pseq <- getpseq(tt,frundata)
+    
+    idx <- getsppidx(pseq,fancdata)
+    idata <- getidxdata(idx,fancdata)
+    rdhead <- data.frame(idx=idx,seq=idata$seq,t=idata$rectime,birtht=idata$obst1,actparent=idata$act,pasparent=idata$pass,stringsAsFactors = F)
+    rdhead$gen<-0
+    rdhead$trace<-T
+    
+    pp <- makephyl(fancdata,rdhead, verbose = F)
+    
+    if(!is.null(pp)){
+      pp <- ppparasitic(pp,fancdata)
+      depth <- ppdepth(pp)
+      message(sprintf("t=%d, depth=%d, seq = %s",tt,depth,pseq))
+      
+      parow <- data.frame(rtime=tt,btime=pp$birtht[1],depth=depth,seq=pseq)
+      
+      
+      
+      if(firstrow){
+        pout<-parow
+        firstrow<-F
+      }else{
+        pout <- rbind(pout,parow)
+        #message(sprintf("t = %d: P-out has %d rows now",tt,nrow(pout)))
+      }
+      
+    }else{
+      message(sprintf("ERROR t=%d: missing record for sequence %s",tt,pseq))
+    }
+  }
+  return(pout)
+}
+
+
+fn <- "manc1705smsp3.RDS"
+manc1705smsp3 <- readRDS(fn)
+rm(rundata)
+load("../examples/rp1705smsp3v2.RData")
+
+ad1705smsp3 <- parasitedepth(rundata,manc1705smsp3,tseq=seq(20000,2000000,20000))
+saveRDS(ad1705smsp3,file="pdepth1705smsp3.RDS")
+
+```
+
+```{r}
+
+fn <- "manc1705smsp2.RDS"
+manc1705smsp2 <- readRDS(fn)
+rm(rundata)
+load("../examples/rp1705smsp2v2.RData")
+
+ad1705smsp2 <- parasitedepth(rundata,manc1705smsp2)
+saveRDS(ad1705smsp2,file="pdepth1705smsp2.RDS")
+```
+
+
+
+```{r}
+
+fn <- "manc1705smsp1.RDS"
+manc1705smsp1 <- readRDS(fn)
+rm(rundata)
+load("../examples/rp1705smsp1v2.RData")
+
+ad1705smsp1 <- parasitedepth(rundata,manc1705smsp1,tseq=seq(20000,2000000,20000))
+saveRDS(ad1705smsp1,file="pdepth1705smsp1.RDS")
+```
+
+
+```{r}
+
+fn <- "manc1705smsp5.RDS"
+manc1705smsp5 <- readRDS(fn)
+rm(rundata)
+load("../examples/rp1705smsp5v2.RData")
+
+ad1705smsp5 <- parasitedepth(rundata,manc1705smsp5)
+saveRDS(ad1705smsp5,file="pdepth1705smsp5.RDS")
+```
+
+
+
+```{r}
+
+fn <- "manc1705smspr2.RDS"
+manc1705smsp5 <- readRDS(fn)
+rm(rundata)
+load("../examples/rp1705smspr2v2.RData")
+
+ad1705smspr2 <- parasitedepth(rundata,manc1705smsp5)
+saveRDS(ad1705smspr2,file="pdepth1705smspr2.RDS")
+```
+
+
+
+```{r}
+# This one took AGES!
+fn <- "manc1705smspr3.RDS"
+manc <- readRDS(fn)
+rm(rundata)
+load("../examples/rp1705smspr3v2.RData")
+
+ad1705smspr3 <- parasitedepth(rundata,manc)
+saveRDS(ad1705smspr3,file="pdepth1705smspr3.RDS")
+```
+
+
+
+```{r}
+fn <- "manc1705sm2504.RDS"
+manc <- readRDS(fn)
+rm(rundata)
+load("../examples/rp1705smsp2504v2.RData")
+
+ad1705sm2504 <- parasitedepth(rundata,manc)
+saveRDS(ad1705sm2504,file="pdepth1705sm2504.RDS")
+```
+
+```{r}
+fn <- "manc1705sm2505.RDS"
+manc <- readRDS(fn)
+rm(rundata)
+load("../examples/rp1705smsp2505v2.RData")
+
+ad1705sm2505 <- parasitedepth(rundata,manc)
+saveRDS(ad1705sm2505,file="pdepth1705sm2505.RDS")
+```
+
+
+
+
+
+  

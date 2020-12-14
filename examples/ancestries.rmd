@@ -1,0 +1,729 @@
+---
+title: "Ancestries"
+author: "Simon Hickinbotham"
+date: "10/06/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Strategies: 
+
+- plot
+- tikz
+- graphviz
+- ape
+
+# Issues
+
+- 
+
+
+# Step 1: 2m down, simple plot
+
+Let's try a naive approach where we plot the ancestries of the top ten spp at 2m timesteps - this is mainly to get a feel for the size of the problem and get a graphical view of it. 
+
+We'll start with `box-box3` as that is a simple run with clear demarcation of the flood. We'll first try with the `splist_stats` function that we wrote over a year ago. Let's load all the data for that run into a list (this is a big step so it makes sense to cach this chunk)
+
+```{r message=FALSE, warning=FALSE, cache=TRUE, eval = F}
+require(Rstringmol)
+source("../Rstringmol/R/splist_stats.R")
+manc <- list()
+ll=1
+for(tt in seq(2000000,20000,-20000)){
+  df <- splist_stats(fn=sprintf("~/Desktop/paulien/smsp/1705smsp/out3/splist%d.dat",tt),verbose = F)
+  df$rectime <- tt
+  manc[[ll]] <- df
+  ll <- ll + 1
+}
+
+require(data.table)
+manc <- rbindlist(manc)
+#unfortunately rbindlist converts strings to factors, so we have to fix that: 
+manc <- data.frame(lapply(manc, as.character), stringsAsFactors=FALSE)
+manc$spp <- as.numeric(manc$spp)
+manc$act <- as.numeric(manc$act)
+manc$pass <- as.numeric(manc$pass)
+manc$obsn <- as.numeric(manc$obsn)
+manc$obst1 <- as.numeric(manc$obst1)
+manc$rectime <- as.numeric(manc$rectime)
+manc$restart <- as.logical(manc$restart)
+
+save(manc,file="manc1705smsp3.Rdata")
+```
+
+We also need to load the config file at t=2m to get the most numerous molecules and initialise the data frame:  
+
+```{r}
+load("rp1705smsp3.RData")
+load("manc1705smsp3.Rdata")
+
+r2m <- rundata[[2000000/20000]]
+r2m <- r2m[order(r2m$nobs,decreasing = T),]
+
+seqs <- unique(c(r2m$actseq[1:10],r2m$passeq[1:10]))
+
+anchead <- data.frame(idx=NA,seq=seqs,t=2000000,birtht=0,actparent=NA,pasparent=NA,stringsAsFactors = F)
+```
+
+
+Let's now find the parents of each of these molecules:
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+
+for(pp in 1:nrow(anchead)){
+  time = 2000000
+  idx<-0
+  found<-F
+  while(!found){
+    idx<- idx+1
+    
+    anc<-manc[manc$rectime == time,]
+    parents <- anc[anc$seq == anchead$seq[pp],]  
+    
+    if(nrow(parents)>1){
+      if(max(parents$obst1)>0){
+        found <- T
+        message(sprintf("Found parents of seq %s at time %d: %d and %d in splist %d",anchead$seq[pp], parents$obst1[1], parents$act[1], parents$pass[1],time))
+        
+        anchead$idx[pp]<- parents$spp[1]
+        anchead$birtht[pp]<-parents$obst1[1]
+        anchead$actparent[pp] <- parents$act[1]
+        anchead$pasparent[pp] <- parents$pass[1]
+                
+        break
+      }
+    }
+    
+    
+    if(idx>100)break
+    time = time - 20000
+  }
+}
+```
+Let's plot this information so we can get a feel for what we are looking at: 
+```{r}
+plot(x=anchead$actparent,y=anchead$birtht,ylim = c(min(anchead$birtht),2000000),xlim=range(c(anchead$idx,anchead$actparent,anchead$pasparent)),pch=19,col="red",cex=1.5,xlab="Species number",ylab="time")
+points(x=anchead$pasparent,y=anchead$birtht,pch=19,col="blue")
+points(x=anchead$idx,y=rep(2000000,nrow(anchead)),pch=19,col="green")
+points(x=anchead$idx,y=anchead$birtht,pch=19,col="green")
+segments(x0=anchead$idx,x1=anchead$actparent,y0=anchead$birtht,lwd=2,col="red")
+segments(x0=anchead$idx,x1=anchead$pasparent,y0=anchead$birtht,col="blue")
+segments(x0=anchead$idx,y0=anchead$birtht,y1=rep(2000000,nrow(anchead)),col="green")
+
+```
+
+OK, that's quite nice. So we can have an algorithm that works like this: 
+
+- Get molecules in the top $N$ reactions for time $t$ - put info in dataframe
+- For $g$ in $G$, the number of generations: 
+    - Call function to find the parent molecules
+    - append info to data frame
+    
+    
+Here are some helper functions that we can use to find our way around:     
+    
+```{r}
+
+getsppidx <- function(seq,data){
+  spent <- unique(data$spp[data$seq == seq])
+  
+  if(length(spent)>1)
+    message(sprintf("WARNING! More than one spp number found for %s - values are %d",seq,spent))
+  
+  return(spent[1])
+  
+}
+
+#TODO: Check that this works generally
+getidxdata <- function(idx,data){
+  spent <- unique(data[data$spp == idx,])
+  
+  rtimes <- unique(spent$rectime)
+  
+  spent <- spent[spent$rectime == min(rtimes),]
+  return(spent[1,])
+  
+}
+
+
+getseq <- function(idx,data){
+  spent <- unique(data$seq[data$spp == idx])
+  
+  if(length(spent)>1)
+    message(sprintf("WARNING! More than one spp number found for %s - values are %d",seq,spent))
+  
+  return(spent[1])
+  
+}
+
+# NB 'data' is HUGE here - copying this will slow things down a lot!
+getparentidx <- function(idx,data){
+  c <- data[data$spp == idx,]
+  c <- c[c$restart==F,]
+  c <- c[c$rectime == min(c$rectime),]
+  
+  # Assume first entry is the original reaction
+  res <- list()
+  res$actp <-c$act[1]
+  res$passp <-c$pass[1]
+  res$t <-c$obst1[1]
+  
+  return(res)
+}
+```
+
+...and here's a function for finding the sequences for the previous generation. 
+
+
+```{r message=FALSE, warning=FALSE}
+require(knitr)
+anctable <- function(head,time,data,ngen=3,verbose=T){
+  
+  
+  head$gen <- 0
+  
+  for(gg in 1:ngen){
+    gidx <- head$idx#[head$gen == (gg-1)]
+    # Find the parent indexes
+    #for(ii in 1:length(gidx)){
+    #  parents <- getparentidx(gidx[ii],data)
+    #  if(verbose)
+    #    message(sprintf("parents of %0.0f are %0.0f and %0.0f at time %0.0f",gidx[ii],parents$actp,parents$passp,parents$t))
+    #  
+    #  if(ii==1)
+    #    pidx <- unique(c(parents$actp,parents$passp))
+    #  else
+    #    pidx <- unique(c(pidx,parents$actp,parents$passp))
+    #}
+    pidx <- unique(c(head$actparent,head$pasparent))
+    if(verbose)message(sprintf("Found %d unique parents for generation %d",length(pidx),gg))
+    #Now build the generation data: 
+    for(ii in 1:length(pidx)){
+      
+      idd<-getidxdata(pidx[ii],data)
+      message(sprintf("%d",ii))
+      message(sprintf("Recording details for %0.0f: %s",idd$spp,idd$seq))
+      
+      # idx, seq, t, birtht, actparent, pasparent
+      pd <- data.frame(stringsAsFactors = F,
+                       idx=pidx[ii],
+                       seq=idd$seq,
+                       t=max(unique(data$rectime[data$spp == time])),#idd$rectime,
+                       birtht=idd$obst1,
+                       actparent=idd$act,
+                       pasparent=idd$pass
+                       )
+      
+      if(ii==1)
+        newgen<-pd
+      else
+        newgen<-rbind(newgen,pd)
+    }
+    
+  }
+  
+  
+  return (newgen)
+}
+
+pd <- anctable(anchead,2000000,manc,ngen=1)
+```
+
+The output of the function is a table similar to the input: 
+
+
+```{r echo=FALSE}
+pd
+```
+    
+But unfortunately there's an error in the first row - caused by a restart of the run. I think it's going to be difficult to fix these issues in the right way programatically. The alternative then is to go back one generation at a time and fix things as we go along: the output will be a big table tracing the whole ancestry. 
+
+Let's try to find the missing entry in the `pd` table, then we can plot this generation. 
+
+First thing to do is work out when the restarts are: 
+
+```{r}
+badentry <- manc[manc$spp == 361335,]
+times <- unique(badentry$rectime)
+times
+```
+
+this gives us a range of times, but we know from the previous generation that we are looking for a reaction which created 361335 that happened *before* t=1920714. We also want a reaction that doesn't have 361335 as the active or passive partner. Let's see how many examples of that we have: 
+
+```{r}
+badentry[badentry$act != 361335 & badentry$pass != 361335 & badentry$rectime <1940000 & badentry$act != -1,]
+```
+
+Finally let's check if there are any other species numbers with the same sequence: 
+```{r}
+unique(manc$spp[manc$seq == "$=?>$DVB^A$=$AB^B$=?>$VAO%N"])
+```
+
+OK - this means that we can fix the bad entry - we haven't got an exact obst1, but we know it's around 1920000. Note that this shows that with this system, phylogenies are going to be much more richly interconnected than conventional phylogenies of life. 
+
+```{r}
+pd$birtht[1]<- 1920000
+pd$actparent[1] <- 329514
+pd$pasparent[1] <- 329514
+pd
+```
+
+We also need to find a sensible value for `t` - let's for now choose the last time it was in a parent reaction like this:
+
+```{r}
+for(ii in 1:nrow(pd)){
+  tfin <- max(anchead$birtht[anchead$actparent == pd$idx[ii] | anchead$pasparent == pd$idx[ii]])
+  message(sprintf("%d %d %d",ii,pd$idx[ii],tfin))
+  pd$t[ii]<- tfin
+}
+```
+
+
+
+
+let's now create a master table that we'll add to as we go through the generations
+
+```{r}
+anchead$gen <- 0
+pd$gen <- 1
+phyl <- rbind(anchead,pd)
+phyl
+```
+
+Now let's see if we can plot this information as we did before: 
+
+```{r}
+plotphyl <- function(phyl){
+  
+  plot(x=phyl$actparent,y=phyl$birtht,
+       ylim = c(min(phyl$birtht),2000000),
+       xlim=range(c(phyl$idx,phyl$actparent,phyl$pasparent)),
+       pch=19,col="red",cex=1.5,xlab="Species number",ylab="time")
+  
+  points(x=phyl$pasparent,y=phyl$birtht,pch=19,col="blue")
+  points(x=phyl$idx,y=phyl$t,pch=19,col="green")
+  points(x=phyl$idx,y=phyl$birtht,pch=19,col="green")
+  
+  segments(x0=phyl$idx,x1=phyl$actparent,y0=phyl$birtht,lwd=2,col="red")
+  segments(x0=phyl$idx,x1=phyl$pasparent,y0=phyl$birtht,col="blue")
+  segments(x0=phyl$idx,y0=phyl$birtht,y1=phyl$t,col="green")
+  
+  
+}
+
+plotphyl(phyl)
+```
+
+OK, let's see how easily we can get the next generation: 
+
+```{r message=FALSE, warning=FALSE}
+
+pd2 <- anctable(phyl[phyl$gen == 1,],2000000,manc,ngen=1)
+pd2
+```
+
+    
+```{r}
+badentry <- manc[manc$spp == 356610,]
+times <- unique(badentry$rectime)
+times
+```
+
+Let's find all the molecules involved in parenting 356610 and take it from there
+
+```{r}
+cp <- badentry[badentry$act != 356610 & badentry$pass != 356610 & badentry$rectime <1935042 & badentry$act != -1,]
+table(c(cp$act,cp$pass))
+```
+OK, great, the candidate is 364851 becuase that's the most common molecule *and* its self-self. Spp 356610 was involved in the phylogeny at t=1935042, so we can set t=1920000 for the origin time: 
+
+```{r}
+pd2$birtht[5] = 1920000
+pd2$actparent[5] = 364851
+pd2$pasparent[5] = 364851
+pd2$gen = 2
+```
+
+once again we need to find good values for `t` for this table: 
+
+We also need to find a sensible value for `t` - let's for now choose the last time it was in a parent reaction like this:
+
+```{r}
+for(ii in 1:nrow(pd2)){
+  tfin <- max(pd$birtht[pd$actparent == pd2$idx[ii] | pd$pasparent == pd2$idx[ii]])
+  message(sprintf("%d %d %d",ii,pd2$idx[ii],tfin))
+  pd2$t[ii]<- tfin
+}
+```
+
+
+
+```{r fig.height=10, fig.width=10}
+
+phyl<-phyl[phyl$gen<2,]
+phyl<-rbind(phyl,pd2)
+
+plotphyl(phyl)
+```
+
+OK, lets try a third iteration. We are starting to get into a rhythm!
+
+```{r message=FALSE, warning=FALSE}
+
+pd3 <- anctable(phyl[phyl$gen == 2,],2000000,manc,ngen=1)
+pd3
+```
+
+
+That worked fine - all we have to do is calculate the `t` value: 
+
+
+```{r}
+for(ii in 1:nrow(pd3)){
+  tfin <- max(pd2$birtht[pd2$actparent == pd3$idx[ii] | pd2$pasparent == pd3$idx[ii]])
+  message(sprintf("%d %d %d",ii,pd3$idx[ii],tfin))
+  pd3$t[ii]<- tfin
+}
+```
+
+
+```{r fig.height=10, fig.width=10}
+pd3$gen <- 3
+phyl<-phyl[phyl$gen<3,]
+phyl<-rbind(phyl,pd3)
+
+plotphyl(phyl)
+title(main="4 Speciations")
+```
+
+```{r message=FALSE, warning=FALSE}
+
+pd4 <- anctable(phyl[phyl$gen == 3,],2000000,manc,ngen=1)
+pd4$gen <- 4
+```
+
+you can see that the 4th entry of pd4 is from a restart - but we've seen this index before! I guess this is to be expected where an active parent is a copier. 
+There is an issue with the birth time of 356610 though - and we may struggle to find its 'first' parent reaction. Let's first get a clear picture of what we know and don't know. 
+
+### Descendants of 356610
+
+```{r}
+phyl[phyl$actparent == 356610 | phyl$pasparent == 356610,]
+```
+
+OK. the first entry is a mutation of a self-reaction, which we have a full explanation for. However, the second molecule is more interesting because the *product* of this reaction (i.e. 363851) is itself a parent of a reaction with 327131 which produces 356610 - there's a weird sort of cycle going on. We'll need more information to construct a representative phylogeny, so let's look in detail at the reaction that produces 356610: 
+
+- `Act 364851 `
+- `Pas 327131`
+
+Produces outputs
+
+- `Pro 363424 $=?>$=?$EZUB^B$=?>$ABO%NHOB$=?>$=?$EZUB^B$=?>$ABO%NHOB`
+- `Act 356610`
+- `Pas 327131 $=?>$=?$EZUB^B$=?>$ABO%NHOB` 
+
+Note that 364851 has a later number than 356610, so it can't have been the originator
+
+Bottom line: We've established that 356610 is not present before 1920000 *even as a substring*
+
+NB: I've now tried to recreate the file for t=1900000 from the config file for t=1880000 but it seems that there's something in the RNG calls that leads to a mismatch. I think that this is an issue with the later parts of the runs, due to the strange things that are going on in the reactions. 
+
+This means we'll have to have incomplete ancestries - the problem only occurs if a new and important species is generated in the 20000 timesteps before a restart. 
+
+So, let's make a 'lost list' of molecules whose first appearence is lost - we'll at least be able to see graphically where they happen and how often. Note that the *first* appearance may not be the most important - it's how these things react later on that is often the significant event 
+
+```{r}
+lostorigins <- data.frame(spp=356610,t=1900000)
+pd4 <- pd4[-4,]
+```
+
+
+
+```{r fig.height=10, fig.width=10}
+phyl<-phyl[phyl$gen<4,]
+phyl<-rbind(phyl,pd4)
+
+plotphyl(phyl)
+title(main="4 Speciations")
+points(x=lostorigins$spp,y=lostorigins$t,pch=19,cex=2)
+```
+
+
+```{r message=FALSE, warning=FALSE}
+
+pd5 <- anctable(phyl[phyl$gen == 4,],2000000,manc,ngen=1)
+pd5$gen <- 5
+pd5
+```
+This give two species whose parents were 'lost' at a restart. Let's have a quick look at both of them and see what we can deduce. The first reaction is like this: 
+
+```
+Product 192250   $=?>$DBVB^A$=?>$EAUB^B$=?>$ZVBO%}HOB
+Active  200959   $=?>$DBVB^A$=?>$EAUB^B$=?>$ZVBO%}HOB$=?>$EAUB^B$=?>$AVBO%}OB$=?>$EAUB^B$=?>$AVBP%}O$=?>$EAUB^B$=?>$AVBO%}OB
+Passive 179327   $=?>$EAUB^B$=?>$AVBO%}OB 
+```
+
+As with the 'lost' product previously observed, it is again the case that the new spp is the product of a truncation reaction. If you look closely at the active partner, you can see that it is four approximate repeats of what were replicator molecules with missed cleaves. The passive molecule does nothing but get appended to the end. 
+
+Let's see if either of these parent molcules exist before the restart .. first the active: 
+
+```{r}
+unique(manc$rectime[manc$spp == 200959])
+```
+
+Now the passive
+
+```{r}
+unique(manc$rectime[manc$spp == 179327])
+```
+
+OK, this shows that the passive molecule was around before but the active was not. The active was probably created close to the time that the product was generated, incorporating it into its sequence. This reflects the strategy we identified in the box-box3 analysis of extending and truncating molecules with functional replicating units. 
+
+the second species with missing parents is this: 
+
+`285202 $=?>$=?$EZUB^B$=?>$ABO%}HOB`
+
+Without going into details, this is intersing - looking at the earliest reaction where 285202 isn't either parent we have: 
+
+```
+Product 285202   $=?>$=?$EZUB^B$=?>$ABO%}HOB
+Active  192250   $=?>$DBVB^A$=?>$EAUB^B$=?>$ZVBO%}HOB
+Passive 179327   $=?>$=?$EZUB^B$=?>$ABO%}HOB$=?>$=?$EZUB^B$=?>$ABO%}HOB 
+```
+
+But *after* the reaction, the active and passive partners are changed: 
+
+```
+Active*  $=?>$DBVB^A$=?>$EAUB^B$=?>$ZVBO%}HOB$=?>$=?$EZUB^B$=?>$ABO%}HOB$=?>$=?$EZUB^B$=?>$ABO%}HOB
+Passive* $=?>$=?$EZUB^B$=?>$ABO%}HOB
+```
+
+Conclusion: these are both macromutations that are typical of the cohort of molecules at this time -- there's nothing missing from the patterns we see, just the origins of these moleulces is missing, which is a shame, but no real damage to the analysis. 
+
+Let's remove these from pd5 then, and replot: 
+
+```{r}
+
+lostorigins <- rbind(lostorigins,data.frame(spp=192250,t=1560000))
+lostorigins <- rbind(lostorigins,data.frame(spp=285202,t=1740000))
+pd5 <- pd5[c(-8,-16),]
+
+phyl<-phyl[phyl$gen<5,]
+phyl<-rbind(phyl,pd5)
+
+plotphyl(phyl)
+title(main="5 Speciations")
+points(x=lostorigins$spp,y=lostorigins$t,pch=19,cex=2)
+```
+
+# Generation 6 
+
+
+```{r message=FALSE, warning=FALSE}
+
+pd6 <- anctable(phyl[phyl$gen == 5,],2000000,manc,ngen=1)
+pd6$gen <- 6
+pd6
+```
+
+
+```{r}
+pd6 <- pd6[-c(5,8),]
+phyl<-phyl[phyl$gen<6,]
+phyl<-rbind(phyl,pd6)
+
+plotphyl(phyl)
+title(main="6 Speciations")
+points(x=lostorigins$spp,y=lostorigins$t,pch=19,cex=2)
+```
+
+# Generation 7
+
+
+```{r fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+
+pd7 <- anctable(phyl[phyl$gen == 6,],2000000,manc,ngen=1)
+pd7$gen <- 7
+pd7
+```
+
+```{r fig.height=10, fig.width=10}
+
+#remove rows 2 & 6
+pd7 <- pd7[-c(2,6),]
+phyl<-phyl[phyl$gen<7,]
+phyl<-rbind(phyl,pd7)
+
+for(ii in 1:nrow(phyl))phyl$t[ii] <- max(manc$rectime[manc$spp == phyl$idx[ii]])
+
+
+plotphyl(phyl)
+title(main="7 Speciations")
+points(x=lostorigins$spp,y=lostorigins$t,pch=19,cex=2)
+```
+
+
+# Generation 8
+
+```{r fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+
+pd8 <- anctable(phyl[phyl$gen == 7,],2000000,manc,ngen=1)
+pd8$gen <- 8
+pd8
+```
+
+
+```{r fig.height=10, fig.width=10}
+
+#remove rows 2 & 6
+pd8 <- pd8[-c(2,5),]
+phyl<-phyl[phyl$gen<8,]
+phyl<-rbind(phyl,pd8)
+
+for(ii in 1:nrow(phyl))phyl$t[ii] <- max(manc$rectime[manc$spp == phyl$idx[ii]])
+
+
+plotphyl(phyl)
+title(main="8 Speciations")
+points(x=lostorigins$spp,y=lostorigins$t,pch=19,cex=2)
+```
+
+
+
+# Generation 9
+
+```{r fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+
+pd9 <- anctable(phyl[phyl$gen == 8,],2000000,manc,ngen=1)
+pd9$gen <- 9
+pd9
+```
+
+
+```{r fig.height=10, fig.width=10}
+
+#remove rows 2 & 6
+pd9 <- pd9[pd9$birtht > -1,]
+phyl<-phyl[phyl$gen<8,]
+phyl<-rbind(phyl,pd9)
+
+for(ii in 1:nrow(phyl))phyl$t[ii] <- max(manc$rectime[manc$spp == phyl$idx[ii]])
+
+
+plotphyl(phyl)
+title(main="9 Speciations")
+points(x=lostorigins$spp,y=lostorigins$t,pch=19,cex=2)
+```
+
+
+# Generation 10
+
+```{r fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+
+pd10 <- anctable(phyl[phyl$gen == 9,],2000000,manc,ngen=1)
+pd10$gen <- 10
+pd10
+```
+
+
+
+
+```{r fig.height=10, fig.width=10}
+
+#remove rows with -1 birtht
+pd10 <- pd10[pd10$birtht > -1,]
+phyl<-phyl[phyl$gen<9,]
+phyl<-rbind(phyl,pd10)
+
+for(ii in 1:nrow(phyl))phyl$t[ii] <- max(manc$rectime[manc$spp == phyl$idx[ii]])
+
+
+plotphyl(phyl)
+title(main="10 Speciations")
+points(x=lostorigins$spp,y=lostorigins$t,pch=19,cex=2)
+```
+
+
+
+# Generation 11
+
+We can put the two chunks from speciation 10 together to get straight to speciation eleven
+
+
+```{r fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+
+pd11 <- anctable(phyl[phyl$gen == 10,],2000000,manc,ngen=1)
+pd11$gen <- 11
+pd11
+
+#remove rows with -1 birtht
+pd11 <- pd11[pd11$birtht > -1,]
+phyl<-phyl[phyl$gen<10,]
+phyl<-rbind(phyl,pd11)
+
+# Find the most recent occurrence of a species: 
+for(ii in 1:nrow(phyl))phyl$t[ii] <- max(manc$rectime[manc$spp == phyl$idx[ii]])
+
+# plot the phylogeny
+plotphyl(phyl)
+title(main="11 Speciations")
+points(x=lostorigins$spp,y=lostorigins$t,pch=19,cex=2)
+```
+
+
+# Generation 12
+It's looking like we can put all this in a function: 
+
+```{r fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+
+nextgen<- function(bigspeciestable,childspp,genno,doplot=T){
+  
+  next.gen <- anctable(childspp[childspp$gen == (genno-1),],2000000,bigspeciestable,ngen=1)
+  next.gen$gen <- genno
+  next.gen
+  
+  #TODO: consider keeping these in but adding a "tracable" boolean field for which these would be false
+  #remove rows with -1 birtht
+  next.gen <- next.gen[next.gen$birtht > -1,]
+  #remove rows where idx == actparent or pasparent
+  #next.gen <- next.gen[next.gen$idx != next.gen$actparent & next.gen$idx != next.gen$pasparent,]
+  
+  
+  childspp<-childspp[childspp$gen<(genno-1),]
+  childspp<-rbind(childspp,next.gen)
+  
+  
+  
+  for(ii in 1:nrow(childspp))childspp$t[ii] <- max(bigspeciestable$rectime[bigspeciestable$spp == childspp$idx[ii]])
+  
+  
+  plotphyl(childspp)
+  title(main=sprintf("%d Speciations",genno))
+  points(x=lostorigins$spp,y=lostorigins$t,pch=19,cex=2)
+  
+  return(childspp)
+}
+
+phyl <- nextgen(manc,phyl,12)
+```
+
+
+```{r fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+
+phyl <- nextgen(manc,phyl,13)
+```
+
+# TODO
+
+- detect and delete self-replications
+- colour green lines as Paulien suggests
+- maybe colour reaction lines too? 
+- check with Susan re: 
+
+
+
+# ReRun from anchead

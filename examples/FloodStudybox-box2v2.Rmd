@@ -1,0 +1,1270 @@
+---
+title: 'Flood study: box-box2'
+author: "Simon Hickinbotham"
+date: "25/03/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+**Summary** 
+
+- first "flood" at $t ~= 600,000$ fails because reciprocal copying between long and short replicator strategies is incomplete: the long replicator parasitises the short
+- emergence of a "camouflaged parasite" between $t ~= 600,000$ and $t ~= 1,200,000$ keeps population low
+- More sophisticated toggle checks emerge, reducing parasitism to almost zero
+- A large community of different replicators emerge - some replicate quickly, some resist parasites - *both classes are more efficient than we saw in `box-box3`*
+- The flood ends because parasites are suppressed so much that the selection pressure to resist them disappears - selection favours fast replicators, and parasites return. 
+
+
+
+----
+# Introduction
+
+This notebook follows from the notebook `FloodStudybox-box3`. In that dataset, the transition to a flood state was clear. Now we move to run "box-box2", where there is a short-lived flood, followed by a dip in population, but then followed by the most dense flooding we've seen. It's clear that this is a more complicated story!
+
+
+
+Here are the movies of the run - coloured by length on the left and species on the right:
+
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/qzMC4aN7SRg" frameborder="0"  allowfullscreen></iframe>
+<iframe width="400" height="500" src="https://www.youtube.com/embed/R2DbrIDl-og" frameborder="0"  allowfullscreen></iframe>
+
+
+You can see an extremely dense flood event from about 0:46 onwards. This period has the most reactions in **any** of the runs (see fig 12 on p29 of current paper draft), so we need to try and understand that as well as events either side of it. 
+
+## Picking the Time slices:
+
+We are going to use the opcode firing measures to identify the flood periods. So let's create a plot and draw vertical lines for each time point we want to look at: 
+
+```{r,echo=FALSE, fig.width=10, message=F, warning=TRUE, r,warning=F}
+require(Rstringmol)
+source("../Rstringmol/R/opcodeFiringPlot.R")
+
+t1 <-  600000
+t2 <-  680000
+t3 <- 1000000
+t4 <- 1080000
+t4a<- 1240000
+t5 <- 1500000
+t6 <- 1800000 #2000000
+t6a <-2000000
+
+load("rp1705smsp2v2.RData")
+ylim=c(0,520000)
+opcode.firing.plot(rundata, title = "Opcode firing for 'box box replicate 2'",ylim=ylim)
+segments(x0=t1,y0=0,y1=ylim[2],col="blue",lty=3)
+segments(x0=t2,y0=0,y1=ylim[2],col="red",lty=3)
+segments(x0=t3,y0=0,y1=ylim[2],col="orange",lty=3)
+segments(x0=t4,y0=0,y1=ylim[2],col="green",lty=3)
+segments(x0=t4a,y0=0,y1=ylim[2],col="black",lty=3)
+segments(x0=t5,y0=0,y1=ylim[2],col="pink",lty=3)
+segments(x0=t6,y0=0,y1=ylim[2],col="purple",lty=3)
+
+text(labels = c("t1","t2","t3","t4","t4a","t5","t6"),x=c(t1,t2,t3,t4,t4a,t5,t6),y=240000)
+```
+
+As you can see, there are a number of distinct time points of interest. From here on we'll call them **t1** to **t6** going from ealiest to latest (left to right).  We need to understand:
+
+- why the opcode firings increased from t1-t2
+- why there was a dip between t2-t3
+- stages of the flood (t3-t5)
+- end of flood (t6)
+
+We can look at the "length" images for these times to see what the spatial distribution is (this was identified as a factor in the flooding for the box-box3 run): 
+
+
+```{r fig.height=6, fig.width=10,echo=F,eval=T}
+par(mfrow=c(2,3))
+library(png)
+imnos<- c(t1,t2,t3,t4,t5,t6)
+for(ii in 1:length(imnos)){
+  par(mar=c(0,0,0,0))
+  plot(NA,xlim=c(0,125),ylim=c(0,100),axes=F,main=sprintf("\nt%d = %d",ii,imnos[ii]),asp = 1,xlab="",ylab="")
+  imname = sprintf("~/Desktop/paulien/smsp/1705smsp/out2png/lenframe%07d.png",imnos[ii])
+  img <- readPNG(source = imname)
+  rasterImage(image=img,xleft = 0,xright = 125,ybottom = 0,ytop=100,interpolate = F)
+}
+
+```
+
+Some points about these pictures:
+
+- **t1:** Short replicator with parasites, as seen in `box-box3`
+- **t2:** Invasion of a longer selfreplicator
+- **t3:** distinct clumps self-replicators of different length 
+- **t4:** Longer self-replicator appears to have won -- or short self-replicator has got longer (there are 2 shades of green if you look closely, and the yellower shade has fewer parasites)
+- **t5:** full flood- if you look at the movie the colour gradually changes to blue, and then gaps open up - I'm guessing the new gaps are caused by parasitism but the molecules are equal lengths, so you have to look at 1:14 on the species movie to see evidence for this
+- **t6:** the flood subsides - why does this happen?
+
+
+
+```{r echo=F, message=FALSE, include=FALSE}
+
+# RUN THIS CODE TO CREATE THE DATA STRUCTURES USED BELOW (THE 'get.cum' FUNCTION SHOULD GO INTO THE r CODEBASE)
+
+get.cum <- function(dat,thr){
+  dat <- dat[order(dat$nobs,decreasing = T),]
+  dat$cum <- 0
+  dat$cum[1] <- dat$nobs[1]
+  for(rr in 2:nrow(dat)){
+    dat$cum[rr] <- dat$cum[rr-1] + dat$nobs[rr]
+  }
+  sdn <- sum(dat$nobs)
+  message(sprintf("thr = %f * %d = %f",thr,sdn,(thr*sdn)))
+  dat <- dat[dat$cum < (thr*sum(dat$nobs)),]
+  return(dat)
+}
+
+
+```
+
+# Changes from t1 to t2
+
+First let's look at the change in the firing rates for four of the opcodes, as we did in `box-box3`: 
+
+```{r fig.width=10, fig.height=8, echo=F, message=F, warning=F, cache = F}
+require(vioplot)
+viopop <- function(dat1,dat2,dat3,cname,tname,sname,ylim=NULL){
+  
+  if(is.null(ylim))
+    ylim = c(0,max(dat1[,cname],dat2[,cname],dat3[,cname]))
+  
+
+  vioplot(rep(dat1[,cname],dat1$nobs),
+          rep(dat2[,cname],dat2$nobs),
+          rep(dat3[,cname],dat3$nobs),
+          h=(ylim[2]-ylim[1])/20,
+          names=c("t1","t2","Novel"),
+          ylab=sprintf("firings of %s (`%s`) opcode ",tname,sname),
+          main=sprintf("Change in firing of '%s'",tname),
+          ylim=ylim,
+          colMed = "red"
+          )  
+  
+}
+
+
+ddbefore <- rundata[[t1/20000]]
+ddafter  <- rundata[[t2/20000]]
+
+ddbefore <- ddbefore[order(ddbefore$nobs,decreasing = T),]
+ddafter <- ddafter[order(ddafter$nobs,decreasing = T),]
+
+thr <- 0.5
+
+message(sprintf("nrow ddbefore = %d, ddafter = %d",nrow(ddbefore),nrow(ddafter)))
+
+dafter <- get.cum(ddafter,thr)
+dbefore <- get.cum(ddbefore,thr)
+
+# GET THE 'ACTSEQ' IN THE 'AFTER' DATA THAT AREN'T IN THE 'BEFORE' DATA
+fnov <- unique(ddafter[!(ddafter$actseq %in% ddbefore$actseq),])
+fnov <- fnov[order(fnov$nobs,decreasing = T),]
+
+par(mfrow=c(2,2))
+
+viopop(ddbefore,ddafter,fnov,"ctogg","toggle","^",ylim=c(0,5))
+viopop(ddbefore,ddafter,fnov,"cmove","move",">", ylim = c(0,120))
+viopop(ddbefore,ddafter,fnov,"ccopy","copy","=",ylim=c(0,120))
+viopop(ddbefore,ddafter,fnov,"cover","over","=", ylim = c(0,120))
+
+
+
+#vioplot(rep(n*ddbefore[,"ctogg"],ddbefore$nobs),rep(n*ddafter$ctogg,ddafter$nobs),rep(n*fnov$ctogg,fnov$nobs),h=0.4,names=c("before","after","after-before"),ylab="Number of firings of toggle (`^`) opcode ",main="Change in firing of toggle")
+
+```
+
+OK, this shows nicely that there is definitely a new mode of behaviour: the red dots indicate the median values, and we can see clearly that they have changed. Compared with the `box-box3` run:
+
+- Modal firing rate of `toggle` is increased to 2, not 3 - is execution moving to the passive molecule?
+- Generally fewer firings of `copy`, `move` and `over`, but there's still an increase - is this simply because molecules are shorter at this point in the run? 
+
+
+```{r eval=FALSE, cache=T, include=FALSE}
+# We'll pick reactions with more than 2 toggles, and more than 80 copy operations. Then we'll split the result into two groups - mutual (including self-) replicators, and parasites. Finally, we'll choose the parasite reactions whose active partner is also the active partner in a mutual replicating reaction. 
+
+
+nr <- fnov[fnov$ctogg>2 & fnov$ccopy > 80,]
+
+nrr <- nr[nr$pp_Replicator | nr$pp_SelfReplicator,]
+nrp <- nr[nr$np_Parasite,]
+
+nrp <- nrp[nrp$actseq %in% nrr$actseq,]
+
+plot(x=nrr$actlen,y=nrr$paslen,pch=19,cex=1+log(nrr$nobs),xlim=c(35,55),ylim = c(20,250))
+points(nrp$actlen,nrp$paslen,col="red",pch=19,cex=1+log(nrp$nobs))
+
+```
+
+
+
+
+
+
+
+## T1: Just before the first flood 
+
+Below is a summary of the ten most common reactions at t1:
+
+```{r echo=FALSE}
+dts <- function(time,rd){
+  dt <- rd[[time/20000]]
+  dt <- dt[order(dt$nobs,decreasing = T),]
+  return(dt)
+}
+
+
+dttab <- function(dt,pp=T){
+  rownames(dt) <- c()
+  if(pp){
+    dt <- dt[,c("nobs","actseq","passeq","pp_SelfReplicator","np_Parasite")]
+    colnames(dt) <- c("n","active","passive","sR","P")
+  }else{
+    dt <- dt[,c("nobs","actseq","pp_SelfReplicator","np_Parasite")]
+    colnames(dt) <- c("n","active","sR","P")
+  }
+  return(dt)
+}
+
+topn <- function(time,rd,pp=T){
+  dt <- dts(time,rd)
+  dt <- dttab(dt,pp)
+  return(dt)
+}
+
+dt1 <- topn(t1,rundata)
+head(dt1,n=10)
+```
+
+Here, "n" is the number of observations. The columns "sR" and "P" show whether the reactions are self-replicating or parasitic respectively. These ten reactions account for 50% of all reactions in the system - (there are 449 different types of reaction at t1). The first reaction covers 22% of all reactions on its own.
+
+
+As we saw in `box-box3`, this run also shows a transition from a slightly shorter version of the seed configuration to a new strategy, which is described here.  The sequence for this self-replicator is
+`$=?>$$BUPO O^B$=?>D$B LU%}P=YH`. 
+Its function is shown in the figure below
+
+
+```{r prefloodrep,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1);
+  %Names
+  \draw (0, 0.85) node[right] {Active string};
+  \draw (0,-0.85) node[right] {Passive string};
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+  %'ACTIVE MOL'
+  \fill[black!40!white] (0,0.5) rectangle (2.8,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (1.2,0.5) rectangle (1.7,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.6,0.7);
+
+
+  % 'Execution:' 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->] (0.5,0.4) -- (1.2,0.4);
+
+  \draw[->] (1.7,0.4) -- (2.0,0.4);
+  \fill[red] (1.25,0.4) circle (0.05);
+  \draw[-> , draw=red] (1.2,0.4) -- (1.7,0.4); 
+
+  \fill (2.05,0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \filldraw[black!40!white] (0,-0.5) rectangle (2.8,-0.7);
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.6,-0.7);
+
+\end{tikzpicture}
+```
+
+This is very similar to the short replicator in the `box-box3` run. 
+*Is it coincidence that the bind site is stronger, but the mol is longer - same invasion dynamic? - some sort of 'sweet spot'?*
+
+The combination of several strategies (shorter replicators; forcing parasites to bind to parasites; adding a replication overhead; self-mutating) maintain the replicator population. The "arms race" between mutual replicators and parasites has driven the new behaviours, but they aren't the cause of the flood - the emergence of a new strategy is the cause of this, which we will describe next. 
+
+## T2: first flood
+
+Here's the top ten reactions at t2 -- notice that the top four reactions are now self replicators, and there are **NO** parasitic reactions (I'm sorry for the layout of this table and others below - I'm working on it!):
+
+
+```{r echo=FALSE}
+dt2 <- topn(t2,rundata,pp=T)
+head(dt2,n=10)
+```
+The first reaction is by far the most numerous, taking up `r 100*dt2$n[1]/sum(dt2$n)`% of all the reactions. The pathway for this reaction is shown below: 
+
+```{r floodrep,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1);
+  %Names
+  \draw (0, 0.85) node[right] {Active string};
+  \draw (0,-0.85) node[right] {Passive string};
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+
+  %'Active molecule'
+  \fill[black!40!white] (0,0.5) rectangle (3.8,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % toggle
+  \fill[blue!40!white] (1.0,0.5) rectangle (1.2,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (1.2,0.5) rectangle (1.7,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,0.5) rectangle (2.5,0.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (2.5,0.5) rectangle (3.0,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.6,0.7);
+
+  % 'Execution:' 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->] (0.5,0.4) -- (1.0,0.4);
+  \draw[->] (1.0,0.4) -- (0,-0.4);
+  \draw[->] (0,-0.4) -- (1.0,-0.4);
+  \draw[->] (1.0,-0.4) -- (1.1,0.4);
+  \draw[->] (1.1,0.4) -- (2.5,0.4);
+  \fill[red] (2.55,0.4) circle (0.05);
+  \draw[-> , draw=red] (2.5,0.4) -- (3.0,0.4); 
+  \draw[->] (3.0,0.4) -- (3.4,0.4);
+  \fill (3.45,0.4) circle (0.05);
+
+
+  % 'Passive molecule'
+  \filldraw[black!40!white] (0,-0.5) rectangle (3.8,-0.7);
+  \fill[blue!40!white] (1.0,-0.5) rectangle (1.2,-0.7);
+
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.6,-0.7);
+
+\end{tikzpicture}
+```
+
+This reaction is very similar to the 'long' replicator reaction observed in run `box-box3`. This doesn't account for the reduced number of firings of toggle compared with `box-box3`. The shorter self-replicating molecules in the table have the same function as described for t1 - I think it is these that explain the distribution of firings of `toggle`. 
+
+There is a different dynamic between the long and short replicators though:
+
+- long-long and short-short self replicate; the former is resistant to parasites
+- short-long replicates
+- long-short (long is active) doesn't copy short - the  `cleave` opcode (`%`) doesn't fire correctly because the flow pointer isn't put in the right place. The result is that sequence of the *short* replicator is copied to the end of the *long* replicator - making an even longer replicator whose reaction rate is too slow for it to fix in the system. 
+- Therefore long is self-replicating parasite on short! So short cannot increase in numbers as seen in box-box3. 
+
+Note that this system is still self-maintaining, but not at a level which we'd call a flood. Interesting dynamics though. 
+
+
+
+```{r gt2, eval=FALSE, fig.height=3, fig.width=6, message=FALSE, include=FALSE}
+
+#Failed attempt to quickly plot a graph of the reactions: can't control loop size
+
+require(igraph)
+gt2 <- graph(c("L","L","S","S","S","L"))
+plot(gt2,vertex.size=50,edge.curved=0.2)
+```
+
+
+
+
+# Status at t3 (orange)
+
+Time t3 is a snapshot of the situation before the *big* flood event. The most common reactions are shown below: 
+
+
+```{r echo=FALSE,size="tiny"}
+dt3 <- topn(t3,rundata,pp=T)
+head(dt3,n=10)
+```
+
+The most common reaction is a 'no product' reaction involving the sequence `$=?KK$VPOO^AC` - notice the `^A` motif in this sequence, which means that when this molecule is passive, it can toggle execution back onto a replicator. This reaction is a pair of identical molecules making no product, but they will act as parasites with other replicators in the system. It's good to see this, because it explains why the flood didn't happen at t2: a string emerged that could parasitise a replicator that has the toggle check. This makes parasitism less profitable though, because a) the bind site has to be the same as the replicator (which is a weak binding), and the parasites code has to contain the 'toggle' function - which means that when parasites bind to each other they have structure which executes, taking them out of the game for longer. 
+
+Also in the above list:
+
+- rows 2,3,5 are replicators with the `toggle` feature as described for t2
+- row 4,7 is a fast (short) replicator as described for t1
+- row 6 is a no-product
+
+# Status at t4 (green)
+
+We'll assume that something happens between t3 and t4 that begins the second, bigger flood. Let's compare the firing vioplots again for these two time points: 
+
+
+```{r fig.width=10, fig.height=8, echo=F, message=F, warning=F, cache = F}
+require(vioplot)
+viopop <- function(dat1,dat2,dat3,cname,tname,sname,ylim=NULL){
+  
+  if(is.null(ylim))
+    ylim = c(0,max(dat1[,cname],dat2[,cname],dat3[,cname]))
+  
+
+  vioplot(rep(dat1[,cname],dat1$nobs),
+          rep(dat2[,cname],dat2$nobs),
+          rep(dat3[,cname],dat3$nobs),
+          h=(ylim[2]-ylim[1])/20,
+          names=c("t3","t4","Novel"),
+          ylab=sprintf("firings of %s (`%s`) opcode ",tname,sname),
+          main=sprintf("Change in firing of '%s'",tname),
+          ylim=ylim,
+          colMed = "red"
+          )  
+  
+}
+
+
+ddbefore <- rundata[[t3/20000]]
+ddafter  <- rundata[[t4/20000]]
+
+ddbefore <- ddbefore[order(ddbefore$nobs,decreasing = T),]
+ddafter <- ddafter[order(ddafter$nobs,decreasing = T),]
+
+thr <- 0.5
+
+message(sprintf("nrow ddbefore = %d, ddafter = %d",nrow(ddbefore),nrow(ddafter)))
+
+dafter <- get.cum(ddafter,thr)
+dbefore <- get.cum(ddbefore,thr)
+
+# GET THE 'ACTSEQ' IN THE 'AFTER' DATA THAT AREN'T IN THE 'BEFORE' DATA
+fnov <- unique(ddafter[!(ddafter$actseq %in% ddbefore$actseq),])
+fnov <- fnov[order(fnov$nobs,decreasing = T),]
+
+par(mfrow=c(2,2))
+
+viopop(ddbefore,ddafter,fnov,"ctogg","toggle","^",ylim=c(0,5))
+viopop(ddbefore,ddafter,fnov,"cmove","move",">", ylim = c(0,120))
+viopop(ddbefore,ddafter,fnov,"ccopy","copy","=",ylim=c(0,120))
+viopop(ddbefore,ddafter,fnov,"cover","over","=", ylim = c(0,120))
+
+
+
+#vioplot(rep(n*ddbefore[,"ctogg"],ddbefore$nobs),rep(n*ddafter$ctogg,ddafter$nobs),rep(n*fnov$ctogg,fnov$nobs),h=0.4,names=c("before","after","after-before"),ylab="Number of firings of toggle (`^`) opcode ",main="Change in firing of toggle")
+
+```
+
+
+There's clearly some changes: 
+
+- Modal firing of `toggle` is now 3 per reaction
+- Big increase in firing of `move` and `copy` - is there significant change in length? 
+
+
+Let's look at the top 10 reactions for t4: 
+
+
+```{r echo=FALSE,size="tiny"}
+dt4 <- topn(t4,rundata,pp=T)
+head(dt4,n=10)
+```
+
+
+- Reactions 1,2,5,6,7,9 have the toggle check
+- Reactions 3,8 and 9 are parts of parsitic networks (a parasite binding to a parasite is not classed as a parasitic reaction)
+- Reaction 4 has **5** toggle operations! - clearly something more sophisticated even though the molecules look similar- let's have a look at the reaction path now
+
+Sequence is `$=?>$UO^A$ T>D$VOO^BC =?>$BLUO%} =YH`
+Despite being only 33 instructions long, this program takes 241 steps to self-replicate! The figure below shows how it executes:
+
+```{r floodt3,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1);
+  %Names
+  \draw (0, 0.85) node[right] {Active string};
+  \draw (0,-0.85) node[right] {Passive string};
+  % dividing line
+  \draw[black!20!white] (-0.1,-0.1) -- (6.5,-0.1);
+
+  % 'ACTIVE MOLECULE'
+  \fill[black!40!white] (0,0.5) rectangle (3.4,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % toggle
+  \fill[blue!40!white] (0.7,0.5) rectangle (0.9,0.7);
+  % move
+  \fill[green!40!white] (1.2,0.5) rectangle (1.4,0.7);
+  % loop:
+  \fill[red!40!white] (2.0,0.5) rectangle (2.4,0.7);
+  % move
+  \fill[green!40!white] (2.2,0.5) rectangle (2.4,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,0.5) rectangle (2.5,0.7);
+  % 2nd scan loop:
+  %\fill[red!40!white] (3.1,0.5) rectangle (3.6,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.5,0.7);
+
+
+
+  % 'Execution:' 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->] (0.5,0.4) -- (0.7,0.4);
+
+  %first toggle and back:
+  \draw[->] (0.7,0.4) -- (0,-0.4);
+  \draw[->] (0,-0.4) -- (0.7,-0.4);
+  \draw[->] (0.7,-0.4) -- (0.8,0.4);
+
+  %toggle at move: 
+  \draw[->] (0.8,0.4) -- (1.2,0.4);
+  \draw[->] (1.2,0.4) -- (1.2,0.3) -- (0.1,0.3);
+  \draw[->] (0.1,0.3) -- (0.1,0.2) -- (0.7,0.2);
+  \draw[->] (0.7,0.2) -- (0.8,-0.4);
+  \draw[->] (0.8,-0.4) -- (1.2,-0.4);
+
+  %second toggle at move 
+  \draw[->] (1.2,-0.4) -- (0.1,0.1);
+  \draw[->] (0.1,0.1) -- (0.7,0.1);
+  \draw[->] (0.7,0.1) -- (1.3,-0.4);
+
+  %toggle at second move and copy loop:
+  \draw[->] (1.3,-0.4) -- (2.2,-0.4);
+  \draw[->] (2.2,-0.4) -- (2.0,0.35);
+  \draw[-> , draw=red] (2.0,0.4) -- (2.4,0.4); 
+  \fill[red] (2.0,0.4) circle (0.05);
+  
+  %cleave and end
+  \draw[->] (2.4,0.4) -- (2.95,0.4);
+  \fill (3.0,0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \fill[black!40!white] (0,-0.5) rectangle (3.4,-0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,-0.5) rectangle (0.5,-0.7);
+  % toggle
+  \fill[blue!40!white] (0.7,-0.5) rectangle (0.9,-0.7);
+  % move
+  \fill[green!40!white] (1.2,-0.5) rectangle (1.4,-0.7);
+  % loop:
+  \fill[red!40!white] (2.0,-0.5) rectangle (2.4,-0.7);
+  % move
+  \fill[green!40!white] (2.2,-0.5) rectangle (2.4,-0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,-0.5) rectangle (2.5,-0.7);
+  % 2nd scan loop:
+  %\fill[red!40!white] (3.1,-0.5) rectangle (3.6,-0.7);
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.5,-0.7);
+
+\end{tikzpicture}
+```
+
+Let's try to understand this reaction
+
+- it is clear that execution is passed repeatedly from active to passive in a complicated network of moves of the instruction pointer
+- the green blocks are 'move' instructions, but they fire when the Flow pointer has been positioned by a rarely-occuring firing mode of the `$` operator which returns execution nearly to the start of the program. In this way, the *same* toggle opcode is fired many times.
+- note that this pathway has exploited some of the murkier corners of the stringmol reaction language, the design of which was pretty much arbitrary as they weren't used in the seed replicator. *There is much scope* to facilitate richer behaviour with more careful design of the opcode functions. 
+- there are now three points at which a parasite could fail to get copied. Each point is an identity test, which a parasite must pass in order to access the copy loop. 
+
+
+```{r eval=FALSE, include=FALSE}
+
+#We can isolate these reactions by counting how many times toggle fires - here's a list of reactions with five toggle firings: 
+    dta4 <- dts(t4,rundata)
+  dta4 <- dta4[dta4$ctogg==5,]
+  dt <- dttab(dta4)
+  head(dt,n=41)
+```
+
+As we shall see below, this strategy is the basis of the severe flood. 
+
+# Status at t5 (pink)
+
+This timepoint is difficult to interpret briefly, since the network of interactions is huge. Let's start by showing how diverse the interactions are - here are the top 50 reactions (we usually only need to see the top 10...)
+
+```{r echo=FALSE}
+dt5 <- dts(t5,rundata)
+d5r <- dt5[dt5$pp_SelfReplicator,]
+head(dttab(dt5,pp=F),n=50)
+```
+
+What you can see from this is that a large proportion the community is made up of self-replicators. Some other numbers are useful
+
+- a total of `r sum(dt5$nobs)` reactions are happening out of a theoretical maximum of `100*125*(1-0.0005)/2 = 6246`
+- only `r sum(dt5$nobs[dt5$np_Parasite])` reactions are parasitic
+- 3127 unique reaction types are happening - there is a long tail of unique reactions, which is to be expected I guess.  
+
+It's worth looking at Sequence is `$=?>DIO^ABL>VOO^BB=>$BLUO%}=YH`, which is the most common self-replicator at t5. 
+Despite being only 30 instructions long, this program takes 225 steps to self-replicate! The figure below shows how it executes:
+
+```{r floodt5,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1);
+  %Names
+  \draw (0, 0.85) node[right] {Active string};
+  \draw (0,-0.85) node[right] {Passive string};
+  % dividing line
+  \draw[black!20!white] (-0.1,-0.1) -- (6.5,-0.1);
+
+
+
+  % 'ACTIVE MOLECULE'
+  \fill[black!40!white] (0,0.5) rectangle (3.0,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % toggle
+  \fill[blue!40!white] (0.7,0.5) rectangle (0.9,0.7);
+  % move
+  \fill[green!40!white] (1.1,0.5) rectangle (1.3,0.7);
+  \fill[green!40!white] (1.9,0.5) rectangle (2.1,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (1.2,0.5) rectangle (1.7,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,0.5) rectangle (2.5,0.7);
+  % 2nd scan loop:
+  %\fill[red!40!white] (3.1,0.5) rectangle (3.6,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.5,0.7);
+
+
+
+  % Execution: 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->] (0.5,0.4) -- (0.8,0.4);
+
+  \draw[->] (0.8,0.4) -- (0,-0.4);
+  \draw[->] (0,-0.4) -- (0.8,-0.4);
+  \draw[->] (0.8,-0.4) -- (0.9,0.4);
+  \draw[->] (0.9,0.4) -- (1.1,0.4);
+  \draw[->] (1.1,0.4) -- (1.1,0.3) -- (0.1,0.3);
+  \draw[->] (0.1,0.3) -- (0.1,0.2) -- (0.8,0.2);
+  \draw[->] (0.8,0.2) -- (0.9,-0.4);
+  \draw[->] (0.9,-0.4) -- (1.1,-0.4);
+  \draw[->] (1.1,-0.4) -- (0.1,0.1);
+  \draw[->] (0.1,0.1) -- (0.8,0.1);
+  \draw[->] (0.8,0.1) -- (1.2,-0.4);
+  \draw[->] (1.2,-0.4) -- (2.0,-0.4);
+  \draw[->] (2.0,-0.4) -- (0.05,0.0);
+
+  \draw[-> , draw=red] (0,0.0) -- (0.5,0.0); 
+  \fill[red] (0,0.0) circle (0.05);
+  \draw[->] (0.5,0.0) -- (0.8,0.0);
+  \draw[->] (0.8,0.0) -- (2.1,-0.4);
+  \draw[->] (2.1,-0.4) -- (2.55,-0.4);
+
+  %\draw[->] (1.1,0.4) -- (2.6,0.4);
+  %\fill[red] (2.65,0.4) circle (0.05);
+  %\draw[-> , draw=red] (2.6,0.4) -- (3.1,0.4); 
+
+  %\draw[->] (3.1,0.4) -- (4.0,0.4);
+  \fill (2.6,-0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \fill[black!40!white] (0,-0.5) rectangle (3.0,-0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,-0.5) rectangle (0.5,-0.7);
+  % toggle
+  \fill[blue!40!white] (0.7,-0.5) rectangle (0.9,-0.7);
+  % move
+  \fill[green!40!white] (1.1,-0.5) rectangle (1.3,-0.7);
+  \fill[green!40!white] (1.9,-0.5) rectangle (2.1,-0.7);
+  % inactive loop:
+  %\fill[red!40!white] (1.2,-0.5) rectangle (1.7,-0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,-0.5) rectangle (2.5,-0.7);
+  % 2nd scan loop:
+  %\fill[red!40!white] (3.1,-0.5) rectangle (3.6,-0.7);
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.5,-0.7);
+
+\end{tikzpicture}
+```
+
+Let's take a look at how these reactions perform in a well-mixed situation: 
+
+
+```{r echo=FALSE}
+#pop = 100
+
+rp <- runReactionFP(c("WWGEWLHHHRLUEUWJJJRJXUUUDYGRHJLRWWRE$BLUBO^B>C$=?>$$BLUBO%}OYHOB","WWGEWLHHHRLUEUWJJJRJXUUUDYGRHJLRWWRE$BLUBO^B>C$=?>$$BLUBO%}OYHOB"))
+
+well.mixed.dynamics <- function(bprob,nsteps,initpop=100,maxt=20000,death=0.0005,lim=(125*100)){
+  
+  t <- 1
+  
+  pop <- vector(length=maxt)
+  bpop <- vector(length=maxt)
+  pop[] <- 0
+  bpop[] <- 0
+  pop[1] <- initpop
+  
+  
+  for(tt in 2:maxt){
+        
+        #decay
+        pop[tt]<- pop[tt-1]*(1-death)
+        bpop[tt]<- bpop[tt-1]*(1-death)
+  
+        #bind - count a pair of bound reactants as 1 in the bpop array - keeps the maths easier
+        bpop[tt] <- bpop[tt]+(0.5*(pop[tt]*bprob))
+        pop[tt]  <-  pop[tt]-((pop[tt]*bprob))
+              
+        #occupancy
+        occ <- pop[tt]+(2*bpop[tt])
+        
+        #birthrate is dependant upon occupancy, number of bound mols, and rep.rate
+        pop[tt] <- pop[tt] +(((lim-occ)/lim)  * (bpop[tt]) * (1/nsteps) )
+      
+        #unbinding after replication (assume replication and unbinding are the same rate)
+        pop[tt]  <- pop[tt]  + (2 * bpop[tt] * 1/nsteps)
+        bpop[tt] <- bpop[tt] - (bpop[tt] * 1/nsteps)
+  }
+  
+  return(data.frame(pop,bpop))
+}
+
+maxt = 20000
+lim = 125*100
+
+#  bprob <- c(rp$bprob,dbefore$bprob[1],dafter$bprob[1])
+#  nsteps <- c(rp$count,dbefore$nsteps[1],dafter$nsteps[1])
+
+d.seed <- well.mixed.dynamics(rp$bprob,rp$count)
+
+ plot(x=seq(1:maxt), y=d.seed$pop+(2*d.seed$bpop),type="l",xlim=c(0,20000),ylim=c(0,lim*1.1),xlab="timesteps",ylab="population")
+ 
+
+d5rr <- d5r[d5r$pp_SelfReplicator,]
+d5rr <- d5rr[d5rr$nobs > 1,]
+d5rr$carrycap <- 0
+for(rr in 1:10){#nrow(d5rr)){
+  d.rr <- well.mixed.dynamics(d5rr$bprob[rr],d5rr$nsteps[rr])
+ 
+  lines(x=seq(1:maxt),y=d.rr$pop+(2*d.rr$bpop),col="green") 
+  
+  d5rr$carrycap[rr]<-max(d.rr$bpop)
+} 
+
+
+lines(x=seq(1:maxt),y=d.seed$pop+(2*d.seed$bpop)) 
+ 
+ 
+ #lines(x=seq(1:maxt),y=d.flood$pop+(2*d.flood$bpop),col="orange")
+ #lines(x=seq(1:maxt),y=d.flood2$pop+(2*d.flood2$bpop),col="orange",lty=3,lwd=3)
+ #lines(x=seq(1:maxt),y=d.before$pop+(2*d.before$bpop),col="blue")
+ segments(x0=0,x1=20000,y0=lim,lty=2,col="red")
+ segments(x0=0,x1=20000,y0=(5671*2),lty=2,col="blue")
+
+ legend("bottomright",legend=c("arena size","carrying capacity","t5 replicators","seed replicator"),lty=c(2,2,1,1),col=c("red","blue","green","black"))
+ 
+ 
+
+mm <- dev.copy2pdf(file="figcc.pdf")
+
+```
+
+The green lines indicate the route to carrying capacity for each replicator. 
+The dashed blue line indicates the total number of bound molecules at t5 - and it is 
+larger than the carrying capacity of any replicator! Explanation: parasitic reactions are faster, 
+so they have a higher carrying capacity. It looks to me similar to explanations for how viruses lose 
+their lethal traits - if they kill their host, then they suffer, so they evolve to be relatively benign. 
+I think we are seeing similar here.
+
+
+```{r}
+
+
+dt2  <- dts(40000,rundata)
+d2r  <- dt2[dt2$pp_SelfReplicator,]
+title <- "carrying capacity for top 10 replicators at t=40000"
+####
+drr  <-  d2r
+drr <- drr[drr$nobs > 1,]
+drr$carrycap <- 0
+plot(x=seq(1:maxt), y=d.seed$pop+(2*d.seed$bpop),type="l",xlim=c(0,10000),ylim=c(0,lim*1.1),xlab="timesteps",ylab="population")
+for(rr in 1:10){#nrow(d5rr)){
+  d.rr <- well.mixed.dynamics(drr$bprob[rr],drr$nsteps[rr])
+ 
+  lines(x=seq(1:maxt),y=d.rr$pop+(2*d.rr$bpop),col="green") 
+  
+  drr$carrycap[rr]<-max(d.rr$bpop)
+} 
+title(main = title)
+lines(x=seq(1:maxt),y=d.seed$pop+(2*d.seed$bpop)) 
+segments(x0=0,x1=20000,y0=lim,lty=2,col="red")
+segments(x0=0,x1=20000,y0=(5671*2),lty=2,col="blue")
+legend("bottomright",legend=c("arena size","carrying capacity","replicators","seed replicator"),lty=c(2,2,1,1),col=c("red","blue","green","black"))
+
+mm <- dev.copy2pdf(file="figcct40000.pdf")
+```
+
+
+
+```{r}
+
+
+dt2  <- dts(600000,rundata)
+d2r  <- dt2[dt2$pp_SelfReplicator,]
+title <- "carrying capacity for top 10 replicators at t2"
+####
+drr  <-  d2r
+drr <- drr[drr$nobs > 1,]
+drr$carrycap <- 0
+plot(x=seq(1:maxt), y=d.seed$pop+(2*d.seed$bpop),type="l",xlim=c(0,10000),ylim=c(0,lim*1.1),xlab="timesteps",ylab="population")
+for(rr in 1:(min(10,nrow(drr)))){
+  d.rr <- well.mixed.dynamics(drr$bprob[rr],drr$nsteps[rr])
+ 
+  lines(x=seq(1:maxt),y=d.rr$pop+(2*d.rr$bpop),col="green") 
+  
+  drr$carrycap[rr]<-max(d.rr$bpop)
+} 
+title(main = title)
+lines(x=seq(1:maxt),y=d.seed$pop+(2*d.seed$bpop)) 
+segments(x0=0,x1=20000,y0=lim,lty=2,col="red")
+segments(x0=0,x1=20000,y0=(5671*2),lty=2,col="blue")
+legend("bottomright",legend=c("arena size","carrying capacity","replicators","seed replicator"),lty=c(2,2,1,1),col=c("red","blue","green","black"))
+
+mm <- dev.copy2pdf(file="figcct2.pdf")
+```
+```{r}
+
+dt3  <- dts(680000,rundata)
+d3r  <- dt3[dt3$pp_SelfReplicator,]
+title <- "carrying capacity for top 10 replicators at t3"
+drr  <-  d3r
+####
+drr <- drr[drr$nobs > 1,]
+drr$carrycap <- 0
+plot(x=seq(1:maxt), y=d.seed$pop+(2*d.seed$bpop),type="l",xlim=c(0,10000),ylim=c(0,lim*1.1),xlab="timesteps",ylab="population")
+for(rr in 1:10){#nrow(d5rr)){
+  d.rr <- well.mixed.dynamics(drr$bprob[rr],drr$nsteps[rr])
+ 
+  lines(x=seq(1:maxt),y=d.rr$pop+(2*d.rr$bpop),col="green") 
+  
+  drr$carrycap[rr]<-max(d.rr$bpop)
+} 
+title(main = title)
+lines(x=seq(1:maxt),y=d.seed$pop+(2*d.seed$bpop)) 
+segments(x0=0,x1=20000,y0=lim,lty=2,col="red")
+segments(x0=0,x1=20000,y0=(5671*2),lty=2,col="blue")
+legend("bottomright",legend=c("arena size","carrying capacity","replicators","seed replicator"),lty=c(2,2,1,1),col=c("red","blue","green","black"))
+
+mm <- dev.copy2pdf(file="figcct3.pdf")
+```
+
+```{r}
+
+dt5  <- dts(1500000,rundata)
+d5r  <- dt5[dt5$pp_SelfReplicator,]
+title <- "carrying capacity for top 10 replicators at t5"
+drr  <-  d5r
+####
+drr <- drr[drr$nobs > 1,]
+drr$carrycap <- 0
+plot(x=seq(1:maxt), y=d.seed$pop+(2*d.seed$bpop),type="l",xlim=c(0,10000),ylim=c(0,lim*1.1),xlab="timesteps",ylab="population")
+for(rr in 1:10){#nrow(d5rr)){
+  d.rr <- well.mixed.dynamics(drr$bprob[rr],drr$nsteps[rr])
+ 
+  lines(x=seq(1:maxt),y=d.rr$pop+(2*d.rr$bpop),col="green") 
+  
+  drr$carrycap[rr]<-max(d.rr$bpop)
+} 
+title(main = title)
+lines(x=seq(1:maxt),y=d.seed$pop+(2*d.seed$bpop)) 
+segments(x0=0,x1=20000,y0=lim,lty=2,col="red")
+segments(x0=0,x1=20000,y0=(5671*2),lty=2,col="blue")
+legend("bottomright",legend=c("arena size","carrying capacity","replicators","seed replicator"),lty=c(2,2,1,1),col=c("red","blue","green","black"))
+
+mm <- dev.copy2pdf(file="figcct5.pdf")
+```
+
+
+```{r}
+
+dt4  <- dts(1080000,rundata)
+d4r  <- dt4[dt4$pp_SelfReplicator,]
+title <- "carrying capacity for top 10 replicators at t4"
+drr  <-  d4r
+####
+drr <- drr[drr$nobs > 1,]
+drr$carrycap <- 0
+plot(x=seq(1:maxt), y=d.seed$pop+(2*d.seed$bpop),type="l",xlim=c(0,10000),ylim=c(0,lim*1.1),xlab="timesteps",ylab="population")
+for(rr in 1:10){#nrow(d5rr)){
+  d.rr <- well.mixed.dynamics(drr$bprob[rr],drr$nsteps[rr])
+ 
+  lines(x=seq(1:maxt),y=d.rr$pop+(2*d.rr$bpop),col="green") 
+  
+  drr$carrycap[rr]<-max(d.rr$bpop)
+} 
+title(main = title)
+lines(x=seq(1:maxt),y=d.seed$pop+(2*d.seed$bpop)) 
+segments(x0=0,x1=20000,y0=lim,lty=2,col="red")
+segments(x0=0,x1=20000,y0=(5671*2),lty=2,col="blue")
+legend("bottomright",legend=c("arena size","carrying capacity","replicators","seed replicator"),lty=c(2,2,1,1),col=c("red","blue","green","black"))
+
+mm <- dev.copy2pdf(file="figcct4.pdf")
+```
+
+
+- now t6
+
+
+
+```{r}
+
+dt6  <- dts(2000000,rundata)
+d6r  <- dt6[dt6$pp_SelfReplicator,]
+title <- "carrying capacity for top 10 replicators at t6"
+drr  <-  d6r
+####
+drr <- drr[drr$nobs > 1,]
+drr$carrycap <- 0
+plot(x=seq(1:maxt), y=d.seed$pop+(2*d.seed$bpop),type="l",xlim=c(0,10000),ylim=c(0,lim*1.1),xlab="timesteps",ylab="population")
+for(rr in 1:10){#nrow(d5rr)){
+  d.rr <- well.mixed.dynamics(drr$bprob[rr],drr$nsteps[rr])
+ 
+  lines(x=seq(1:maxt),y=d.rr$pop+(2*d.rr$bpop),col="green") 
+  
+  drr$carrycap[rr]<-max(d.rr$bpop)
+} 
+title(main = title)
+lines(x=seq(1:maxt),y=d.seed$pop+(2*d.seed$bpop)) 
+segments(x0=0,x1=20000,y0=lim,lty=2,col="red")
+segments(x0=0,x1=20000,y0=(5671*2),lty=2,col="blue")
+legend("bottomright",legend=c("arena size","carrying capacity","replicators","seed replicator"),lty=c(2,2,1,1),col=c("red","blue","green","black"))
+
+mm <- dev.copy2pdf(file="figcct6.pdf")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Status at t6
+
+Top 50 reactions: 
+
+```{r include=T}
+#dafter6 <- rundata[[t6/20000]]
+#dafter6 <- dafter6[order(dafter6$nobs,decreasing = T),]
+
+#```{r echo=FALSE}
+dt6 <- dts(t6,rundata)
+#d6r <- dt5[dt6$pp_SelfReplicator,]
+head(dttab(dt6,pp=T),n=20)
+```
+
+
+The parasites in this time point are rather "dull" - they are simply mutations in which the copy loop is broken, hence not called when active. 
+
+
+At this point, the flood recedes. Why? It's worth studying the last 15 seconds of the 'species' movie at the top of this document, which appears to show a classic parasitic invasion. Indeed 1219 of 4947 reactions are now parasitic. The most common parasitic reaction indicates that the replicator is similar in function to that for t1 - there are no toggle checks anymore. I haven't created a diagram for this as it is so similar - just shorter!
+
+I think what we are seeing is:
+
+- parasites can't survive the multiple toggle checks, so their population diminishes to near zero
+- This sets up a more competitive environment between **Fast** and **Safe** replicators - it no longer pays to be safe from parasites - **Fast** wins
+- because the toggle checks arent there anymore, parasites re-emerge
+- becuase parasitism is more likely to emerge than toggle checks, the flood collapses and we return to more familiar R-P landscapes
+
+# status at t6a
+
+
+
+```{r include=T}
+#dafter6 <- rundata[[t6/20000]]
+#dafter6 <- dafter6[order(dafter6$nobs,decreasing = T),]
+
+#```{r echo=FALSE}
+dt6a <- dts(t6a,rundata)
+#d6r <- dt5[dt6$pp_SelfReplicator,]
+head(dttab(dt6a,pp=T),n=20)
+```
+
+One final point - it's worth looking at the very last frame of this run (t=2000000): 
+
+```{r}
+
+#par(mfrow=c(2,3))
+library(png)
+imnos<- c(2000000)
+for(ii in 1:length(imnos)){
+  par(mar=c(0,0,0,0))
+  plot(NA,xlim=c(0,125),ylim=c(0,100),axes=F,main=sprintf("\nt%d = %d",ii,imnos[ii]),asp = 1,xlab="",ylab="")
+  imname = sprintf("~/Desktop/paulien/smsp/1705smsp/out2png/lenframe%07d.png",imnos[ii])
+  img <- readPNG(source = imname)
+  rasterImage(image=img,xleft = 0,xright = 125,ybottom = 0,ytop=100)
+}
+```
+
+You can see that soon after the flood, new dynamics are emerging, involving longer replicators (dark red and yellow patches). Also, very short (dark blue) molecules are surrounded by longer (pale blue) molecules. Something unusual is going on here - I'll return to this when I've looked at the other runs. 
+
+
+```{r floodt6p, eval=T, fig.width=10, message=FALSE, engine='tikz', include=T}
+% Here, the molecule  `$=?>^AC` is active, and  `$=?D}ICAT>V^BC>$UP%}UY` is passive. 
+% $=?D}ICAT>V^BC>$UP%}UY is the product - the passive molecule
+
+% This looks suspicious straghtaway! Here's the reaction pathway: 
+\begin{tikzpicture}[font=\sffamily\tiny]
+
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1);
+  %Names
+  \draw (0, 0.85) node[right] {Active string};
+  \draw (0,-0.85) node[right] {Passive string};
+  % dividing line
+  \draw[black!20!white] (-0.1,-0.1) -- (6.5,-0.1);
+
+
+
+  % 'ACTIVE MOLECULE'
+  \fill[black!40!white] (0,0.5) rectangle (0.7,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.4,0.7);
+  % toggle
+  \fill[blue!40!white] (0.4,0.5) rectangle (0.6,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.3,0.7);
+
+
+
+  % Execution: 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.4,0.4); 
+  \draw[->] (0.4,0.4) -- (0.45,0.4);
+  \draw[->] (0.45,0.4) -- (0,-0.4);
+  \draw[->] (0,-0.4) -- (1.0,-0.4);
+  \draw[->] (1.0,-0.4) -- (0.1,0.3);
+  \draw[->] (0.1,0.3) -- (0.45,0.3);
+  \draw[->] (0.45,0.3) -- (1.1,-0.4);
+  \draw[->] (1.1,-0.4) -- (1.5,-0.4);
+  \draw[->] (1.5,-0.4) -- (0.1,0.2);
+  %copy:
+  \draw[-> , draw=red] (0,0.2) -- (0.4,0.2);   
+  \fill[red] (0,0.2) circle (0.05);
+  \draw[->] (0.4,0.2) -- (0.45,0.2);
+  \draw[->] (0.45,0.2) -- (1.6,-0.4);
+  \draw[->] (1.6,-0.4) -- (1.95,-0.4);
+  \fill (2.0,-0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \fill[black!40!white] (0,-0.5) rectangle (2.2,-0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,-0.5) rectangle (0.4,-0.7);
+  % toggle
+  %\fill[blue!40!white] (0.7,-0.5) rectangle (0.9,-0.7);
+  % move
+  \fill[green!40!white] (1.0,-0.5) rectangle (1.2,-0.7);
+  \fill[green!40!white] (1.5,-0.5) rectangle (1.7,-0.7);
+
+\end{tikzpicture}
+
+
+%- bind site is v. short, but strong - 0.779
+%- self-scan doesn't take up much time because self is so short!
+%- toggle is immediately adjacent to first loop
+%- unusal use of `?` skips terminate opcode `}` on passive mol
+%- pointer arranging for copy is on passive, but copy loop is on active
+%- If the roles of the molecules are reveresd, the reaction ends very quickly because of the teminate symbol `}` at position 5 on the longer molecule. 
+
+%What's *really* surprising is that there are no reactions where the shorter molecule is the product! Here's some code to see if they are modified X or Ys: 
+
+```
+
+
+```{r eval=FALSE, include=FALSE}
+seq <- "$=?>^AC"
+count <- 0
+dafter6 <- rundata[[t6/20000]]
+dafter6 <- dafter6[order(dafter6$nobs,decreasing = T),]
+for(rr in 1:nrow(dafter6)){
+  
+  rrr <- runReactionFP(c(dafter6$actseq[rr],dafter6$passeq[rr]))
+  
+  if(rrr$mActive == seq){
+    message(sprintf("Found modifed active seq at %d",rr))
+    count <- count+1
+  }
+  if(rrr$mPassive == seq){
+    message(sprintf("Found modifed passive seq at %d",rr))
+    count <- count+1
+  }
+}
+message(sprintf("Found %d seqs",count))
+```
+
+
+
+
+
+
+
+```{r eval=FALSE, include=FALSE}
+dafter6 <- rundata[[t6/20000]]
+dafter6 <- dafter6[order(dafter6$nobs,decreasing = T),]
+
+d6r <- dafter6[order(dafter6$nsteps),]
+head(d6r[d6r$pp_SelfReplicator,])
+```
+
+
+
+
+```{r eval=FALSE, include=FALSE}
+rp <- runReactionFP(c("WWGEWLHHHRLUEUWJJJRJXUUUDYGRHJLRWWRE$BLUBO^B>C$=?>$$BLUBO%}OYHOB","WWGEWLHHHRLUEUWJJJRJXUUUDYGRHJLRWWRE$BLUBO^B>C$=?>$$BLUBO%}OYHOB"))
+
+well.mixed.dynamics <- function(bprob,nsteps,initpop=100,maxt=20000,death=0.0005,lim=(125*100)){
+  
+  t <- 1
+  
+  pop <- vector(length=maxt)
+  bpop <- vector(length=maxt)
+  pop[] <- 0
+  bpop[] <- 0
+  pop[1] <- initpop
+  
+  
+  for(tt in 2:maxt){
+        
+        #decay
+        pop[tt]<- pop[tt-1]*(1-death)
+        bpop[tt]<- bpop[tt-1]*(1-death)
+  
+        #bind - count a pair of bound reactants as 1 in the bpop array - keeps the maths easier
+        bpop[tt] <- bpop[tt]+(0.5*(pop[tt]*bprob))
+        pop[tt]  <-  pop[tt]-((pop[tt]*bprob))
+              
+        #occupancy
+        occ <- pop[tt]+(2*bpop[tt])
+        
+        #birthrate is dependant upon occupancy, number of bound mols, and rep.rate
+        pop[tt] <- pop[tt] +(((lim-occ)/lim)  * (bpop[tt]) * (1/nsteps) )
+      
+        #unbinding after replication (assume replication and unbinding are the same rate)
+        pop[tt]  <- pop[tt]  + (2 * bpop[tt] * 1/nsteps)
+        bpop[tt] <- bpop[tt] - (bpop[tt] * 1/nsteps)
+  }
+  
+  return(data.frame(pop,bpop))
+}
+
+maxt = 20000
+lim = 125*100
+
+#  bprob <- c(rp$bprob,dbefore$bprob[1],dafter$bprob[1])
+#  nsteps <- c(rp$count,dbefore$nsteps[1],dafter$nsteps[1])
+
+d.seed <- well.mixed.dynamics(rp$bprob,rp$count)
+
+ plot(x=seq(1:maxt), y=d.seed$pop+(2*d.seed$bpop),type="l",xlim=c(0,20000),ylim=c(0,lim*1.1),xlab="timesteps",ylab="population")
+ 
+
+d6rr <- d6r[d6r$pp_SelfReplicator,]
+d6rr <- d6rr[d6rr$nobs > 1,]
+for(rr in 1:nrow(d5rr)){
+  d.rr <- well.mixed.dynamics(d6rr$bprob[rr],d6rr$nsteps[rr])
+ 
+ lines(x=seq(1:maxt),y=d.rr$pop+(2*d.rr$bpop),col="green") 
+} 
+
+
+lines(x=seq(1:maxt),y=d.seed$pop+(2*d.seed$bpop)) 
+ 
+ 
+ #lines(x=seq(1:maxt),y=d.flood$pop+(2*d.flood$bpop),col="orange")
+ #lines(x=seq(1:maxt),y=d.flood2$pop+(2*d.flood2$bpop),col="orange",lty=3,lwd=3)
+ #lines(x=seq(1:maxt),y=d.before$pop+(2*d.before$bpop),col="blue")
+ segments(x0=0,x1=20000,y0=lim,lty=2,col="red")
+
+   
+
+```
+
+
+Here's the key to the tikz pictures: 
+
+```{r tikzkey,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1);
+
+  %Names
+  \draw (0, 0.85) node[right] {KEY};
+
+  % 'ACTIVE MOLECULE'
+  \fill[black!40!white] (0.2,0.5) rectangle (0.4,0.7);
+  \draw (0.5, 0.6) node[right] {Program};
+
+  % 'bind site'
+  \draw[red] (0.2,0.2) rectangle (0.4,0.4);
+  \draw (0.5, 0.3) node[right] {Bind Site};
+
+  % 'loop':
+  \fill[red!40!white] (0.2,-0.1) rectangle (0.4,0.1);
+  \draw (0.5, 0.0) node[right] {Loop};
+
+  % toggle
+  \fill[blue!40!white] (0.2,-0.4) rectangle (0.4,-0.2);
+  \draw (0.5, -0.3) node[right] {Toggle};
+
+  % move
+  \fill[green!40!white] (0.2,-0.7) rectangle (0.4,-0.5);
+  \draw (0.5, -0.6) node[right] {Move};
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  % Execution start: 
+  \fill[green] (1.9,0.6) circle (0.05);
+  \draw (2.1, 0.6) node[right] {Program Entry Point};
+
+  % Execution path:
+  \draw[->] (1.8,0.3) -- (2.0,0.3);
+  \draw (2.1, 0.3) node[right] {Execution path};
+  
+
+  \fill[red] (1.8,0.0) circle (0.05);
+  \draw[-> , draw=red] (1.8,0.0) -- (2.0,0.0); 
+  \draw (2.1, 0.0) node[right] {Execution loop};
+
+  % Execution end: 
+  \fill[black] (1.9,-0.3) circle (0.05);
+  \draw (2.1, -0.3) node[right] {Program Exit};
+
+
+\end{tikzpicture}
+```
+
+...and now let's make a pic for t6:
+
+
+
+
+
+
+

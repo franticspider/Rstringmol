@@ -1,0 +1,678 @@
+---
+title: "Ancestries"
+author: "Simon Hickinbotham"
+date: "10/06/2020"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+*this builds on `ancestries.Rmd` and `ancestries-V2.rmd` to be able to parse the other 8 runs we are building the publication around.
+
+# Issues
+
+- Find `birtht` for "lost" spp (where `trace==F`)
+
+# Functions
+
+We need a function to parse the 'raw' splist files: 
+
+
+```{r message=FALSE, warning=FALSE, eval = T}
+require(Rstringmol)
+source("../Rstringmol/R/splist_stats.R")
+
+makemanc <- function(froot){
+  
+  manc <- list()
+  ll=1
+  for(tt in seq(2000000,20000,-20000)){
+    df <- splist_stats(fn=sprintf("%ssplist%d.dat",froot,tt),verbose = F)
+    df$rectime <- tt
+    manc[[ll]] <- df
+    ll <- ll + 1
+  }
+  
+  require(data.table)
+  manc <- rbindlist(manc)
+  #unfortunately rbindlist converts strings to factors, so we have to fix that: 
+  manc <- data.frame(lapply(manc, as.character), stringsAsFactors=FALSE)
+  manc$spp <- as.numeric(manc$spp)
+  manc$act <- as.numeric(manc$act)
+  manc$pass <- as.numeric(manc$pass)
+  manc$obsn <- as.numeric(manc$obsn)
+  manc$obst1 <- as.numeric(manc$obst1)
+  manc$rectime <- as.numeric(manc$rectime)
+  manc$restart <- as.logical(manc$restart)
+  
+  return(manc)
+}
+
+
+#manc1705smsp2 <- makemanc("~/Desktop/paulien/smsp/1705smsp/out2/")
+
+#save(manc1705smsp2, file = "manc1705smsp2.Rdata")
+
+  
+#save(manc,file="manc1705smsp3.Rdata")
+```
+
+Here's a function that gets the top $N$ molecules from the top 10 reactions at t=2m: 
+
+```{r}
+makeanchead <- function(rundata,rdmanc,verbose = F){
+  r2m <- rundata[[2000000/20000]]
+  r2m <- r2m[order(r2m$nobs,decreasing = T),]
+  
+  seqs <- unique(c(r2m$actseq[1:10],r2m$passeq[1:10]))
+  
+  rdhead <- data.frame(idx=NA,seq=seqs,t=2000000,birtht=0,actparent=NA,pasparent=NA,stringsAsFactors = F)
+  rdhead$gen <- 0
+  rdhead$trace <- T
+  
+  for(pp in 1:nrow(rdhead)){
+    time = 2000000
+    idx<-0
+    found<-F
+    while(!found){
+      
+      anc<-rdmanc[rdmanc$rectime == time,]
+      parents <- anc[anc$seq == rdhead$seq[pp],]  
+      
+      if(nrow(parents)>1){
+        if(max(parents$obst1)>0){
+          found <- T
+          if(verbose)message(sprintf("Found parents of seq %s at time %d: %d and %d in splist %d",rdhead$seq[pp], parents$obst1[1], parents$act[1], parents$pass[1],time))
+          
+          rdhead$idx[pp]<- parents$spp[1]
+          rdhead$birtht[pp]<-parents$obst1[1]
+          rdhead$actparent[pp] <- parents$act[1]
+          rdhead$pasparent[pp] <- parents$pass[1]
+                  
+          break
+        }
+      }
+      
+      time = time - 20000
+      if(time<1)break
+    }
+  }
+  return(rdhead)
+  
+}
+
+#REMEMBER The object in the following file is called "rundata"
+#load("rp1705smsp3.RData")
+#load("manc1705smsp3.Rdata")
+#anchead <- makeanchead(rundata,manc)
+
+#load("rp1705smsp2.RData")
+#load("manc1705smsp2.Rdata")
+#anchead <- makeanchead(rundata,manc1705smsp2)
+
+
+#TODO: rewrite the code below so that we don't have to do this: 
+#manc <- manc1705smsp2
+
+```
+
+
+Here are some helper functions that we can use to find our way around:     
+    
+```{r}
+
+getsppidx <- function(seq,data){
+  spent <- unique(data$spp[data$seq == seq])
+  
+  if(length(spent)>1)
+    message(sprintf("WARNING! More than one spp number found for %s - values are %d",seq,spent))
+  
+  return(spent[1])
+  
+}
+
+#TODO: Check that this works generally
+getidxdata <- function(idx,data){
+  spent <- unique(data[data$spp == idx,])
+  
+  rtimes <- unique(spent$rectime)
+  
+  spent <- spent[spent$rectime == min(rtimes),]
+  return(spent[1,])
+  
+}
+
+
+getseq <- function(idx,data){
+  spent <- unique(data$seq[data$spp == idx])
+  
+  if(length(spent)>1)
+    message(sprintf("WARNING! More than one spp number found for %s - values are %d",seq,spent))
+  
+  return(spent[1])
+  
+}
+
+# NB 'data' is HUGE here - copying this will slow things down a lot!
+getparentidx <- function(idx,data){
+  c <- data[data$spp == idx,]
+  c <- c[c$restart==F,]
+  c <- c[c$rectime == min(c$rectime),]
+  
+  # Assume first entry is the original reaction
+  res <- list()
+  res$actp <-c$act[1]
+  res$passp <-c$pass[1]
+  res$t <-c$obst1[1]
+  
+  return(res)
+}
+```
+
+...and here's a function for finding the sequences for the previous generation. 
+
+```{r message=FALSE, warning=FALSE}
+require(knitr)
+anctable <- function(head,time,data,ngen=3,verbose=F){
+  
+  
+  head$gen <- 0
+  
+  for(gg in 1:ngen){
+    gidx <- head$idx
+    
+    pidx <- unique(c(head$actparent,head$pasparent))
+    if(verbose)message(sprintf("Found %d unique parents for generation %d",length(pidx),gg))
+    #Now build the generation data: 
+    for(ii in 1:length(pidx)){
+      
+      idd<-getidxdata(pidx[ii],data)
+      if(verbose)message(sprintf("%d",ii))
+      if(verbose)message(sprintf("Recording details for %0.0f: %s",idd$spp,idd$seq))
+      
+      # idx, seq, t, birtht, actparent, pasparent
+      pd <- data.frame(stringsAsFactors = F,
+                       idx=pidx[ii],
+                       seq=idd$seq,
+                       t=max(unique(data$rectime[data$spp == pidx[ii]])),#idd$rectime,
+                       birtht=idd$obst1,
+                       actparent=idd$act,
+                       pasparent=idd$pass
+                       )
+      
+      if(ii==1)
+        newgen<-pd
+      else
+        newgen<-rbind(newgen,pd)
+    }
+    
+  }
+  
+  
+  return (newgen)
+}
+
+#pd <- anctable(anchead,2000000,manc,ngen=1)
+```
+
+Here's the function to plot the phylogeny:  
+   
+   
+```{r, message=F}
+require(stringr)
+require(colorRamps)
+plotphyl <- function(phyl,colbylen=T){
+  
+  plot(x=phyl$actparent,y=phyl$birtht,
+       ylim = c(min(phyl$birtht),2000000),
+       xlim=range(c(phyl$idx,phyl$actparent,phyl$pasparent)),
+       pch=19,col="red",cex=1.5,xlab="Species number",ylab="time")
+  
+  
+  if(colbylen){
+    #rect(xleft = min(c(phyl$idx,phyl$actparent,phyl$pasparent)),xright = max(c(phyl$idx,phyl$actparent,phyl$pasparent)),ybottom = min(phyl$birtht),ytop=2000000,col="black")
+    
+    rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = "black")
+    #par(bg = "black")
+  }
+  
+  
+  points(x=phyl$actparent,y=phyl$birtht,pch=19,col="red")
+  points(x=phyl$pasparent,y=phyl$birtht,pch=19,col="blue")
+  
+  segments(x0=phyl$idx,x1=phyl$actparent,y0=phyl$birtht,lwd=2,col="red")
+  segments(x0=phyl$idx,x1=phyl$pasparent,y0=phyl$birtht,col="blue")
+  
+  if(colbylen){
+    phyl$len <- str_length(phyl$seq)
+    lr <- max(phyl$len)
+    
+    #cols<-heat.colors(n = 65)
+    #FROM setupSM.cpp in strimgmol library
+    cols <- matlab.like(70)
+    
+    for(pp in 1:nrow(phyl)){
+      if(phyl$len[pp]<70)
+        cpp <- cols[phyl$len[pp]]
+      else
+        cpp = "white"
+      segments(x0=phyl$idx[pp],y0=phyl$birtht[pp],y1=phyl$t[pp],col=cpp)
+      points(x=phyl$idx[pp],y=phyl$t[pp],      pch=19,col=cpp)
+      points(x=phyl$idx[pp],y=phyl$birtht[pp], pch=19,col=cpp)
+      
+    }
+    
+    
+  }
+  else{
+    points(x=phyl$idx,y=phyl$t,pch=19,col="green")
+    points(x=phyl$idx,y=phyl$birtht,pch=19,col="green")
+    segments(x0=phyl$idx,y0=phyl$birtht,y1=phyl$t,col="green")
+  }
+  
+}
+
+#plotphyl(pd[pd$birtht>-1,],colbylen = T)
+```
+
+   
+Now let's add the nextgen function, which does a bit of tidying up outside the anctable function: 
+
+
+```{r fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+
+nextgen<- function(bigspeciestable,childspp,verbose=F,doplot=F){
+  
+  next.gen <- anctable(childspp[childspp$gen == max(childspp$gen) & childspp$trace,],2000000,bigspeciestable,ngen=1)
+  genno <- max(childspp$gen) + 1
+  next.gen$gen <- genno
+  
+  #remove entries in this gen that were also in previous gens: 
+  #p1[!(p1$idx %in% anchead$idx),]
+  next.gen <- next.gen[!(next.gen$idx %in% childspp$idx),]
+  
+  if(nrow(next.gen)>0){
+    
+    next.gen$trace <- T
+    
+    
+    #Don't trace rows with -1 birtht
+    next.gen$trace[next.gen$birtht == -1] <- F
+    #Don't trace rows where idx == actparent or pasparent
+    next.gen$trace[next.gen$idx == next.gen$actparent | next.gen$idx == next.gen$pasparent] <- F
+    
+    #TODO - this line causes warnings - probably better to go through each individually (if we care about what next.gen$t is for bad traces)
+    #next.gen$t[!next.gen$trace] <- min(bigspeciestable$rectime[bigspeciestable$spp==next.gen$idx[!next.gen$trace]])
+    
+    
+    #childspp<-childspp[childspp$gen<(genno-1),]
+    childspp<-rbind(childspp,next.gen)
+    
+    
+    
+    for(ii in 1:nrow(childspp))childspp$t[ii] <- max(bigspeciestable$rectime[bigspeciestable$spp == childspp$idx[ii]])
+  }
+  
+  if(doplot){  
+    plotphyl(childspp[childspp$trace,])
+    title(main=sprintf("%d Speciations",genno))
+    
+    points(x=childspp$idx[!childspp$trace],y=childspp$t[!childspp$trace],pch=19,cex=2)
+  }
+  
+  return(childspp)
+}
+
+#phyl <- nextgen(manc,anchead)
+```   
+
+Finally a function to make the 'big' phlogeny: 
+
+```{r}
+
+makephyl <- function(fmanc,fanchead,verbose = T){
+
+  phyl <- nextgen(fmanc,fanchead)
+  newrows<- nrow(phyl)
+  depth<-0
+  while(newrows>0){
+    oldr<- nrow(phyl)
+    phyl<-nextgen(fmanc,phyl,verbose=F,doplot=F)
+   
+    newr<- nrow(phyl) 
+    
+    newrows <- newr-oldr
+    depth <- depth + 1
+    if(verbose)message(sprintf("\nDepth %d: Found %d new species",depth,newrows))
+    
+    
+  }
+  
+  return(phyl)
+}
+```
+
+
+# box-box run 1:
+  
+Make the master ancestry file: 
+  
+```{r}
+fn <- "manc1705smsp1.RDS"
+if(!file.exists(fn)){
+  manc1705smsp1 <- makemanc("~/Desktop/paulien/smsp/1705smsp/out1/")
+  saveRDS(manc1705smsp1,fn)
+}else{
+  manc1705smsp1 <- readRDS(fn)
+}
+
+```
+  
+Make the 'head' of the ancestry: 
+
+```{r}
+
+load("rp1705smsp1.RData")
+anchead <- makeanchead(rundata,manc1705smsp1)
+```
+
+Make the phylogeny: 
+```{r fig.height=10, fig.width=10}
+pfn<- "phyl1705smsp1.RDS"
+if(!file.exists(pfn)){
+  phyl1705smsp1 <- makephyl(manc1705smsp1,anchead, verbose = F)
+  saveRDS(phyl1705smsp1,pfn)
+}else{
+  phyl1705smsp1  <- readRDS(pfn)
+}
+
+#SPECIAL CASE: We have to set trace<-F for one extra molecule: 
+#phyl1705smspr2$trace[phyl1705smspr2$idx==285937]<-F
+
+plotphyl(phyl1705smsp1[phyl1705smsp1$trace & !is.na(phyl1705smsp1$idx),])
+```
+
+
+# box-box run 2
+Make the master ancestry file: 
+  
+```{r}
+fn <- "manc1705smsp2.RDS"
+if(!file.exists(fn)){
+  manc1705smsp2 <- makemanc("~/Desktop/paulien/smsp/1705smsp/out2/")
+  saveRDS(manc1705smsp2,fn)
+}else{
+  manc1705smsp2 <- readRDS(fn)
+}
+
+```
+  
+Make the 'head' of the ancestry: 
+
+```{r}
+
+load("rp1705smsp2.RData")
+anchead <- makeanchead(rundata,manc1705smsp2)
+```
+
+Make the phylogeny: 
+```{r box-box2phyl, fig.height=6, fig.width=6}
+pfn<- "phyl1705smsp2.RDS"
+if(!file.exists(pfn)){
+  phyl1705smsp2 <- makephyl(manc1705smsp2,anchead, verbose = F)
+  saveRDS(phyl1705smsp2,pfn)
+}else{
+  phyl1705smsp2  <- readRDS(pfn)
+}
+
+#SPECIAL CASE: We have to set trace<-F for one extra molecule: 
+#phyl1705smspr2$trace[phyl1705smspr2$idx==285937]<-F
+
+plotphyl(phyl1705smsp2[phyl1705smsp2$trace & !is.na(phyl1705smsp2$idx),])
+```
+
+  
+# box-box run 3:
+  Make the master ancestry file: 
+  
+```{r}
+fn <- "manc1705smsp3.RDS"
+if(!file.exists(fn)){
+  manc1705smsp3 <- makemanc("~/Desktop/paulien/smsp/1705smsp/out3/")
+  saveRDS(manc1705smsp3,fn)
+}else{
+  manc1705smsp3 <- readRDS(fn)
+}
+
+```
+  
+Make the 'head' of the ancestry: 
+
+```{r}
+
+load("rp1705smsp3.RData")
+anchead <- makeanchead(rundata,manc1705smsp3)
+```
+
+Make the phylogeny: 
+```{r fig.height=10, fig.width=10}
+pfn<- "phyl1705smsp3.RDS"
+if(!file.exists(pfn)){
+  phyl1705smsp3 <- makephyl(manc1705smsp3,anchead, verbose = F)
+  saveRDS(phyl1705smsp3,pfn)
+}else{
+  phyl1705smsp3  <- readRDS(pfn)
+}
+
+#SPECIAL CASE: We have to set trace<-F for one extra molecule: 
+#phyl1705smspr2$trace[phyl1705smspr2$idx==285937]<-F
+
+plotphyl(phyl1705smsp3[phyl1705smsp3$trace & !is.na(phyl1705smsp3$idx),])
+```
+
+
+   
+   
+# box-box run 5:
+  
+Make the master ancestry file: 
+  
+```{r}
+fn <- "manc1705smsp5.RDS"
+if(!file.exists(fn)){
+  manc1705smsp5 <- makemanc("~/Desktop/paulien/smsp/1705smsp/out5/")
+  saveRDS(manc1705smsp5,fn)
+}else{
+  manc1705smsp5 <- readRDS(fn)
+}
+
+```
+  
+Make the 'head' of the ancestry: 
+
+```{r}
+
+load("rp1705smsp5.RData")
+anchead <- makeanchead(rundata,manc1705smsp5)
+```
+
+Make the phylogeny: 
+```{r fig.height=10, fig.width=10}
+pfn<- "phyl1705smsp5.RDS"
+if(!file.exists(pfn)){
+  phyl1705smsp5 <- makephyl(manc1705smsp5,anchead, verbose = F)
+  saveRDS(phyl1705smsp5,pfn)
+}else{
+  phyl1705smsp5  <- readRDS(pfn)
+}
+
+plotphyl(phyl1705smsp5[phyl1705smsp5$trace & !is.na(phyl1705smsp5$idx),])
+```
+
+
+# box-rand run 2:
+  
+Make the master ancestry file: 
+  
+```{r}
+fn <- "manc1705smspr2.RDS"
+if(!file.exists(fn)){
+  manc1705smspr2 <- makemanc("~/Desktop/paulien/smsp/1705smspr/out2/")
+  saveRDS(manc1705smspr2,fn)
+}else{
+  manc1705smspr2 <- readRDS(fn)
+}
+
+```
+  
+Make the 'head' of the ancestry: 
+
+```{r}
+
+load("rp1705smspr2.RData")
+anchead <- makeanchead(rundata,manc1705smspr2)
+```
+
+Make the phylogeny: 
+```{r fig.height=10, fig.width=10}
+pfn<- "phyl1705smspr2.RDS"
+if(!file.exists(pfn)){
+  phyl1705smspr2 <- makephyl(manc1705smspr2,anchead, verbose = F)
+  saveRDS(phyl1705smspr2,pfn)
+}else{
+  phyl1705smspr2  <- readRDS(pfn)
+}
+
+#SPECIAL CASE: We have to set trace<-F for one extra molecule: 
+phyl1705smspr2$trace[phyl1705smspr2$idx==285937]<-F
+
+plotphyl(phyl1705smspr2[phyl1705smspr2$trace & !is.na(phyl1705smspr2$idx),])
+```
+
+
+
+# box-rand run 3:
+  
+Make the master ancestry file: 
+  
+```{r}
+fn <- "manc1705smspr3.RDS"
+if(!file.exists(fn)){
+  manc1705smspr3 <- makemanc("~/Desktop/paulien/smsp/1705smspr/out3/")
+  saveRDS(manc1705smspr3,fn)
+}else{
+  manc1705smspr3 <- readRDS(fn)
+}
+
+```
+  
+Make the 'head' of the ancestry: 
+
+```{r}
+
+load("rp1705smspr3.RData")
+anchead <- makeanchead(rundata,manc1705smspr3)
+```
+
+Make the phylogeny: 
+```{r fig.height=10, fig.width=10}
+pfn<- "phyl1705smspr3.RDS"
+if(!file.exists(pfn)){
+  phyl1705smspr3 <- makephyl(manc1705smspr3,anchead, verbose = F)
+  saveRDS(phyl1705smspr3,pfn)
+}else{
+  phyl1705smspr3  <- readRDS(pfn)
+}
+
+#SPECIAL CASE: We have to set trace<-F for one extra molecule: 
+#phyl1705smspr2$trace[phyl1705smspr2$idx==285937]<-F
+
+plotphyl(phyl1705smspr3[phyl1705smspr3$trace & !is.na(phyl1705smspr3$idx),])
+```
+
+  
+# slot-box run 4:
+  
+Make the master ancestry file: 
+  
+```{r}
+fn <- "manc1705sm2504.RDS"
+if(!file.exists(fn)){
+  manc1705sm2504 <- makemanc("~/Desktop/paulien/smsp/1705sm250/out4/")
+  saveRDS(manc1705sm2504,fn)
+}else{
+  manc1705sm2504 <- readRDS(fn)
+}
+
+```
+  
+Make the 'head' of the ancestry: 
+
+```{r}
+
+load("rp1705sm2504.RData")
+anchead <- makeanchead(rundata,manc1705sm2504)
+```
+
+Make the phylogeny: 
+```{r fig.height=10, fig.width=10}
+pfn<- "phyl1705sm2504.RDS"
+if(!file.exists(pfn)){
+  phyl1705sm2504 <- makephyl(manc1705sm2504,anchead, verbose = F)
+  saveRDS(phyl1705sm2504,pfn)
+}else{
+  phyl1705sm2504  <- readRDS(pfn)
+}
+
+#SPECIAL CASE: We have to set trace<-F for one extra molecule: 
+#phyl1705smspr2$trace[phyl1705smspr2$idx==285937]<-F
+
+plotphyl(phyl1705sm2504[phyl1705sm2504$trace & !is.na(phyl1705sm2504$idx),])
+```
+
+
+
+  
+# slot-box run 5:
+  
+Make the master ancestry file: 
+  
+```{r}
+fn <- "manc1705sm2505.RDS"
+if(!file.exists(fn)){
+  manc1705sm2505 <- makemanc("~/Desktop/paulien/smsp/1705sm250/out5/")
+  saveRDS(manc1705sm2505,fn)
+}else{
+  manc1705sm2505 <- readRDS(fn)
+}
+
+```
+  
+Make the 'head' of the ancestry: 
+
+```{r}
+
+load("rp1705sm2505.RData")
+anchead <- makeanchead(rundata,manc1705sm2505)
+```
+
+Make the phylogeny: 
+```{r fig.height=10, fig.width=10}
+pfn<- "phyl1705sm2505.RDS"
+if(!file.exists(pfn)){
+  phyl1705sm2505 <- makephyl(manc1705sm2505,anchead, verbose = F)
+  saveRDS(phyl1705sm2505,pfn)
+}else{
+  phyl1705sm2505  <- readRDS(pfn)
+}
+
+#SPECIAL CASE: We have to set trace<-F for one extra molecule: 
+#phyl1705smspr2$trace[phyl1705smspr2$idx==285937]<-F
+
+plotphyl(phyl1705sm2505[phyl1705sm2505$trace & !is.na(phyl1705sm2505$idx),])
+```

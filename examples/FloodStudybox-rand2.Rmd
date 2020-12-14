@@ -1,0 +1,637 @@
+---
+title: 'Flood study: box-rand2'
+author: "Simon Hickinbotham"
+date: "25/03/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+**Summary** 
+
+- takes a while to abandon 'seed' replication pattern
+- heavy parasitism and jumpers explained at t3
+- 'hidden' bimodal replication strategy at t4
+- "long parasite" strategy emerges
+- new cleave-based defence emerges that merits further investigation
+
+----
+# Introduction
+
+This is the first study on the `box-rand` configuration. Only two of the five ran to t=2m, and the run here is from trial 2. 
+
+This notebook follows from the notebooks covering the  `box-box` configurations, I'll try not to duplicate the observations there. 
+
+Here are the movies of the run - the key dynamic to watch is the emergence of longer parasites after about 40s.
+
+<iframe  width="400" height="500" src="https://www.youtube.com/embed/g59Z_i73U38" frameborder="0"  allowfullscreen>
+</iframe><iframe  width="400" height="500" src="https://www.youtube.com/embed/Eieme6UgmXc" frameborder="0" allowfullscreen></iframe>
+
+
+
+## Picking the Time slices:
+
+We are going to use the opcode firing measures to identify the flood periods. So let's create a plot and draw vertical lines for each time point we want to look at: 
+
+```{r,echo=FALSE, fig.width=10, message=F, warning=TRUE, r,warning=F}
+require(Rstringmol)
+source("../Rstringmol/R/opcodeFiringPlot.R")
+
+t1 <-  540000
+t2 <-  600000
+t3 <-  860000
+t4 <- 1240000
+t5 <- 1740000 #1840000 
+t6 <- 2000000
+
+load("rp1705smspr2.RData")
+ylim=c(0,520000)
+opcode.firing.plot(rundata, title = "Opcode firing for 'box rand replicate 2'")
+segments(x0=t1,y0=0,y1=ylim[2],col="blue",lty=3)
+segments(x0=t2,y0=0,y1=ylim[2],col="red",lty=3)
+segments(x0=t3,y0=0,y1=ylim[2],col="orange",lty=3)
+segments(x0=t4,y0=0,y1=ylim[2],col="green",lty=3)
+segments(x0=t5,y0=0,y1=ylim[2],col="pink",lty=3)
+segments(x0=t6,y0=0,y1=ylim[2],col="purple",lty=3)
+
+text(labels = c("t1","t2","t3","t4","t5","t6"),x=c(t1,t2,t3,t4,t5,t6),y=240000)
+```
+
+As you can see, there are a number of distinct time points of interest. From here on we'll call them **t1** to **t6** going from ealiest to latest (left to right). We can look at the "length" images for these times to see what the spatial distribution is (this was identified as a factor in the flooding for the box-box3 run): 
+
+
+```{r fig.height=6, fig.width=10,echo=F,eval=T}
+par(mfrow=c(2,3))
+library(png)
+imnos<- c(t1,t2,t3,t4,t5,t6)
+for(ii in 1:length(imnos)){
+  par(mar=c(0,0,0,0))
+  plot(NA,xlim=c(0,100),ylim=c(0,125),axes=F,main=sprintf("\nt%d = %d",ii,imnos[ii]),asp = 1,xlab="",ylab="")
+  imname = sprintf("~/Desktop/paulien/smsp/1705smspr/out2png/lenframe%07d.png",imnos[ii])
+  img <- readPNG(source = imname)
+  rasterImage(image=img,xleft = 0,xright = 100,ybottom = 0,ytop=125, interpolate = F)
+}
+
+```
+
+Some points about these pictures - :
+
+- **t1:** Still quite a long replicator at t=500,000 compared with other runs at the same timepoint
+- **t2:** Shift to short replicator
+- **t3:** Strange 'jumper' behaviour - transient, but intresting (0:35-0:36 in the movie)
+- **t4:** short replictor with different length parasites
+- **t5:** mix of two parasites? One long, one short
+- **t6:** bimodal distribution of replicator lengths
+
+
+
+```{r include=FALSE, message=F, echo=F, cache = T}
+
+# RUN THIS CODE TO CREATE THE DATA STRUCTURES USED BELOW (THE 'get.cum' FUNCTION SHOULD GO INTO THE r CODEBASE)
+
+get.cum <- function(dat,thr){
+  dat <- dat[order(dat$nobs,decreasing = T),]
+  dat$cum <- 0
+  dat$cum[1] <- dat$nobs[1]
+  for(rr in 2:nrow(dat)){
+    dat$cum[rr] <- dat$cum[rr-1] + dat$nobs[rr]
+  }
+  sdn <- sum(dat$nobs)
+  message(sprintf("thr = %f * %d = %f",thr,sdn,(thr*sdn)))
+  dat <- dat[dat$cum < (thr*sum(dat$nobs)),]
+  return(dat)
+}
+
+```
+
+
+# Changes from t1 to t2
+
+First let's look at the change in the firing rates for four of the opcodes, as we did in `box-box3`: 
+
+```{r fig.width=10, fig.height=8, echo=F, message=F, warning=F, cache = F}
+require(vioplot)
+viopop <- function(dat1,dat2,dat3,cname,tname,sname,ylim=NULL){
+  
+  if(is.null(ylim))
+    ylim = c(0,max(dat1[,cname],dat2[,cname],dat3[,cname]))
+  
+
+  vioplot(rep(dat1[,cname],dat1$nobs),
+          rep(dat2[,cname],dat2$nobs),
+          rep(dat3[,cname],dat3$nobs),
+          h=(ylim[2]-ylim[1])/20,
+          names=c("t1","t2","Novel"),
+          ylab=sprintf("firings of %s (`%s`) opcode ",tname,sname),
+          main=sprintf("Change in firing of '%s'",tname),
+          ylim=ylim,
+          colMed = "red"
+          )  
+  
+}
+
+
+ddbefore <- rundata[[t1/20000]]
+ddafter  <- rundata[[t2/20000]]
+
+ddbefore <- ddbefore[order(ddbefore$nobs,decreasing = T),]
+ddafter <- ddafter[order(ddafter$nobs,decreasing = T),]
+
+thr <- 0.5
+
+message(sprintf("nrow ddbefore = %d, ddafter = %d",nrow(ddbefore),nrow(ddafter)))
+
+dafter <- get.cum(ddafter,thr)
+dbefore <- get.cum(ddbefore,thr)
+
+# GET THE 'ACTSEQ' IN THE 'AFTER' DATA THAT AREN'T IN THE 'BEFORE' DATA
+fnov <- unique(ddafter[!(ddafter$actseq %in% ddbefore$actseq),])
+fnov <- fnov[order(fnov$nobs,decreasing = T),]
+
+par(mfrow=c(2,2))
+
+viopop(ddbefore,ddafter,fnov,"ctogg","toggle","^",ylim=c(0,5))
+viopop(ddbefore,ddafter,fnov,"cmove","move",">", ylim = c(0,120))
+viopop(ddbefore,ddafter,fnov,"ccopy","copy","=",ylim=c(0,120))
+viopop(ddbefore,ddafter,fnov,"cover","over","=", ylim = c(0,120))
+
+
+
+#vioplot(rep(n*ddbefore[,"ctogg"],ddbefore$nobs),rep(n*ddafter$ctogg,ddafter$nobs),rep(n*fnov$ctogg,fnov$nobs),h=0.4,names=c("before","after","after-before"),ylab="Number of firings of toggle (`^`) opcode ",main="Change in firing of toggle")
+
+```
+
+OK, this shows nicely that there is definitely a new mode of behaviour: the red dots indicate the median values, and we can see clearly that they have changed for the `over` instruction, which you'll recall is a `copy` to and from the same opcode.  This is standard stuff, but let's take a quick look at what the popular reactions are for these two times.
+
+
+## T1: seed replicator
+
+Below is a summary of the ten most common reactions at t1:
+
+```{r echo=FALSE}
+dts <- function(time,rd){
+  dt <- rd[[time/20000]]
+  dt <- dt[order(dt$nobs,decreasing = T),]
+  return(dt)
+}
+
+
+dttab <- function(dt,pp=T,ns=F){
+  rownames(dt) <- c()
+  if(ns){
+    nsv <- dt$nsteps 
+  }
+  if(pp){
+    dt <- dt[,c("nobs","actseq","passeq","pp_SelfReplicator","np_Parasite")]
+    colnames(dt) <- c("n","active","passive","sR","P")
+  }else{
+    dt <- dt[,c("nobs","actseq","pp_SelfReplicator","np_Parasite")]
+    colnames(dt) <- c("n","active","sR","P")
+  }
+  if(ns){
+    dt$s <- nsv
+  }
+  return(dt)
+}
+
+topn <- function(time,rd,pp=T){
+  dt <- dts(time,rd)
+  dt <- dttab(dt,pp)
+  return(dt)
+}
+
+dt1 <- topn(t1,rundata)
+head(dt1,n=10)
+```
+
+Here, "n" is the number of observations. The columns "sR" and "P" show whether the reactions are self-replicating or parasitic respectively. 
+
+Execution follows the same path as the 'seed' replicator as shown below (*not to scale*)
+
+
+```{r seedrep,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1);
+
+  %Names
+  \draw (0, 0.85) node[right] {Active string};
+  \draw (0,-0.85) node[right] {Passive string};
+
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+
+  %'active molecule'
+  \fill[black!40!white] (0,0.5) rectangle (6.4,0.7);
+  % copy loop:
+  \fill[red!40!white] (4.7,0.5) rectangle (5.2,0.7);
+  %bind site
+  \draw[red] (1.7,0.5) rectangle (3.0,0.7);
+
+  % 'Execution:' 
+  \fill[green] (1.65,0.4) circle (0.05);
+  \draw[->] (1.7,0.4) -- (4.7,0.4);
+
+  \fill[red] (4.75,0.4) circle (0.05);
+  \draw[-> , draw=red] (4.7,0.4) -- (5.2,0.4); 
+
+  \draw[->] (5.2,0.4) -- (5.9,0.4);
+  \fill (5.95,0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \filldraw[black!40!white] (0,-0.5) rectangle (6.4,-0.7);
+  %bind site
+  \draw[red] (0,-0.5) rectangle (1.6,-0.7);
+
+
+\end{tikzpicture}
+```
+
+Let's just check the most numerous parasitic reactions:
+
+```{r}
+head(dt1[dt1$P,],n=10)
+```
+
+Parasitic reactions account for `r 100*sum(dt1$n[dt1$P])/sum(dt1$n)`% of all reactions at t1.  We commonly see parasitism at this level -- I wonder if we can find some reason for this..? 
+
+
+## T2: short replicator
+
+Here's the top ten reactions at t2 -- you can see that the transition to short replicators is clear: 
+
+```{r echo=FALSE}
+dt2 <- topn(t2,rundata,pp=T)
+head(dt2,n=10)
+```
+
+
+These reactions take the form (*again, not to scale*): 
+
+```{r prefloodrep,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1);
+  %Names
+  \draw (0, 0.85) node[right] {Active string};
+  \draw (0,-0.85) node[right] {Passive string};
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+  %'ACTIVE MOL'
+  \fill[black!40!white] (0,0.5) rectangle (2.6,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (1.1,0.5) rectangle (1.6,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.5,0.7);
+
+
+  % 'Execution:' 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->] (0.5,0.4) -- (1.1,0.4);
+
+  \fill[red] (1.15,0.4) circle (0.05);
+  \draw[-> , draw=red] (1.1,0.4) -- (1.6,0.4); 
+
+  \draw[->] (1.6,0.4) -- (1.9,0.4);
+  \fill (1.95,0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \filldraw[black!40!white] (0,-0.5) rectangle (2.6,-0.7);
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.5,-0.7);
+
+\end{tikzpicture}
+```
+
+
+This is very similar to the short replicator in the `box-box3` and `box-box2` runs. See separate notes for those runs for details. 
+
+### Ancestry of the t2 replicator. 
+
+Lets try and find how the t2 replicator arises. It looks like it has been around for a while. Here's the relevant line from the splist at t=660000 (Sorry for the excess amount of detail here - I'm writing this so I can trace the info. again for later)
+
+`48439,48343,48343,0.000000,2,545588,64,$=?>$$LUCO^BT>C$=?>$$LUCO%}OYHOB`
+
+The first number is the species label and the sequence is at the end of the data string. Most of the other numbers can be ignored for our current purposes. 
+The second and third numbers in this data line are the "parent" molecules. In this case they are identical, indicating that this is the product of a self-self reaction between two molecules `48343`with sequence: 
+
+```
+48343,48171,48218,0.000000,1,544949,0,UUDY$H$LRWVRECBLBO^T>C$=?>$$LUCO^BT>C$=?>$$LUCO%}OYHOB
+                                                            $=?>$$LUCO^BT>C$=?>$$LUCO%}OYHOB
+```
+
+..You can see that this molecule has the t2 replicator as a substring (I've added t2 below the parent sequence), and the reaction is the commonly-observed "self-scan then copy" strategy, its just that it starts in the *middle* of the parent molecule, not at the beginning. 
+
+
+
+
+
+
+
+Going back further in the ancestry, we find that `48343` is the product of these two sequences
+
+`48171,47966,48120,0.000000,2,543753,0 ,UUDY$H$LRWVRECBLBO^T>C$=?>$$LUCO`
+`                                       UUDY$H$LRWVRECBLBO^T>C$=?>$$LUCO^BT>C$=?>$$LUCO%}OYHOB`
+`48218,45959,45959,0.000000,1,544050,53,HHRLEUWJJB>JX=UUDY$H$LRWVRECBLBO^BT>C$=?>$$LUCO%}OYHOB`
+
+This is an *overwrite* reaction, in which the passive molecule (`48218`) is overwritten by the active (`48171`). 
+
+
+Let's try and develop a figure for this using tikz -- we can put it in the paper
+
+```{r ancestry1,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1);
+  %Names
+  \draw (3, 54.5588) node[left] {Active string};
+  \draw (3, 54.5588) node[right] {\texttt{UUDY\$H\$LRWVRECBLBO\^T>C\$=?>\$\$LUCO\^BT>C\$=?>\$\$LUCO\%\}OYHOB}};
+  \draw (4, (54.5588-0.3) node[right] {\texttt{\$=?>\$\$LUCO\^BT>C\$=?>\$\$LUCO\%\}OYHOB}};
+  \draw (3, (54.5588-0.6) node[right] {\texttt{UUDY\$H\$LRWVRECBLBO\^T>C\$=?>\$\$LUCO\^BT>C\$=?>\$\$LUCO\%\}OYHOB}};
+
+%UUDY$H$LRWVRECBLBO^T>C$=?>$$LUCO^BT>C$=?>$$LUCO%}OYHOB
+
+
+  \draw (0,-0.85) node[right] {Passive string};
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+  %'ACTIVE MOL'
+  \fill[black!40!white] (0,0.5) rectangle (2.6,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (1.1,0.5) rectangle (1.6,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.5,0.7);
+
+
+  % 'Execution:' 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->] (0.5,0.4) -- (1.1,0.4);
+
+  \fill[red] (1.15,0.4) circle (0.05);
+  \draw[-> , draw=red] (1.1,0.4) -- (1.6,0.4); 
+
+  \draw[->] (1.6,0.4) -- (1.9,0.4);
+  \fill (1.95,0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \filldraw[black!40!white] (0,-0.5) rectangle (2.6,-0.7);
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.5,-0.7);
+
+\end{tikzpicture}
+```
+
+
+
+
+
+
+
+
+
+I won't follow the passive molecules ancestry for now as it is clearly a version of the seed replicator with a few mutations that don't affect the function. But lets trace the active molecule `48171` and see where it takes us: 
+
+```
+47966,47951,45959,0.000000,6,542276,0,UUDY$H$LRWVRECBLBO^T>C$=?>$$LUCO%}OYHOB>$$LUCO%}OYHOB
+48120,48113,47997,0.000000,5,543408,0,>$$LUCO%}BLBO^T>C$=?>$$
+```
+
+This is a *very* quick reaction, because the bind site has a cleave at the start of it (`%}OYHOB`).  Note that so far *no* copy mutations have been observed - this "ancestry" is a cascade of reactions that happen without mutation. Let's follow the active parent `47966` back a further generation: 
+
+```
+47951,45959,45959,0.000000,3,542127,53,HHRLEUWJJ>JX=UUDY$H$LRWVRECBLBO^T>C$=?>$$LUCO%}OYHOB
+45959,44605,44605,0.000000,1,512158,54,HHRLEUWJJ>JX=UUDY$H$LRWVRECBLBO^BT>C$=?>$$LUCO%}OYHOB
+```
+
+This looks like it might be a standard replicator reaction -- but it isn't! What happens is that instead of reading from the beginning of the passive and writing to the end of the active, the program reads from the middle of the active and writes to the beginning of the passive - another overwrite operation, caused by change in the arrangement of pointers from a single mutation.
+
+Molecule `45959` *is* a standard "seed-like" replicator - and `47951` has the copy mutation (an insertion) that causes the cascade. It might be worth doing a diagram of this, but here's a sketch that illustrates how the 'seed' program has been rearranged to make the short replicator (NB there are errors in the diagram below but I'll redo it if we decide it is needed):
+
+```{r fig.height=6, fig.width=6.2,echo=F,eval=T}
+
+library(png)
+plot(NA,xlim=c(0,100),ylim=c(0,125),axes=F,main=sprintf(""),asp = 1,xlab="",ylab="")
+  imname = sprintf("box-rand2-t2ancestry.png")
+  img <- readPNG(source = imname)
+    rasterImage(image=img,xleft = 0,xright = 100,ybottom = 0,ytop=125,interpolate = F)
+ 
+```
+
+
+
+
+# Status at t3 (orange)
+
+t3 is a "pinch point" in the population with a single 'bloom' of replicators. The mode of replication is similar to t2: 
+
+```{r echo=FALSE,size="tiny"}
+dt3 <- topn(t3,rundata,pp=T)
+head(dt3,n=10)
+```
+
+`r 100*sum(dt3$n[dt3$P])/sum(dt3$n)`% of reactions are parasitic
+
+### Understanding 'jumpers'
+
+We can isolate the bloom by shifting the toroid about a bit like this: 
+
+```{r fig.height=6, fig.width=6.2,echo=F,eval=T}
+
+library(png)
+ii<-3
+imnos<- c(t1,t2,t3,t4,t5,t6)
+plot(NA,xlim=c(30,120),ylim=c(75,160),axes=F,main=sprintf("\nt%d = %d",ii,imnos[ii]),asp = 1,xlab="",ylab="")
+  imname = sprintf("~/Desktop/paulien/smsp/1705smspr/out2png/lenframe0860000.png")
+  img <- readPNG(source = imname)
+for(ii in 0:1){
+  io = 100*ii
+  for(jj in 0:1){
+    jo = 125*jj
+    rasterImage(image=img,xleft = 0+io,xright = 100+io,ybottom = 0+jo,ytop=125+jo,interpolate = F)
+  }
+}
+
+```
+
+You can see that there's some strange 'jumper' reactions evident at the top of the bloom. Our automated analyses can pick these reactions up now. Here are the jumper reactions: 
+
+```{r echo=FALSE}
+d3 <- rundata[[t3/20000]]
+d3j <- d3[d3$pp_Jumper,]
+#head(d3j)
+head(data.frame(n = d3j$nobs, active = d3j$actseq, passive = d3j$passeq, stringsAsFactors = F),n=100)
+```
+
+Note that the number of reactions is different to the number of molecules - and the behaviour of jumpers is one of the rare instances where the number of unbound molecules is significant.
+
+
+```{r include=FALSE}
+# Here's confirmation of the "jumper" behaviour for the most common jumper reaction:
+qs <- function(s){
+  sprintf("\"%s\"",s)
+}
+
+print.reaction<-function(dd,idx){
+  rp <- runReactionFP(c(dd$actseq[idx],dd$passeq[idx]))
+  
+  #message(sprintf(" ACTIVE: \"%s\"",dd$actseq[idx]))
+  #message(sprintf(" ACTout: \"%s\"",rp$mActive))
+  #message(sprintf("PASSout: \"%s\"",dd$passeq[idx]))
+  #message(sprintf("PASSIVE: \"%s\"",rp$mPassive))
+  #message(sprintf("Product: \"%s\"",rp$product))
+  
+  res <- data.frame(
+            type = c(" ACTIVE:"," ACTout:","PASSout:","PASSIVE:","Product:"),
+            sequence = c(qs(dd$actseq[idx]),qs(rp$mActive),qs(dd$passeq[idx]),qs(rp$mPassive),qs(rp$product)),
+             stringsAsFactors = F)
+  
+  head(res,n=5)
+  
+}
+print.reaction(d3j,1)
+```
+
+Execution of jumper reaction is pretty simple in cases where execution starts at the beginning of the molecule:
+
+
+```{r jumpertikz,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  
+  %'sequence is: $=?>CMUO%} PYH$=?R$=P Z$'
+
+
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1);
+  %Names
+  \draw (0, 0.85) node[right] {Active string};
+  \draw (0,-0.85) node[right] {Passive string};
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+  %'ACTIVE MOL'
+  \fill[black!40!white] (0,0.5) rectangle (2.2,0.7);
+  % cleave opcode:
+  \fill[red!40!black] (0.9,0.5) rectangle (1.0,0.7);
+  % 2nd scan loop:
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.4,0.7);
+
+
+  % 'Execution:' 
+  \fill[green] (-0.05,0.4) circle (0.05);
+  \draw[->] (0,0.4) -- (0.95,0.4);
+  \fill (1.0,0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \filldraw[black!40!white] (0,-0.5) rectangle (2.2,-0.7);
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.4,-0.7);
+
+\end{tikzpicture}
+```
+
+This means that the evolved structure of the replicators is vulnerable to jumpers because they *also* bind at the beginning of the molecule. 
+The key thing is that because the bind site is at the *start* of the molecule, the flow pointer doesn't need to be moved anywhere for `cleave` to have the "jumper" effect. I would make the observation that this is probably a feature of the way the stringmol reaction language is written, but I wonder if binding at the start of the molecule emerges frequently because it is very difficult (I hesitate to say impossible) to switch execution to the start of the molecule if the molecule doesn't bind there. While we are on the subject, this difficulty to return execution to the start may be a reason why we don't see replicators that produce multiple copies. 
+
+
+Having established the main jumper reaction, the next step is to see how it interacts with replicators. Let's focus first on reactions where the jumper molecule is passive. 
+
+```{r echo=FALSE}
+d3ja <- d3[d3$passeq==d3j$actseq[1],]
+
+head(data.frame(n = d3ja$nobs, active = d3ja$actseq, passive = d3ja$passeq, R = d3ja$pp_Replicator, P = d3ja$np_Parasite, stringsAsFactors = F),n=100)
+```
+ 
+Here we can see that the jumper molecule is classifiable as a straightforward parasite on replicating molecules. But it has advantages over parasitic molecules that don't 'jump':
+
+- firstly, the self-self jumper reaction is *short* - only 10 instructions long, instead of (potentially) running for the length of the molecule. When the molecule cleaves, execution has nowhere to go, so it stops. This means the jumper molecules become available to bind to a replicator every 11 timesteps or so. If there is no room to replicate, one of the jumpers disappears - but this leaves room for new copies so it's not much of a loss. 
+- secondly, and more importantly, if two jumper molecules bind together along the boundary of a patch of replicators, then the jumping behaviour will free up an empty position for the replicators to copy a jumper into. 
+- thirdly, it becomes possible for a replicator to replicate *through* a patch of jumpers into available space, wheras standard parasites form an impenetrable barrier. 
+
+Note that jumper reactions like this never fix in any runs, possibly because their behaviour is only advantageous where there is empty space available, but it's good to have an explanation for how they happen. 
+
+# Status at t4 (green)
+
+Looking at the images for t4 we can see that a range of different parasite lengths are functioning. 
+
+Let's look at the most numerous reactions: 
+
+
+```{r echo=FALSE,size="tiny"}
+dt4 <- topn(t4,rundata,pp=T)
+head(dt4,n=10)
+```
+
+Well, that's interesting -- these sequences are markedly different to those from other runs. Witness the absence of the ubiquitous "`$=?>`" motif in the most numerous self replicator, yet the behaviour is the familiar "self-scan then copy passive" strategy. How is this working? Well, the self-scan can work because the flow pointer is never moved from its start position, so the first `$` is not needed (in the `$=?>` loop this positions the flow pointer as execution enters the loop). 
+
+The loop that actually does the copy is the sequence `B=CC=?>`. Again, the flow pointer is positioned in an unusual manner, but the effect here is that the copy loop is *much* less efficient. There are now 7 opcodes in the loop, so it takes 7 timesteps to copy a single opcode instead of 4. So what we are seeing is another case of what Jon Pitchford calls "survival of the shittest" - a strategy that makes it hard for parasites to gain advantage by being copied quickly, by simply copying *everything* more slowly. (**It is also beginning to suggest to me that these replicators are exploring the fitness landscape caused by a "generous" decay rate that was tuned to the seed replicators replication rate**)
+
+We haven't seen evolution in the copy loop much and we've speculated in other papers about this (see 'granular stringmol' in the ALife paper of 2016 - I'd like to explore these issues if we ever do "Stringmol 2") -- it indicates that the composability of this loop needs to be increased to give evolution a chance to explore what's possible with these powerful opcodes. 
+
+This feature also means that there is somewhat less pressure for parasites to be short. Parasites account for `r 100 * sum(dt4$n[dt4$P])/sum(dt4$n)`% of the population, so they are still signifiant - let's list the most numerous parasitic reactions
+
+
+```{r echo=FALSE,size="tiny"}
+head(dt4[dt4$P,],n=20)
+```
+
+You can see that the most common parasitic reactions are not using the 'slow' replicator discussed above. This is interesting - I think we've got another case of two replication modes, (fast-with-parasites and slow-without-parasites), it's just that the modes are harder to see using our tools because 1: they are similar lengths and 2: the firing rate of the opcodes is similar. The *long* parasites react with the fast replicator. They are able to make a living this way because the general reproduction rate of the whole system has diminished. Thus we see patches of 'long' parasites -- they have long programs, but their replication time is still advantageous compared with the slow replicator, so it has room to proliferate. 
+
+
+# Status at t5 (pink)
+
+
+Here are the top 20 reactions at t5:
+
+```{r echo=FALSE}
+dt5 <- dts(t5,rundata)
+d5r <- dt5[dt5$pp_SelfReplicator,]
+head(dttab(dt5,pp=T,ns=T),n=10)
+```
+
+The ecology at t5 is pretty straightforward given what we have learned so far. I've added an extra column to the table above, labelled 's', which gives the number of steps each reaction takes to complete. With this info to hand we can observer the following: 
+
+- the short replicator (s=139) is now more efficient and dominates the reactions
+- the longer replicator (s=160) is much less numerous, beacause parasitism has switched to this class. How? 
+
+To understand this, we can also list the behaviour of the long parasites: 
+
+```{r}
+dt5p <- dt5[dt5$passeq == dt5$passeq[9],]
+head(dttab(dt5p,pp=T,ns=T),n=10)
+```
+
+It's a bit hard to line up the result by eye, but two things are going on: 
+
+- firstly, this confirms that the long parasite is *only* parasitic on the long, slow replicator
+- reactions between the short replicator and the long parasite are *infinite* in time (s=1001 in the table because I've set a timeout on the reaction properties code)
+
+If you look at where the short replicator and the long parasite bind, you'll see that the bind site is the copy loop: the "`=?>B`" motif on the parasite binds to the "`=?>O`" motif on the short replicator, locking the molecules together forever. The long replicator can't follow this strategy becuse its own bind site is to distant in mutation space to make the change. 
+
+# Status at t6
+
+The common reactions at t6 are: 
+
+```{r echo=FALSE}
+dafter6 <- rundata[[t6/20000]]
+dafter6 <- dafter6[order(dafter6$nobs,decreasing = T),]
+head(dttab(dafter6,pp=T,ns=T),n=30)
+```
+
+At this point, we've got a return to the 'normal' R-P pattern where parasites are programatically shorter than replicators. We still have a secondary cohort of relatively long replicators, but both classes of replicator are pretty efficient. This is the "expected" state of the system I guess, so it's good to add it to the menagerie. It would be worth carrying on with this run just to see if we've arrived at an attractor state or not.

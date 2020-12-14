@@ -1,0 +1,696 @@
+---
+title: 'Flood study: box box 3'
+author: "Simon Hickinbotham"
+date: "25/03/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This notebook is another iteration of attempts to understand floods in runs. We have new tools at our disposal now, so things should be easier to understand.
+We'll focus on the run with the sharpest change to flood state. Once we've got a methodology we are happy with,  we'll extend it to the others. 
+
+## Picking the Time slices:
+
+We are going to use the opcode firing measures to identify the flood periods. So let's create a plot and draw lines on them: blue for 'before' and red for 'after' the flood. NB when choosing these time points, we'd ideally like to keep the two as close together as possible so that we can more easily see which of the behaviours after the flood begins are new by comparing them to the molecules that existed before. Later on, we'll also look a third time point when the flood has been fully estalished, as shown by the vertical orange line. 
+
+```{r,echo=FALSE, fig.width=10, message=F, warning=TRUE, r,warning=F}
+require(Rstringmol)
+source("../Rstringmol/R/opcodeFiringPlot.R")
+
+t1 <- 1460000
+t2 <- 1540000
+t3 <- 1580000
+
+load("rp1705smsp3.RData")
+opcode.firing.plot(rundata, title = "Opcode firing for 'box box replicate 3'")
+segments(x0=t1,y0=0,y1=250000,col="blue",lty=3)
+segments(x0=t2,y0=0,y1=250000,col="red",lty=3)
+segments(x0=t3,y0=0,y1=250000,col="orange",lty=3)
+```
+
+
+
+
+```{r eval=FALSE, fig.width=10, message=FALSE, warning=FALSE, include=FALSE}
+#  We can look at the ratio of parasitc and mutual-replication reactions like this: 
+
+source("../Rstringmol/R/rpRatioPlot.R")
+
+rp.ratio.plot(rundata, title = "R-P ratio plot for 'box box replicate 3'")
+segments(x0=t1,y0=0,y1=250000,col="blue")
+segments(x0=t2,y0=0,y1=250000,col="red")
+
+
+# This is a crude measure, because it doesn't capture the relative *efficiency* of replication -- it just gives a broad picture of what is going on. 
+```
+
+
+
+
+
+```{r include=FALSE, message=F, echo=F, cache = T}
+
+# RUN THIS CODE TO CREATE THE DATA STRUCTURES USED BELOW (THE 'get.cum' FUNCTION SHOULD GO INTO THE r CODEBASE)
+
+get.cum <- function(dat,thr){
+  dat <- dat[order(dat$nobs,decreasing = T),]
+  dat$cum <- 0
+  dat$cum[1] <- dat$nobs[1]
+  for(rr in 2:nrow(dat)){
+    dat$cum[rr] <- dat$cum[rr-1] + dat$nobs[rr]
+  }
+  sdn <- sum(dat$nobs)
+  message(sprintf("thr = %f * %d = %f",thr,sdn,(thr*sdn)))
+  dat <- dat[dat$cum < (thr*sum(dat$nobs)),]
+  return(dat)
+}
+
+ddbefore <- rundata[[t1/20000]]
+ddafter  <- rundata[[t2/20000]]
+
+ddbefore <- ddbefore[order(ddbefore$nobs,decreasing = T),]
+ddafter <- ddafter[order(ddafter$nobs,decreasing = T),]
+
+thr <- 0.5
+
+message(sprintf("nrow ddbefore = %d, ddafter = %d",nrow(ddbefore),nrow(ddafter)))
+
+dafter <- get.cum(ddafter,thr)
+dbefore <- get.cum(ddbefore,thr)
+
+# GET THE 'ACTSEQ' IN THE 'AFTER' DATA THAT AREN'T IN THE 'BEFORE' DATA
+fnov <- unique(ddafter[!(ddafter$actseq %in% ddbefore$actseq),])
+fnov <- fnov[order(fnov$nobs,decreasing = T),]
+
+
+```
+
+
+Now we can grab the data for these time periods and begin to look for differences in the community. Our intuition is that parasitism is inhibited by some new behaviour that emerges, which causes the flood. Let's see if we can back that idea up with some observations. 
+
+Note that we are looking for behaviours that *prevent* parasitism from being easy, or stop it from occurring at all. In the latter case, we won't see parasitic reactions, but we'll have to explain why they don't occur. 
+
+We need to find a behaviour pattern that allows the flood to happen. Let's see if we can do this by looking at opcode firing. In the plots below, we have violin plots for each of the opcodes we've done the plot above for. In each plot in the figure are three violin plots: the first is the distribution of firings before the flood event; the second is the same for after the flood event; the rightmost violin plot, marked "Novel" shows the distrubution for molecules present after the flood event that aren't present *before* the flood event, highlighting new reactions on flooding. (We could do the same for the passive molecules, or combine the two if we thought it was useful). Note that the firing counts are now on a 'per molecule' basis, not a 'per ecosystem' basis as in the figure above. 
+
+
+```{r fig.width=10, fig.height=8, echo=F, message=F, warning=F, cache = T}
+require(vioplot)
+viopop <- function(dat1,dat2,dat3,cname,tname,sname,ylim){
+  
+
+  vioplot(rep(dat1[,cname],dat1$nobs),
+          rep(dat2[,cname],dat2$nobs),
+          rep(dat3[,cname],dat3$nobs),
+          h=(ylim[2]-ylim[1])/20,
+          names=c("t=1,460,000","t=1,540,000","Novel"),
+          ylab=sprintf("firings of %s (`%s`) opcode ",tname,sname),
+          main=sprintf("Change in firing of '%s'",tname),
+          ylim=ylim,
+          colMed = "red"
+          )  
+  
+}
+
+par(mfrow=c(2,2))
+
+
+viopop(ddbefore,ddafter,fnov,"ctogg","toggle","^", ylim = c(0,5))
+viopop(ddbefore,ddafter,fnov,"ccopy","copy","=", ylim = c(0,100))
+viopop(ddbefore,ddafter,fnov,"cmove","move",">", ylim = c(0,150))
+viopop(ddbefore,ddafter,fnov,"cover","over","=", ylim = c(0,80))
+
+
+
+#vioplot(rep(n*ddbefore[,"ctogg"],ddbefore$nobs),rep(n*ddafter$ctogg,ddafter$nobs),rep(n*fnov$ctogg,fnov$nobs),h=0.4,names=c("before","after","after-before"),ylab="Number of firings of toggle (`^`) opcode ",main="Change in firing of toggle")
+
+```
+
+OK, this shows nicely that there is definitely a new mode of behaviour: the red dots indicate the median values, and we can see clearly that they have changed. The 'toggle' behaviour should be considered sparately to the other three opcodes, since it is not part of the iterative 'copy loop' that is the engine of replication. In the original design, only one toggle option is required, which moves the read pointer to the start of the passive molecule. Now there are three toggle operations - what are they doing? Also there are approximately twice as many firings of the other three opcodes *per reaction* - so each reaction appears to be more complex as well as taking longer to run. This change should result in *fewer* molecules, since they require more resources to construct them, yet the flood demonstrates the opposite dynamic. 
+
+What I like about this approach is that it links the behaviours we've worked hard to classify with the execution of the reactions themselves. Let's see if we can hone in on the reactions that cause the flood by visualising the modal reactions. 
+```{r eval=FALSE, cache=T, include=FALSE}
+# We'll pick reactions with more than 2 toggles, and more than 80 copy operations. Then we'll split the result into two groups - mutual (including self-) replicators, and parasites. Finally, we'll choose the parasite reactions whose active partner is also the active partner in a mutual replicating reaction. 
+
+
+nr <- fnov[fnov$ctogg>2 & fnov$ccopy > 80,]
+
+nrr <- nr[nr$pp_Replicator | nr$pp_SelfReplicator,]
+nrp <- nr[nr$np_Parasite,]
+
+nrp <- nrp[nrp$actseq %in% nrr$actseq,]
+
+plot(x=nrr$actlen,y=nrr$paslen,pch=19,cex=1+log(nrr$nobs),xlim=c(35,55),ylim = c(20,250))
+points(nrp$actlen,nrp$paslen,col="red",pch=19,cex=1+log(nrp$nobs))
+
+```
+
+
+
+
+
+
+
+
+# Visualising reactions
+
+Let's go through some reactions now to try and understand the flood event in this run. We will start with an illustration of the seed replicator, then go on to describe some of the emergent behaviours. 
+
+The seed sequence is `WWGEWLHHHRLUEUWJJJRJXUUUDYGRHJLRWWRE$BLUBO^B>C$=?>$$BLUBO%}OYHOB`. Its function is illustrated in the figure below: 
+
+
+```{r seedrep,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1);
+
+  %Names
+  \draw (0, 0.85) node[right] {Active string};
+  \draw (0,-0.85) node[right] {Passive string};
+
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+
+  %'active molecule'
+  \fill[black!40!white] (0,0.5) rectangle (6.4,0.7);
+  % copy loop:
+  \fill[red!40!white] (4.7,0.5) rectangle (5.2,0.7);
+  %bind site
+  \draw[red] (1.7,0.5) rectangle (3.0,0.7);
+
+  % 'Execution:' 
+  \fill[green] (1.65,0.4) circle (0.05);
+  \draw[->] (1.7,0.4) -- (4.7,0.4);
+
+  \fill[red] (4.75,0.4) circle (0.05);
+  \draw[-> , draw=red] (4.7,0.4) -- (5.2,0.4); 
+
+  \draw[->] (5.2,0.4) -- (5.9,0.4);
+  \fill (5.95,0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \filldraw[black!40!white] (0,-0.5) rectangle (6.4,-0.7);
+  %bind site
+  \draw[red] (0,-0.5) rectangle (1.6,-0.7);
+
+
+\end{tikzpicture}
+```
+
+To explain this figure: 
+
+- The Active and Passive molecules are represented as grey bars
+- The position of the bind sites are represented as red boxes. Remember, if the posistion of the bind doesn't line up, then the rightmost box is the active molecule. If the binds *are* aligned, then it one molceuls is randomly assigned to the Active role with equal probability. 
+- Red blocks indicate the sequence "`$=?>$`".  (I can indicate other regions of the molecule if needed). I'm only showing regions of the molecules that are important for understanding what is going on. 
+- The start of the program is indicated by the green dot.
+- The arrows indicate the progress only of the **Instruction** pointer through the reaction. It gets too confusing if the other pointers are shown, so their movements will be described in the text where needed. 
+- Red arrows in the execution path indicate an iterative loop. The red dot emphasises that execution returns to the start of the arrow several times.  
+- The end of the program is indicated by the black dot. 
+
+Points to note about the seed replicator:
+
+- It is designed to be capable of self-replicating, and uses complementary binding (e.g. `BLUBO` binds to `OYHOB`) to facilitate this. 
+- The region between the bind sites and the copy loop contains lots of non-functional opcodes, but also some code to place the Flow, Read and Write pointers such that the copy loop actually copies
+- The region after the end of the program is needed so that the flow pointer can be moved to the end of the molecule. 
+- Any molecule that can bind in this way will be copied, so mutants of the replicator that don't reciprocate copying become parasites, and the classic R-P reaction dynamics emerge. Note that the parasite simply has to bind in the manner indicated by the Passive string in the diagram in order to be copied. 
+
+Now we've understood the manual design of the seed molecule, we can see how the system evolves. 
+
+
+## Just before the flood 
+
+This particular run shows a slow transition from a slightly shorter version of the seed configuration to a new strategy, which is described here. 
+Our analysis has revealed that at t = 1,460,000,  a single self-replicating reaction accounts for 27.2 percent of *all* reactions. The sequence for this self-replicator is `$=?>$EBUB^B$=?>$AVBO%}HOB`. Its function is shown in the figure below
+
+
+```{r prefloodrep,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1);
+
+  \fill[black!40!white] (0,0.5) rectangle (2.5,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (1.2,0.5) rectangle (1.7,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.5,0.7);
+
+  %Names
+  \draw (0, 0.85) node[right] {Active string};
+  \draw (0,-0.85) node[right] {Passive string};
+
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+  % Execution: 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->] (0.5,0.4) -- (1.2,0.4);
+
+  \draw[->] (1.7,0.4) -- (2.0,0.4);
+  \fill[red] (1.25,0.4) circle (0.05);
+  \draw[-> , draw=red] (1.2,0.4) -- (1.7,0.4); 
+
+  \fill (2.05,0.4) circle (0.05);
+
+  % Passive molecule
+  \filldraw[black!40!white] (0,-0.5) rectangle (2.5,-0.7);
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.5,-0.7);
+
+\end{tikzpicture}
+```
+
+Points to note about this replicator cf. the seed replicator: 
+
+- It is *much* shorter - less than half the seed replicator (these reaction figures all have the same scale)
+- There are now two instances  of the  `$=?>$` loop. The first of these forms a bind site, and also runs a self-scan
+- Because the bind is formed from active opcodes, it binds without complementary pairing (so `$=?>$` binds to `$=?>$` and so on, instead of `BLUBO` binding to `OYHOB`). This means that *parasites now bind to each other*, reducing their effectiveness in exploiting replicators because a molecule cannot bind to another if it is already bound.
+- The bind site executes a loop, but the pointers haven't been arranged for replication at this point, so the Read and Write pointer are both at the start of the Active molecule. This loop runs until the Read pointer is not pointing at an opcode, so the 'self-scan' behaviour has emerged. It has two interesting effects: 
+    1. It *slows down* replication, by adding a constant time period before replication starts. This reduces the advantages that parasites have by being shorter, because there is now an overhead to replication that the parasite cannot influence. 
+    2. It *increases* mutation. Most of the time, the self-scan does nothing, but since the operation is actually copying a code  to itself (writing `A` where there is an `A` for example), the active molecule can mutate whenever it executes, which the parasite again cannot access. 
+    
+    
+The combination of these strategies (shorter replicators; forcing parasites to bind to parasites; adding a replication overhead; self-mutating) maintain the replicator population. The "arms race" between mutual replicators and parasites has driven the new behaviours, but they aren't the cause of the flood - the emergence of a new strategy is the cause of this, which we will describe next. 
+
+## Defence against parasites during floods
+
+From the observations above, it's clear that the system is evolving new strategies, but the flood event, whereby the arena rapidly fills, indicates that evoltion goes further. 
+Here's how the most common replicator in the early flood executes. It accounts for 31% of all reactions at this timestep. 
+The sequence is `$=?>$EBUB^A$=?>$AVB$=?>$EBUB^B$=?>$AVBO%}HOB`
+
+```{r floodrep,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1);
+
+
+  %Names
+  \draw (0, 0.85) node[right] {Active string};
+  \draw (0,-0.85) node[right] {Passive string};
+
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+  %'Active molecule'
+  \fill[black!40!white] (0,0.5) rectangle (4.4,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % toggle
+  \fill[blue!40!white] (1.0,0.5) rectangle (1.2,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (1.2,0.5) rectangle (1.7,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,0.5) rectangle (2.5,0.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (3.1,0.5) rectangle (3.6,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.5,0.7);
+
+  % Execution: 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->] (0.5,0.4) -- (1.0,0.4);
+
+  \draw[->] (1.0,0.4) -- (0,-0.4);
+  \draw[->] (0,-0.4) -- (1.0,-0.4);
+  \draw[->] (1.0,-0.4) -- (1.1,0.4);
+
+  \draw[->] (1.1,0.4) -- (3.1,0.4);
+  \fill[red] (3.15,0.4) circle (0.05);
+  \draw[-> , draw=red] (3.1,0.4) -- (3.6,0.4); 
+
+  \draw[->] (3.6,0.4) -- (4.0,0.4);
+  \fill (4.05,0.4) circle (0.05);
+
+  % Passive molecule
+  \filldraw[black!40!white] (0,-0.5) rectangle (4.4,-0.7);
+  \fill[blue!40!white] (1.0,-0.5) rectangle (1.2,-0.7);
+
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.5,-0.7);
+
+\end{tikzpicture}
+```
+
+
+Here's how this replicator functions: 
+
+- The program starts at the green dot, and immediately enters a 'self-scan' loop as described previously. This phenomena exists *before* the flood happens, but it is still a useful strategy. 
+- The instruction pointer is moved to the start of the passive string, caused by the sequence `^A`. If the passive string has the same operator, then exection will be moved back to the active string.
+- Execution progresses to the copy loop, and the program ends. 
+
+Note also that the replicator is almost twice as long as the earlier modal replicator, and the execution times have similar proportions. 
+
+What is the benefit of this strategy? To understand, we need to look at what happens when the replicator binds to a "potential" parasite:
+
+
+```{r floodpar,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1);
+
+
+  \fill[black!40!white] (0,0.5) rectangle (4.4,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % toggle
+  \fill[blue!40!white] (1.0,0.5) rectangle (1.2,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (1.2,0.5) rectangle (1.7,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,0.5) rectangle (2.5,0.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (3.1,0.5) rectangle (3.6,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.5,0.7);
+
+  %Names
+  \draw (0, 0.85) node[right] {Active string};
+  \draw (0,-0.85) node[right] {Passive string (non-self)};
+
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+  % Execution: 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->] (0.5,0.4) -- (1.0,0.4);
+
+  \draw[->] (1.0,0.4) -- (0,-0.4);
+  \draw[->] (0,-0.4) -- (4.4,-0.4);
+  %\draw[->] (1.0,-0.4) -- (1.1,0.4);
+
+  %\draw[->] (1.1,0.4) -- (2.6,0.4);
+  %\fill[red] (2.65,0.4) circle (0.05);
+  %\draw[-> , draw=red] (2.6,0.4) -- (3.1,0.4); 
+
+  %\draw[->] (3.1,0.4) -- (4.0,0.4);
+  \fill (4.45,-0.4) circle (0.05);
+
+  % Passive molecule
+  \filldraw[black!40!white] (0,-0.5) rectangle (4.4,-0.7);
+  %\fill[blue!40!white] (1.0,-0.5) rectangle (1.2,-0.7);
+
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.5,-0.7);
+
+\end{tikzpicture}
+```
+
+Here, execution is passed over to the passive molecule, which does not have the facility to pass execution back to the active partner. This means the passive string cannot access the copy loop, giving the replicator an advantage: whereas previously a parasite only had to bind to get replicated, now it has to respond appropriately when its code is executed. 
+
+```{r eval=FALSE, fig.width=10, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+# # Probability of decay for time
+
+#There must be a ceiling on the average runtime, based on the decay rate. This is the ultimate limiting step in this system, but if you can reproduce successfully at a quicker rate than the decay rate (on average), then you can increase in number. The problem is *parasitism*: 
+# I think it's useful to get an idea about the chance of survival based on the decay rate. 
+# We can do some maths about the replication rate vs the decay rate as well...
+# "LD50" for this is 1,387 timesteps, as shown on the plot below
+
+tmax=10000
+x <- seq(1,tmax)
+y = vector(length=tmax)
+y[1]=1
+for(tt in 2:tmax) y[tt] <- y[tt-1]*(1-0.0005)
+plot(x=x,y=y,xlab="Timesteps",ylab="Probability of survival")
+segments(x0=0,x1=tmax,y0=0.05)
+segments(x0=0,x1=tmax,y0=0.5,col="red")
+
+segments(x0=1388,y0=0,y1 = 1,col="red")
+
+```
+
+
+
+```{r eval=FALSE, message=FALSE, include=FALSE}
+require(stringr)
+require(Rstringmol)
+rp <- runReactionFP(c("WWGEWLHHHRLUEUWJJJRJXUUUDYGRHJLRWWRE$BLUBO^B>C$=?>$$BLUBO%}OYHOB","WWGEWLHHHRLUEUWJJJRJXUUUDYGRHJLRWWRE$BLUBO^B>C$=?>$$BLUBO%}OYHOB"))
+
+tb <- data.frame(
+  Sequence = c(
+    "`WWGEWLHHHRLUEUWJJJRJXUUUDYGRHJLRWWRE$BLUBO^B>C$=?>$$BLUBO%}OYHOB`",
+    sprintf("`%s`",dbefore$actseq[1]),
+    sprintf("`%s`",dafter$actseq[1])
+  ),
+  Bprob = c(
+    rp$bprob,
+    dbefore$bprob[1],
+    dafter$bprob[1]
+  ),
+  Length = c(
+    str_length(rp$mActive),
+    dbefore$actlen[1],
+    dafter$actlen[1]
+  ),
+  Steps = c(
+    rp$count,
+    dbefore$nsteps[1],
+    dafter$nsteps[1]
+  ),
+  pFin = c(
+    y[rp$count],
+    y[dbefore$nsteps[1]],
+    y[dafter$nsteps[1]]
+  )
+)
+require(knitr)
+kable(tb,digits = 3)
+```
+
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+target = "$=?>$UO^A$T>D$VOO^BC=?>$BLUO%}=YH"
+target = "$=?>$DAVB^A$=CAB^B$=?>$VBO%}HOB"
+for (rr in 1:length(rundata)){
+  ts <- rundata[[rr]]
+  ts <- ts[order(ts$nobs,decreasing = T),]
+  
+  match <- ts[target %in% ts$actseq,]
+  
+  if(nrow(match)>1)
+    message(sprintf("rr = %d found %d actseq %s",rr,nrow(match),target))
+  
+}
+```
+
+
+# Time to capacity calculations
+
+To get a better understanding of these dynamics, we can do some calculations for the time a non-mutating replicator would take to reach capacity.
+
+Recognising the simplification, we can plug in the bind rate, decay rate and reproduction rate as numbers and then run a space-free simulation to see how efficient the replicators are. We can build in the capacity of the arena as well, to try to capture the effect of having no space to replicate in (I'll show the working later). This gives us: 
+
+```{r echo=FALSE}
+#pop = 100
+
+rp <- runReactionFP(c("WWGEWLHHHRLUEUWJJJRJXUUUDYGRHJLRWWRE$BLUBO^B>C$=?>$$BLUBO%}OYHOB","WWGEWLHHHRLUEUWJJJRJXUUUDYGRHJLRWWRE$BLUBO^B>C$=?>$$BLUBO%}OYHOB"))
+
+well.mixed.dynamics <- function(bprob,nsteps,initpop=100,maxt=20000,death=0.0005,lim=(125*100)){
+  
+  t <- 1
+  
+  pop <- vector(length=maxt)
+  bpop <- vector(length=maxt)
+  pop[] <- 0
+  bpop[] <- 0
+  pop[1] <- initpop
+  
+  
+  for(tt in 2:maxt){
+        
+        #decay
+        pop[tt]<- pop[tt-1]*(1-death)
+        bpop[tt]<- bpop[tt-1]*(1-death)
+  
+        #bind - count a pair of bound reactants as 1 in the bpop array - keeps the maths easier
+        bpop[tt] <- bpop[tt]+(0.5*(pop[tt]*bprob))
+        pop[tt]  <-  pop[tt]-((pop[tt]*bprob))
+              
+        #occupancy
+        occ <- pop[tt]+(2*bpop[tt])
+        
+        #birthrate is dependant upon occupancy, number of bound mols, and rep.rate
+        pop[tt] <- pop[tt] +(((lim-occ)/lim)  * (bpop[tt]) * (1/nsteps) )
+      
+        #unbinding after replication (assume replication and unbinding are the same rate)
+        pop[tt]  <- pop[tt]  + (2 * bpop[tt] * 1/nsteps)
+        bpop[tt] <- bpop[tt] - (bpop[tt] * 1/nsteps)
+  }
+  
+  return(data.frame(pop,bpop))
+}
+
+maxt = 20000
+lim = 125*100
+
+#  bprob <- c(rp$bprob,dbefore$bprob[1],dafter$bprob[1])
+#  nsteps <- c(rp$count,dbefore$nsteps[1],dafter$nsteps[1])
+d.seed <- well.mixed.dynamics(rp$bprob,rp$count)
+d.before <- well.mixed.dynamics(dbefore$bprob[1],dbefore$nsteps[1])
+d.after <- well.mixed.dynamics(dafter$bprob[1],dafter$nsteps[1])
+
+d.flood <- well.mixed.dynamics(bprob = 0.644995, nsteps = 248)
+d.flood2 <- well.mixed.dynamics(bprob = 0.644995, nsteps = 164)
+# Now plot them!
+
+
+ plot(x=seq(1:maxt), y=d.seed$pop+(2*d.seed$bpop),type="l",xlim=c(0,10000),ylim=c(0,lim*1.1),xlab="timesteps",ylab="population")
+ lines(x=seq(1:maxt),y=d.after$pop+(2*d.after$bpop),col="red")
+ lines(x=seq(1:maxt),y=d.flood$pop+(2*d.flood$bpop),col="orange")
+ lines(x=seq(1:maxt),y=d.flood2$pop+(2*d.flood2$bpop),col="orange",lty=3,lwd=3)
+ lines(x=seq(1:maxt),y=d.before$pop+(2*d.before$bpop),col="blue")
+ segments(x0=0,x1=20000,y0=lim,lty=2,col="red")
+
+ 
+ #lines(x=seq(1:maxt),y=(2*d.before$bpop),col="blue",lty=3)
+ #lines(x=seq(1:maxt),y=(2*d.before$bpop),col="blue",lty=3)
+ #lines(x=seq(1:maxt),y=(2*d.after$bpop),col="red",lty=3)
+ 
+ 
+ legend("bottomright",lty=c(2,1,1,1,1,3),lwd=c(1,1,1,1,1,3),col=c("red","black","blue","red","orange","orange"),legend=c(
+   "capacity","seed",
+   "t1", 
+   "t2", 
+   "t3m1","t3m2"
+ ))
+ 
+ 
+```
+
+
+What is going on here? Let's make a few general points before discussing the different lines. Even without parasitism, the arena never fills, but there's quite a big difference in the steady states which I hadn't expected. 
+
+It is clear that the "blue" strategy for before the flood is more fecund than the 'black' seed replicator and the  'red' replicator that appears after the flood starts. Yet it is the 'red' period that is involved in producing the flood. Why? I think the explanation is as follows:
+
+- The 'blue' replicator is efficient, but susceptible to parasitism, and tends to have a lower population than it's non-mutating potential.
+- The 'red' replicator is *not* efficent, but resistant to parasitism as we've seen above. 
+- The only explanation I can see is that a *mix* of these two replicators would explain the flood - the longer replicator forms islands that partially mop up the parasites and partially act as a barrier to them spreading. The remainder of the arena is filled with the fast replicator. In effect, the longer replicator is able to fill the space left behind by parasites. 
+- This hunch is backed up by looking at the top *two* self-replicators at t=1,580,000. These are shown in orange in the plot above, and you can see that the two replicators have fecundity similar to red and blue. 
+
+Let's just check what happens when the two molecules interact, just to make sure there's no inhibition
+
+
+
+
+
+```{r eval=F, include=F, message = F}
+require(Rstringmol)
+require(rje)
+
+plot(NA,xlim=c(0,10000),ylim=c(0,(125*100*1.05)))
+
+bprobs <- vector(length=length(rundata))
+nsteps <- vector(length=length(rundata))
+
+#cols <- rainbow(length(rundata))
+cols <- cubeHelix(n=(1.2*length(rundata)))
+
+for(rr in 1:length(rundata)){
+  rd <- rundata[[rr]]
+  rd <- rd[rd$pp_SelfReplicator == T,]
+  rd <- rd[order(rd$nobs,decreasing = T),]
+  
+  
+  rpars <- runReactionFP(c(rd$actseq[1],rd$passeq[1]))
+  
+  dyn <- well.mixed.dynamics(rpars$bprob,rpars$count)
+  
+  bprobs[rr] <-rpars$bprob
+  nsteps[rr]<- 1/rpars$count
+  
+  message(sprintf("t = %d bprob = %f nsteps = %d\tactseq = %s, passeq = %s",rr*20000,rpars$bprob,rpars$count,rd$actseq[1],rd$passeq[1]))
+  message(sprintf(" second self replicator:\t\t\tactseq = %s, passeq = %s\n",rd$actseq[2],rd$passeq[2]))
+  
+  
+  lines(x=seq(1:maxt),y=dyn$pop+(2*dyn$bpop),col=cols[rr])
+
+ 
+  lines(x=seq(1:maxt),y=(2*dyn$bpop),col=cols[rr],lty=3)
+}
+
+plot(x=seq(20000,2000000,20000),y=bprobs,type="l",ylim=c(0,0.8))
+
+lines(x=seq(20000,2000000,20000),y=nsteps,col="red")
+
+```
+
+
+
+
+### Mutual replication
+
+We have seen that parasites can't get themselves copied by the new molecule, but some replicators in the system are able to both copy and be copied by them. The mechanism is an interesting mix of new and old, involving molecules with sequences. Let's look at this for the
+`$=?>$DBVB^A$=?>$EAUB^B$=?>$ZVBO%}HOB`
+and 
+`$=?>$EAUB^B$=?>$AVBO%}HOB`, as shown below. 
+
+
+```{r ffloodpar,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1);
+
+
+  \fill[black!40!white] (0,0.5) rectangle (3.6,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % toggle
+  \fill[blue!40!white] (1.0,0.5) rectangle (1.2,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (1.2,0.5) rectangle (1.7,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,0.5) rectangle (2.5,0.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (2.3,0.5) rectangle (2.8,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.5,0.7);
+
+  %Names
+  \draw (0, 0.85) node[right] {Active string};
+  \draw (0,-0.85) node[right] {Passive string (non-self)};
+
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+  % Execution: 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->] (0.5,0.4) -- (1.0,0.4);
+  \draw[->] (1.0,0.4) -- (0,-0.4);
+  \draw[->] (0,-0.4) -- (1.1,-0.4);
+  \fill[red] (1.15,-0.4) circle (0.05);
+  \draw[-> , draw=red] (1.1,-0.4) -- (1.6,-0.4); 
+  \draw[->] (1.6,-0.4) -- (2.2,-0.4);
+  \fill (2.25,-0.4) circle (0.05);
+
+  % Passive molecule
+  \filldraw[black!40!white] (0,-0.5) rectangle (2.5,-0.7);
+  \fill[red!40!white] (1.1,-0.5) rectangle (1.6,-0.7);
+
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.5,-0.7);
+
+\end{tikzpicture}
+```
+
+In this case, the passive partner doesn't have the code to switch execution back to the active molecule, but *because it is a replicator*, and because the read and write pointers are arranged just so, *the active partner executes the copy loop on the passive partner*, and facilitates copying of the passive molecule. In this framework then:
+
+- molecules with the 'check' can copy one another, but slowly
+- parasites cannot exploit the 'check' molecule
+- shorter 'non-checking' self-replicators exist, which reproduce rapidly but suffer parasitism
+- the longer and shorter replicators exhibit mutual copying so do not inhibit each other's replication
+
+I think this is a solid explanation of why a flood happens. It is interesting because it's a bigger network of replicating entities, which combine to minimise the effect of parasites and are together able to reach close to the maximum possible population size. 
+

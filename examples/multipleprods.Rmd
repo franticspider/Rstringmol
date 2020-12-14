@@ -1,0 +1,72 @@
+---
+title: "Multiple Product Note"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+
+In this notebook, we give details regarding the occurence of reactions with the *"multiple product"* property in the spatial stringmol dataset. 
+
+To summarize, although some of these reactions occur, they are never numerous enough to merit  further study. 
+
+The plots below give detail to this. Only one run has a sustained period where the number of reactions is only 50, and even this never has more than 100 reactions. Note that if the arena is full, as in a flood event, the maximum number of reactions that can occur is 100x125/2 = 6,250. Although we can't rule out from this the influence that these reactions have on the general dynamics, I think we should put them to one side until we've explored other mechanisms. 
+
+Note also that the *maximum* number of produces in these reactions was 3, but the majority had 2 products. 
+
+```{r echo=FALSE, fig.height=16, fig.width=8, message=FALSE, warning=FALSE}
+require(Rstringmol)
+source("../examples/vg_plus_rprops_functions.R")
+
+#message(sprintf("wd is %s",getwd()))
+
+pr <- function(rundata,title = "Plot"){
+  
+  vals <- vector(length=length(rundata))
+  
+  for(rr in 1:length(rundata)){
+    d<-rundata[[rr]]
+    md <- d[d$nprod>1,]
+    if(nrow(md)>0){
+      #md <- md[order(md$nobs,decreasing = T),]
+      #message(sprintf("\nMax nprod for run %d is %d",rr*20000,max(d$nprod)))
+      #for(kk in 1:nrow(md)){
+      #  message(sprintf("row %d: nobs = %d, nprod = %d\nact=%s\npas=%s\n",kk,md$nobs[kk],md$nprod[kk],md$actseq[kk],md$passeq[kk]))    
+      #}
+      vals[rr]<- sum(md$nobs)
+    }
+  }
+
+  plot(x=seq(20000,2000000,20000),y=vals,type="l",ylim=c(0,100),xlim=c(0,2000000),xlab="time",ylab="Number of muti-producut reactions",main=title)
+  
+}
+
+par(mfrow=c(4,2))
+
+load("../examples/rp1705smsp1.RData")
+pr(rundata, "box box replicate 1")
+
+load("rp1705smsp2.RData")
+pr(rundata, "box box replicate 2")
+
+load("rp1705smsp3.RData")
+pr(rundata, "box box replicate 3")
+
+load("rp1705smsp5.RData")
+pr(rundata, "box box replicate 5")
+
+load("rp1705smspr2.RData")
+pr(rundata, "box rand replicate 2")
+
+load("rp1705smspr3.RData")
+pr(rundata, "box rand replicate 3")
+
+load("rp1705sm2504.RData")
+pr(rundata, "slot box replicate 4")
+
+load("rp1705sm2505.RData")
+pr(rundata, "slot box replicate 5")
+```
+
+

@@ -1,0 +1,72 @@
+---
+title: "Fig 4 version For 'Biology' Paper"
+author: "Simon Hickinbotham"
+date: "13/07/2020"
+output:
+  html_document:
+    code_folding: hide
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+# Paulien's questions about BBB
+
+*This BBB parasite is haunting me in my sleep! Where did it come from? In the notation BBB is does not seem a close relative of the prevalent replicator,...as the parasite non-lineage would suggest. Might be from a very separate replicator..?*
+
+This is correct, as shown below
+
+*Also more intriguing still - Could it be called a self-reflective replicator, needing a "primer" (which can be anybody but BBB) and sometimes destroying it (as ZAA)?*
+
+Yes I think I see what you mean - there is an emboidied logical check as to whether self-scan has occurred or not, encoded in the sequence `?A}`. A reductionist view would be that it's just the function of this arrangement of opcodes, but the facility this gives BBB does make it appear to be "reasoning" about whether to terminate the reaction early. 
+
+*Finally, but less important, who is, according to your classification the parent of AABBB?*
+
+Apologies - I messed  up the position of AABBB in the table - `AABBB` should be in the product column: 
+
+```
+            INPUTS          |             OUTPUTS
+----------------------------|---------------------------------
+      Active     Passive    |  Active     Passive  
+      string1    string 2   |  string1    string2   product  
+#    (Machine)  (Template)  | (Machine)  (Template)    
+----------------------------|---------------------------------
+1       ZAA        ZAA      |    ZAA        ZAA       ZAA
+2       BBB        BBB      |    BBB        BBB        - 
+3       ***        BBB      |    ***        BBB       BBB
+4       BBB        ZAA      |    BBB        ZAA        - 
+5       ZAA        BBB      |    Z          BBB       AABBB
+6       Z          BBB      |    Z          BBB       BBB  
+```
+
+
+*Where did it come from?*
+
+I've manually aligned the sequences below to help the explanation. What we have is a couple of cascades with some point mutations in the middle. 
+```
+Time      Sequence
+1754014  $=?>D-I^AT>V^BC>$UO%}UYNH                          507074 self-replicator
+
+1790981  $=?-D-I^AT>V^BC>$UO%}UYNH$=?>DI^AT>V^BC>$UO%}UYNH  524609 507074 is repeated 
+                                                                   due to a missed 
+                                                                   cleave, with a 
+                                                                   deletion during 
+                                                                   self-scan
+1791163  $=?-D-I^AT>V^BC>$UO%}UYNH                          524673 truncation 
+              +
+1878154  $=?-D}I$AT>V^BC>$UO%}UYNH                          546808 point insertion
+                |
+1892082  $=?-D}ICAT>V^BC>$UO%}UYNH                          550209 point mutation
+                           |
+1910000  $=?-D}ICAT>V^BC>$UP%}UYNH                          554054 point mutation
+
+1949483  $=?-D}ICAT>V^BC>$UP%}UYNH$=?>^ACL>Q^B>$BLU%G}Y     568046 concat due to 
+                                                                   missed cleave
+
+1951006  $=?-D}ICAT>V^BC>$UP%}UY                            BBB
+```
+

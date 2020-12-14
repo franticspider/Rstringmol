@@ -1,0 +1,186 @@
+---
+title: "Opcode Analysis"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+
+In this notebook, we present an analysis the number of times an opcode fires over a run. It is anticipated that this measurement will indicate how the complexity of the system increases, because the number of firings of opcodes is linked both to the overall population of the grid and the length of the programs that occupy each cell. 
+
+Because of the antagonistic relationship between Replicator and Parasite, we see an 'arms race' between the two classes of molecule. As a result, the drive to efficiency is no longer the main feature of selection. This is the central result of this work, because it provides a route to increasingly complex behaviours in a system which is initially simple. 
+
+We are trying to get a "snapshot" of the dynamics at any one time. This is achieved as follows:
+
+- The logfile that is recorded at every 20,000 timesteps is parsed for all reactions
+- each observed reaction is rerun without mutation or decay, and the number of times each opcode fires is recorded
+
+The firing of the following opcode firings were recorded
+
+- The "copy" operator **`=`** which copies the opcode at the read pointer to the write pointer
+- The "move" operator **`>`** which moves the instruction pointer (or read or write pointers in certain circumstances) to the flow pointer
+- The "toggle" operator **`^`** which switches the instruction pointer from one molecule to the other
+- "Overwriting" happens when the write pointer is positioned on the sequence of a molecule, not on the end of it. This is how the "self-scan" feature works, which slows down the overall copy rate. Since we've seen this feature emerge several times, it was worth recording whether the copy operator is firing in this mode. 
+
+Figures for the eight non-terminating runs are shown below. I've scaled the firing of the `toggle` operator (blue line) by 25 so that you can see how it is used relative to the others. The x resolution of these figures is 20,000 timesteps - far longer than a molecule could survive for. I'll make some points about the runs underneath the figures.
+
+
+```{r echo=FALSE, fig.height=12, fig.width=10, message=FALSE, warning=FALSE}
+require(Rstringmol)
+source("../examples/vg_plus_rprops_functions.R")
+
+#message(sprintf("wd is %s",getwd()))
+
+pr <- function(rundata,title = "Plot"){
+  
+  cvals <- vector(length=length(rundata))
+  ovals <- vector(length=length(rundata))
+  mvals <- vector(length=length(rundata))
+  tvals <- vector(length=length(rundata))
+  
+  for(rr in 1:length(rundata)){
+    md<-rundata[[rr]]
+    #md <- d[d$nprod>1,]
+    #if(nrow(md)>0){
+      #md <- md[order(md$nobs,decreasing = T),]
+      #message(sprintf("\nMax nprod for run %d is %d",rr*20000,max(d$nprod)))
+      #for(kk in 1:nrow(md)){
+      #  message(sprintf("row %d: nobs = %d, nprod = %d\nact=%s\npas=%s\n",kk,md$nobs[kk],md$nprod[kk],md$actseq[kk],md$passeq[kk]))    
+      #}
+      cvals[rr]<- sum(md$ccopy)#/sum(md$ccopy)#-sum(md$cover)
+      ovals[rr]<- sum(md$cover)#/sum(md$ccopy)
+      mvals[rr]<- sum(md$cmove)#/sum(md$ccopy)
+      tvals[rr]<- sum(md$ctogg)#/sum(md$ccopy)
+    #}
+  }
+
+  xvals =seq(20000,2000000,20000) 
+  plot(x=xvals,y=cvals,type="l",ylim=c(0,250000)#max(cvals,ovals,mvals,tvals))
+       ,xlim=c(0,2000000),xlab="time",ylab="Number of muti-producut reactions",main=title)
+  lines(x=xvals,y=ovals,col="red")
+  
+  #axis(4,ylim=c(0,4))
+  lines(x=xvals,y=mvals,col="green")
+  lines(x=xvals,y=tvals*25,col="blue")
+  
+  #message(sprintf("max mvals = %d, max tvals = %d",max(mvals),max(tvals)))
+  legend("topleft",legend=c("copy","move","toggle * 25","overwrite"),lty=1,col=c("black","green","blue","red"))
+}
+
+par(mfrow=c(4,2))
+
+load("../examples/rp1705smsp1.RData")
+pr(rundata, "box box replicate 1")
+
+load("rp1705smsp2.RData")
+pr(rundata, "box box replicate 2")
+
+load("rp1705smsp3.RData")
+pr(rundata, "box box replicate 3")
+
+load("rp1705smsp5.RData")
+pr(rundata, "box box replicate 5")
+
+load("rp1705smspr2.RData")
+pr(rundata, "box rand replicate 2")
+
+load("rp1705smspr3.RData")
+pr(rundata, "box rand replicate 3")
+
+load("rp1705sm2504.RData")
+pr(rundata, "slot box replicate 4")
+
+load("rp1705sm2505.RData")
+pr(rundata, "slot box replicate 5")
+```
+
+OK, here are my observations:
+
+- What we see nicely in these runs is the general increase in opcode firing, and this backs up our argument for an increase in both complexity and efficiency in these runs. 
+- The *complexity* of the system is increased by molecules whose programs encode richer behaviour, which needs more operator firings
+- The *efficiency* of the system increases through flooding - only by covering the grid with molecules can the energy available at each cell per timestep can be captured. This is an unusual definition of efficiency!
+- The tit-for-tat development of strategies between R and P accounts for the sudden switches in the dynamics. It would I think be pointless to try and fit regression lines to these plots, but if we can think of some way of capturing this statistically it would help our arguments. 
+- In the discussion below, the "copy loop" (`$=?>`) is the sequence of opcodes that is the 'engine' of replication - the whole loop cycles once to copy a single opcode. This is a repeated motif in these runs, but it does different things if the pointers it uses are arranged differently before entering the loop. 
+- The relative firing rates for the opcodes are good indicators of different strategies. Lets list a few of those now - although I will have to check my reasoning by looking at a few more.
+- We can use the copy operator firing (black line) as a reference for all other lines. 
+- Let's start by looking at "overwrite" events (red lines), which we've also called "self-scan" previously. This feature was not part of the original replicator at all, so values above zero indicate emergent behaviour. Self-scanning emerges early in all runs. (There is one run where it doesn't start until t=500,000). That makes sense for three related reasons:
+    - Firstly it is a simple re-use of the copy loop, but without arraging the position of the read and write pointers. But of course this wouldn't fix in the system if there isn't a second copy loop to do the job of replicating. 
+    - Secondly, it buys time for other behaviours to emerge. By fixing a strategy that slows down the replication rate by simple wasting time, any behaviour that does something useful becomes a viable option. 
+    - Thirdly, the overwrite operation is subject to mutation, meaning that the 'parent' molecules are now able to change *themselves*. It is striking how this step towards the error catastrophe fixes so often...
+- The "move" operator (green line) should track the "copy" operator (black line) firing rates for a seed replicator, but there are several instances where its firing is markedly higher. I need to look into why this is. It may be another rate-slowing strategy that I haven't spotted yet. This emerges in at least half of the runs. 
+- Finally the "toggle" operator(blue line) shows periods where it is in much higher numbers than would be expected. Recall that I've scaled the firing line up by 25 so that we can see this change in behaviour relative to other operators. Toggle is *not* part of the copy loop, so it is unsurprising that it fires relatively infrequently, but is *is* essential for the behaviour whereby a replicator can "check" whether it is bound to a parasite: by moving execution to the partner molecule, it is possible to reject parasites which do not have code to move execution back to the active replicator molecule at the corret point to ensure replication. Thus, periods where toggle is firing frequently correspond to periods where this checking behaviour has selective advantage. 
+
+
+Since the copy operator is the central feature of replication, we can use its firing count to normalise the firing of the others. This is shown below and is a way of looking at the function of the firing without the population dynamics. I think it shows more clearly the different phases of emergent behaviours. 
+
+
+    
+```{r echo=FALSE, fig.height=12, fig.width=10, message=FALSE, warning=FALSE}
+require(Rstringmol)
+source("../examples/vg_plus_rprops_functions.R")
+
+#message(sprintf("wd is %s",getwd()))
+
+pr <- function(rundata,title = "Plot"){
+  
+  cvals <- vector(length=length(rundata))
+  ovals <- vector(length=length(rundata))
+  mvals <- vector(length=length(rundata))
+  tvals <- vector(length=length(rundata))
+  
+  for(rr in 1:length(rundata)){
+    md<-rundata[[rr]]
+    #md <- d[d$nprod>1,]
+    #if(nrow(md)>0){
+      #md <- md[order(md$nobs,decreasing = T),]
+      #message(sprintf("\nMax nprod for run %d is %d",rr*20000,max(d$nprod)))
+      #for(kk in 1:nrow(md)){
+      #  message(sprintf("row %d: nobs = %d, nprod = %d\nact=%s\npas=%s\n",kk,md$nobs[kk],md$nprod[kk],md$actseq[kk],md$passeq[kk]))    
+      #}
+      cvals[rr]<- sum(md$ccopy)/sum(md$ccopy)#-sum(md$cover)
+      ovals[rr]<- sum(md$cover)/sum(md$ccopy)
+      mvals[rr]<- sum(md$cmove)/sum(md$ccopy)
+      tvals[rr]<- sum(md$ctogg)/sum(md$ccopy)
+    #}
+  }
+
+  xvals =seq(20000,2000000,20000) 
+  plot(x=xvals,y=cvals,type="l",ylim=c(0,4)#max(cvals,ovals,mvals,tvals))
+       ,xlim=c(0,2000000),xlab="time",ylab="Number of muti-producut reactions",main=title)
+  lines(x=xvals,y=ovals,col="red")
+  
+  #axis(4,ylim=c(0,4))
+  lines(x=xvals,y=mvals,col="green")
+  lines(x=xvals,y=tvals*25,col="blue")
+  
+  #message(sprintf("max mvals = %d, max tvals = %d",max(mvals),max(tvals)))
+  legend("topleft",legend=c("copy","move","toggle * 25","overwrite"),lty=1,col=c("black","green","blue","red"))
+}
+
+par(mfrow=c(4,2))
+
+load("../examples/rp1705smsp1.RData")
+pr(rundata, "box box replicate 1")
+
+load("rp1705smsp2.RData")
+pr(rundata, "box box replicate 2")
+
+load("rp1705smsp3.RData")
+pr(rundata, "box box replicate 3")
+
+load("rp1705smsp5.RData")
+pr(rundata, "box box replicate 5")
+
+load("rp1705smspr2.RData")
+pr(rundata, "box rand replicate 2")
+
+load("rp1705smspr3.RData")
+pr(rundata, "box rand replicate 3")
+
+load("rp1705sm2504.RData")
+pr(rundata, "slot box replicate 4")
+
+load("rp1705sm2505.RData")
+pr(rundata, "slot box replicate 5")
+```

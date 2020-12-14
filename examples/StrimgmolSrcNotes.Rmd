@@ -1,0 +1,126 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+This notebook records issues regarding the stringmol source code that should be fixed
+
+
+# Binding when bprob is zero
+
+Nesting of functions to test bind is:
+
+```
+main (stringmol.cpp)
+  smspatial (setupSM.h & setupSM.cpp line 1797)
+    smspatial_step (setupSM.cpp)
+      get_sw (stringPM.cpp)
+        get_bprob ()
+```
+
+Code in `smspatial_step` is: 
+
+```
+						//Now we've found a potential partner, we can see if it binds:
+						float bprob;
+						bprob = A->get_sw(pag,bag,&sw);
+
+						float rno;
+						rno = rand0to1();
+						if(rno<bprob){//Binding success!
+```						
+
+We can check that `rand0to1()` doesn't produce zeros like this: 
+
+```{r eval=FALSE, include=T}
+require(Rstringmol)
+smalx<-1
+for(i in 1:10000000)x <- mtrand();if(x<0.001)message(sprintf("found low x: %f",x));if(x<smalx)smalx<-x
+message(sprintf("Smallest rno is %f",smalx))
+```
+
+
+Next we need to see if the bind function ever passes with `bprob=0`
+
+# Web App issues
+
+The main issue is that sometimes the webapp doesn't run reactions in the same way that c++ stringmol does. Here are some example molecules.
+
+
+```
+$=?>=^SA$U?$FC^B%B$T?E>$CMU%YH
+```
+
+In this example two identical molecules react. They do a 'self-scan' first (where `R` and `W` point at the same opcode), but then when execution gets to the `E>$` motif, the webapp enters an infinite loop - execution in the C++ goes to the start of the passive molecule:
+
+```
+--------------
+105	001	
+105	002	
+Printing species list
+
+     0:
+$=?>=^SA$U?$FC^B%B$T?E>$CMU%YH
+i
+F
+R
+w
+     1:
+$=?>=^SA$U?$FC^B%B$T?E>$CMU%YH
+                      I
+f
+                              r
+                              W
+--------------
+106	001	
+106	002	
+Printing species list
+
+     0:
+$=?>=^SA$U?$FC^B%B$T?E>$CMU%YH
+ I
+F
+R
+w
+     1:
+$=?>=^SA$U?$FC^B%B$T?E>$CMU%YH
+                      i
+f
+                              r
+                              W
+--------------
+```
+
+### Improving the command line reaction evaluation 
+
+- use `ncurses` to animate - we can get finer control then
+- allow more than one molecule type!
+- allow forward and backward animation via caching (like the webapp does)
+
+
+# Improving species ancestry logs
+
+- indicate whether (and where) a copy mutation has happened 
+- it looks like complex reactions are recorded more than I thought they would be - but still not enough
+
+
+
+# Execution improvements - Improving the opcode language. 
+
+We designed the original language simply to do replication and not crash. But we *didn't* design it to do the interesting things we've seen. This raises the question: can the language be improved to make these things more stable? And if we do this, are we "throwing half the problem out the window"?
+
+- Make it easier to get to the start of a molecule
+- Make binding rate va
+
+# Mutation 
+
+
+(is `B` always inserted when there's an indel? )
+
+
+
+
+

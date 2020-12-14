@@ -1,0 +1,68 @@
+---
+title: "Spatial Stringmol Summary"
+author: "Simon Hickinbotham"
+date: "07/06/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Definitions
+
+- **copy loop** a sequence of opcodes that execute repeatedly, iteratively 
+- **seed behaviour** is any replicating reaction in which execution never leaves the active molecule, and there is a single copy loop
+- **self-scan** special case of copy loop - increases mutation, slows down replication independently of passive length
+
+
+# box-box 3
+- simplest flood example, so we started here - 3 timesteps investigated
+- self-scan + short seed (type I) emerges
+- flip to toggle-based check on self-replication (type II) emerges
+- flood caused my mutual replication between type I and II - combine to keep parasite population low
+
+# box-box 2
+
+- type I and II do not flood because no mutual copying
+- parasite mimics type II toggle - keeps population low
+- type IIx emerges - v. sophisticated toggle checks, virtually immune from parasites
+- type IIx diversifies - parasites extinct
+- type I re-emerges, parasites return (Lotka-Volterra?)
+
+
+
+# box-box 1
+
+- type I emerges
+- type II emerges
+- parasite mimics type II toggle - keeps population low
+- type III (hypercycle) emerges, side by side with I and II. Origin of hypercycles from a single mutation causing a cascade of reactions
+- long type I and short type III 
+- zombie replicators - a special case of parasites at end
+
+# box-box 5
+
+- type I emerges
+- type II emerges
+- parasite mimics type II toggle - keeps population low
+- type IIxx emerges - long molecule with 'zigzag' toggle checks
+- revert to tII
+-
+
+
+
+
+# General points
+
+-there's a population threshold below which parasites don't influence things. 
+- by permitting longer molecules to exist, new behaviours can emerge.
+- replicators are exploring the fitness landscape caused by a “generous” decay rate that was tuned to the seed replicators replication rate
+
+
+- Compared with PH's (and others) earlier studies, this is not as exhaustive because it is  a complex system - but the evoltuion is much closer to an intrinsic system: all that 
+
+
+
+
+

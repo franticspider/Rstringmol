@@ -1,0 +1,1722 @@
+---
+title: "Figures For 'Biology' Paper"
+author: "Simon Hickinbotham"
+date: "13/07/2020"
+output:
+  html_document:
+    code_folding: hide
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Basic story: Big picture stuff
+
+
+The "naive" expectations for evolving self-replicating systems (in the absence of parasites) are: 
+
+- Continuous selection for replication efficiency- this would show an increase in population to a steady state governed by the decay rate and the maximum efficiency reached. 
+- a continuous downward gradient in program length and time - because that's how efficiency manifests itself in this system. 
+
+Under these conditions, parasites are expected to be fatal in well mixed systems, and to drive spatial organisation where there is no external mixing. The assumption has still been that the replicating entities will still be obliged to evolve for increasingly efficient replication under parasitism. 
+
+From the plots below we are observing/claiming the following trends:
+
+- Fig 1: Population size tends to increase, as we would expect if evolution was increasing efficiency
+- Fig 2: In terms of reaction time (which is the main measure of efficiency in this system) we see little, if any, decrease. 
+
+Here lies the mystery: *In a 'steady state' environment, how can a population increase its carrying capacity if it isn't increasing its reproductive efficiency?*. Clearly, there is another factor that is causing the increase in population size - an this is known to be improved replication rate under the yoke of parasitism. 
+
+
+Here's a brief summary of each run for reference:
+
+- run1 (box-box1): hypercycle with different length partners
+- run2 (box-box2): densest flooding; complex parasite evasion
+- run3 (box-box3): clearest switch between states
+- run4 (box-box5): 'zig-zag' toggle check; cleave-based defense emerges
+- run5 (box-rand2): reactions slowed by 7-opcode copy loop
+- run6 (box-rand3): dual short/long in a hypercycle configuration (*outlier*)
+- run7 (slot-box4): to be checked
+- run8 (slot-box5): to be checked
+
+
+
+
+```{r load_data, fig.height=6, fig.width=10, include=FALSE}
+
+# Here's code for loading the raw data set: 
+
+smsp <- list()
+load("../rp1705smsp1.RData")
+smsp[[1]] <- rundata
+load("../rp1705smsp2.RData")
+smsp[[2]] <- rundata
+load("../rp1705smsp3.RData")
+smsp[[3]] <- rundata
+load("../rp1705smsp5.RData")
+smsp[[4]] <- rundata
+load("../rp1705smspr2.RData")
+smsp[[5]] <- rundata
+load("../rp1705smspr3.RData")
+smsp[[6]] <- rundata
+load("../rp1705sm2504.RData")
+smsp[[7]] <- rundata
+load("../rp1705sm2505.RData")
+smsp[[8]] <- rundata
+
+
+smspv2 <- list()
+load("../rp1705smsp1v2.RData")
+smspv2[[1]] <- rundata
+load("../rp1705smsp2v2.RData")
+smspv2[[2]] <- rundata
+load("../rp1705smsp3v2.RData")
+smspv2[[3]] <- rundata
+load("../rp1705smsp5v2.RData")
+smspv2[[4]] <- rundata
+load("../rp1705smspr2v2.RData")
+smspv2[[5]] <- rundata
+load("../rp1705smspr3v2.RData")
+smspv2[[6]] <- rundata
+load("../rp1705smsp2504v2.RData")
+smspv2[[7]] <- rundata
+load("../rp1705smsp2505v2.RData")
+smspv2[[8]] <- rundata
+
+# If you want to check whether the two datasets are identical, you can try..
+# smsp <- smspv2
+
+```
+
+
+```{r config,message=FALSE, include=FALSE}
+
+# Global definitions for these figures: 
+
+require(stringr)
+myoma = c(5.5,4.5,4,4.5)
+mymar = c(0.5,0.5,0.5,0.5)
+lax=c(T,F,F,F,T,F,F,F)
+rax=c(F,F,F,T,F,F,F,T)
+bax=c(F,F,F,F,T,T,T,T)
+cols = c("orange","blue")
+```
+
+
+
+# Figure 1: Population dynamics 
+
+*These figures are fine for both v1 and v2 datasets*
+
+First we plotted this is as `nReactions * 2`, not population, as it isn't including unbound molecules:
+
+```{r popdy, fig.height=6, fig.width=10, message = F, warning=FALSE}
+fig1 <- function(rundata,plax,prax,pbax){
+  time <- seq(1:length(rundata))
+  val <- time
+  var <- time
+  
+  par(mar=mymar)
+  
+  for(tt in 1:length(time)){
+    val[tt] <- sum(rundata[[tt]]$nobs)*2
+    var[tt] <- length(unique(c(rundata[[tt]]$actseq,rundata[[tt]]$passeq)))
+  }
+  plot(x=time*20000,y=val,type="l",axes = F,xlab="time",ylab="population",col=cols[1],ylim=c(0,12500))
+  box()
+  if(pbax)axis(1)
+  if(plax)axis(2)
+  par(new = T)
+  plot(x=time*20000,y=var,col=cols[2],axes=F,type="l",ylim=c(0,2000),ylab="",xlab="")
+  if(prax)axis(4)
+}
+
+par(mfrow=c(2,4),oma=myoma)
+for(rr in 1:length(smsp))fig1(smsp[[rr]],lax[rr],rax[rr],bax[rr])
+
+
+
+title("Population (red) and number of species(green) of bound molecules",outer=T)
+
+# To make a legend add a single big dummy figure over the whole devece, and then stick the legend on *that*
+par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
+plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n")
+legend('bottom',legend=c("population (left axis)","n spp (right axis)"),col=c(cols[1],cols[2]),lty=1, xpd = T, horiz = TRUE,  seg.len=3, bty = 'n',inset=c(0,0))
+mm <- dev.copy2pdf(file="fig1.pdf")
+```
+
+- Generally the population increases - this suggests an increase in replicating efficiency.
+- The diversity also increases as shown by the number of species
+- These two measures track each other approximately
+
+Version 2 looks like this: 
+
+```{r pop_plot}
+
+par(mfrow=c(2,4),oma=myoma)
+for(rr in 1:length(smspv2))fig1(smspv2[[rr]],lax[rr],rax[rr],bax[rr])
+
+
+
+title("Population (red) and number of species(green) of bound molecules",outer=T)
+
+# To make a legend add a single big dummy figure over the whole devece, and then stick the legend on *that*
+par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
+plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n")
+legend('bottom',legend=c("population (left axis)","n spp (right axis)"),col=c(cols[1],cols[2]),lty=1, xpd = T, horiz = TRUE,  seg.len=3, bty = 'n',inset=c(0,0))
+mm <- dev.copy2pdf(file="fig1v2.pdf")
+```
+
+
+
+
+To see how constant the ratio of number of individuals to number of species is, we can plot the ratio: 
+
+
+```{r fig1a, fig.height=6, fig.width=10}
+fig1a <- function(rundata,plax,prax,pbax){
+  time <- seq(1:length(rundata))
+  val <- time
+  var <- time
+  par(mar=mymar)
+  
+  for(tt in 1:length(time)){
+    val[tt] <- sum(rundata[[tt]]$nobs)*2
+    var[tt] <- length(unique(c(rundata[[tt]]$actseq,rundata[[tt]]$passeq)))
+    #val[tt] <- val[tt] / (var[tt] *20/125)
+  }
+  #val <- val/var
+  plot(x=time*20000,y=val/var,type="l",xlab="time",ylab="population",col=cols[1],ylim=c(0,30),axes = F)
+  box()
+  if(pbax)axis(1)
+  if(plax)axis(2)
+  #par(new = T)
+  #plot(x=time*20000,y=var,col=cols[2],axes=F,type="l",ylim=c(0,2000),ylab="",xlab="")
+  if(prax)axis(4)
+  return(data.frame(pop=val,nspp=var,ratio=val/var,stringsAsFactors = F))
+}
+
+pval <- list()
+par(mfrow=c(2,4),oma=myoma,mar=c(3,3,0,0))
+for(rr in 1:length(smsp))pval[[rr]]<-fig1a(smsp[[rr]],lax[rr],rax[rr],bax[rr])
+title("Rato of population size to number of species",outer=T)
+
+mm <- dev.copy2pdf(file="fig1a.pdf")
+
+```
+
+There's no strong trend here that I'd expect to be statistically significant, but there does seem to be distinct periods of variability vs stability in these plots, and a line of best fit would have a negative gradient for most of them. 
+
+### 'True' population numbers (including unbound molecules). 
+
+
+```{r truepop,cache=TRUE, include=FALSE}
+
+# We needed a function to get this information from the raw data files: 
+
+require(stringr)
+spdata <- function(froot="",trange=seq(20000,2000000,20000)){
+  
+  nspp <- vector(length=length(trange))
+  nmols <- vector(length=length(trange))
+  
+  idx <- 1
+  for(tt in trange){
+    fn <- sprintf("%s%d.conf",froot,tt)
+    #message(sprintf("Loading file %s",fn))
+    raw <- read.table(fn,stringsAsFactors = F,fill=T,sep=",")
+    
+    ##lx <- raw[str_detect("TOTSPPCT",str_sub(raw$V1,1,8)),]
+    
+    lx <- data.frame(raw[str_detect(str_sub(raw$V1,1,40),"extant"),],stringsAsFactors = F)
+    if(nrow(lx) != 1){
+      message(sprintf("%d: problem finding extant species"))
+    }
+    else{
+      nspp[idx] <- as.numeric(str_sub(lx,17,str_length(lx)))
+    }
+    #message(sprintf("%d: Found %d species",tt,nspp[tt]))
+    
+    lx <- data.frame(raw[str_detect(str_sub(raw$V1,1,40),"NUMAGENTS"),],stringsAsFactors = F)
+    if(nrow(lx) != 1){
+      message(sprintf("%d: problem finding number of agents"))
+    }
+    else{
+      nmols[idx] <- as.numeric(str_sub(lx,11,str_length(lx)))
+    }
+    #message(sprintf("%d: Found %d mols and %d species",tt,nmols[idx],nspp[idx]))
+    idx <- idx + 1
+  }
+  
+  rdf <- data.frame(time=trange,nspp=nspp,nmols=nmols,stringsAsFactors = F)
+  
+  return (rdf)
+}
+
+popdata<-list()
+popdata[[1]]<-spdata("~/Desktop/paulien/smsp/1705smsp/out1/out1_",trange=seq(20000,2000000,20000))
+popdata[[2]]<-spdata("~/Desktop/paulien/smsp/1705smsp/out2/out1_",trange=seq(20000,2000000,20000))
+popdata[[3]]<-spdata("~/Desktop/paulien/smsp/1705smsp/out3/out1_",trange=seq(20000,2000000,20000))
+popdata[[4]]<-spdata("~/Desktop/paulien/smsp/1705smsp/out5/out1_",trange=seq(20000,2000000,20000))
+popdata[[5]]<-spdata("~/Desktop/paulien/smsp/1705smspr/out2/out1_",trange=seq(20000,2000000,20000))
+popdata[[6]]<-spdata("~/Desktop/paulien/smsp/1705smspr/out3/out1_",trange=seq(20000,2000000,20000))
+popdata[[7]]<-spdata("~/Desktop/paulien/smsp/1705sm250/out4/out1_",trange=seq(20000,2000000,20000))
+popdata[[8]]<-spdata("~/Desktop/paulien/smsp/1705sm250/out5/out1_",trange=seq(20000,2000000,20000))
+
+```
+
+With that to hand, we can look at the true population and the true diversity compared with the 'bound only' numbers we plotted above: 
+
+
+```{r  fig.height=6, fig.width=10, message = F, warning=FALSE}
+
+fig1c <- function(rundata,popd,plax,prax,pbax,rno){
+  time <- seq(1:length(rundata))
+  val <- time
+  var <- time
+  par(mar=mymar)
+  
+  for(tt in 1:length(time)){
+    val[tt] <- sum(rundata[[tt]]$nobs)*2
+    var[tt] <- length(unique(c(rundata[[tt]]$actseq,rundata[[tt]]$passeq)))
+  }
+  plot(x=time*20000,axes=F,y=val,type="l",xlab="time",ylab="population",col=cols[1],ylim=c(0,12500),lty=2)
+  box()
+  lines(x=popd$time,y=popd$nmols,lty=1,col=cols[1])
+  if(pbax)axis(1)
+  if(plax)axis(2)
+  par(new = T)
+  plot(x=time*20000,y=var,col=cols[2],axes=F,type="l",ylim=c(0,2000),ylab="",xlab="",lty=2)
+  lines(x=popd$time,y=popd$nspp,lty=1,col=cols[2])
+  if(prax)axis(4)
+  text(labels = sprintf("Run %d",rno),x=0,y=1900,pos = 4)
+  
+}
+
+
+par(mfrow=c(2,4),oma=myoma)
+lax=c(T,F,F,F,T,F,F,F)
+rax=c(F,F,F,T,F,F,F,T)
+bax=c(F,F,F,F,T,T,T,T)
+
+for(rr in 1:length(smsp))fig1c(smsp[[rr]],popdata[[rr]],lax[rr],rax[rr],bax[rr],rr)
+title("Population and number of species",outer=T)
+
+# To make a legend add a single big dummy figure over the whole devece, and then stick the legend on *that*
+par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
+plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n")
+legend('bottom',legend=c("population (left axis)","bound population (left axis)","n spp (right axis)","bound n spp (right axis)"),col=c(cols[1],cols[1],cols[2],cols[2]), xpd = T, horiz = TRUE,  seg.len=3, bty = 'n',inset=c(0,0),lty=c(1,2,1,2))
+
+mm <- dev.copy2pdf(file="fig1b.pdf")
+```
+
+Again, most of the time these appear proportional to one another, but there are periods where the ratio changes. 
+
+It is important that we know how these major descriptors of the population dynamics have changed over the run. But it is surprising (to me anyway) that these descriptors aren't reflecting the scale of changes in function that the forensic investigations were showing. 
+
+# Figure 2: String length and time
+
+
+```{r fig.height=6, fig.width=10}
+#https://www.dataanalytics.org.uk/make-transparent-colors-in-r/
+opcol <- function(col,percent = 70){
+  rgbc<-col2rgb(col)
+  t.col <- rgb(rgbc["red",1], rgbc["green",1], rgbc["blue",1],
+             max = 255,
+             alpha = (100 - percent) * 255 / 100) 
+  return(t.col)
+}
+
+
+fig2 <- function(rundata,prop=0.1,dolen=T,ylim=NULL,plax,prax,pbax,rno,plotlen=T){
+  
+  time <- seq(1:length(rundata))
+  #val <- time
+  #val2 <- time
+  
+  # these will be arrays to hold the median and quartile values: 
+  valm <- time
+  valql <- time
+  valqh <- time
+  
+  lvm <-time
+  lvl <-time
+  lvu <-time
+  
+  par(mar=mymar)
+  
+  #if(is.null(ylim))
+  ylim=c(0,120)
+  ylim2=c(0,400)
+  
+  repvals <- list()
+  
+  #for each time
+  for(tt in 1:length(time)){
+    # Get the data
+    rd <- rundata[[tt]]
+    rd <- rd[order(rd$nobs,decreasing = T),]
+    
+    #work out the end point - this is to get the average of the top *n* reactions
+    totrp <- sum(rd$nobs)*prop
+    count<- 0
+    rsum <- 0
+    rsum2 <- 0
+    idx <- 1
+    firstentry <- T
+    while(count<totrp){
+      rsum <- rsum + (rd$nobs[idx]*0.5*(rd$actlen[idx] + rd$paslen[idx]))
+      rsum2 <- rsum2 + (rd$nobs[idx]*(rd$nsteps[idx]))
+      count <- count + rd$nobs[idx]
+      
+      #gather the data for medians
+      if(firstentry){
+        mdata <- rep( (rd$actlen[idx]), rd$nobs[idx])
+        ldata <- rep(  (rd$nsteps[idx]) , rd$nobs[idx])
+        firstentry <- F
+      }
+      else{
+        mdata <- c(mdata,rep((rd$actlen[idx]), rd$nobs[idx]))
+        ldata <- c(ldata,rep(  (rd$nsteps[idx]) , rd$nobs[idx]))
+      }
+      idx<-idx+1
+    }
+    
+    #val[tt] <-rsum/count
+    #val2[tt] <-rsum2/count
+    q <- quantile(mdata)
+    valm[tt] <- q[3]
+    valql[tt] <- q[2] #25th
+    valqh[tt] <- q[4] #75th
+    #q <- quantile(mdata)
+    
+    q <- quantile(ldata)
+    lvm[tt]<-q[3]
+    lvl[tt]<-q[2]
+    lvu[tt]<-q[4]
+  }
+  
+  # Plot string length in orange on the firxt axis:
+  plot(x=time*20000,y=valm,type="l",xlab="time",ylab="string length",col=cols[1],axes=F,ylim=ylim)
+  
+  shf <- data.frame(t=time*20000,v=valql)
+  shr <- data.frame(t = rev(time*20000), v = rev(valqh))
+  sh <- rbind(shf,shr)
+  polygon(x=sh$t,y=sh$v,col=opcol(cols[1],percent = 40),border=F)
+  
+  lines(x = time*20000,y=valm,col=cols[1])
+  #plot the lhs y axis now before we get a new ylim
+  if(plax)axis(2)
+  
+  par(new=T)
+    
+  plot(x=time*20000,y=lvm,type="l",xlab="time",ylab="",col=cols[2],ylim=ylim2,axes=F)
+  
+  shf <- data.frame(t=time*20000,v=lvl)
+  shr <- data.frame(t = rev(time*20000), v = rev(lvu))
+  sh <- rbind(shf,shr)
+  polygon(x=sh$t,y=sh$v,col=opcol(cols[2]),border=F)
+  
+  lines(x = time*20000,y=lvm,col=cols[2])
+  
+  box()
+  if(pbax)axis(1)
+  if(prax)axis(4)
+  text(labels = sprintf("Run %d",rno),x=0,y=380,pos = 4)
+  
+  #emphasise the orange line: 
+  par(new=T)
+  plot(x=time*20000,y=valm,type="l",xlab="time",ylab="string length",col=cols[1],axes=F,ylim=ylim)
+  
+}
+
+par(mfrow=c(2,4),oma=myoma)
+for(rr in 1:length(smsp))fig2(smsp[[rr]],prop=1,dolen=T,ylim=c(10,110),lax[rr],rax[rr],bax[rr],rr)
+#for(rr in 1:length(smsp))plot(NA,xlim=c(0,2000000),ylim=c(0,130))
+title("Median string length and reaction time",outer=T)
+
+# Legend
+par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
+plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n")
+legend('bottom',legend=c("string length (left axis)","reaction time (right axis)"),col=c(cols[1],cols[2]),lty=1, xpd = T, horiz = TRUE,  seg.len=3, bty = 'n',inset=c(0,0))
+
+
+mtext(text="time",side=1,line=-3,outer=TRUE)
+mtext(text="string length",side=2,line=-1.5,outer=TRUE)
+mtext(text="reaction time",side=4,line=-1.5,outer=TRUE)
+
+mm <- dev.copy2pdf(file="fig2.pdf")
+```
+
+- Species length tends to drop sharply and then maintain a slow increase. This doesn't appear to be strongly correlated with the overall population size we saw in figure 1. 
+- An alternative way of looking at this is reaction time. Periods of correlation with species length are punctuated by jumps - so there *is* a transition to a different state - but the correspondence with the changes in figure 1 are still weak - why? 
+
+Let's look at the same for the top 10% of  reactions 
+
+
+```{r fig.height=6, fig.width=10}
+par(mfrow=c(2,4),oma=myoma)
+for(rr in 1:length(smsp))fig2(smsp[[rr]],prop=0.1,dolen=T,ylim=c(0,80),lax[rr],rax[rr],bax[rr],rno=2)
+title("Average spp length(red) and reaction time(green) for top 10% of reactions",outer=T)
+```
+
+
+Let's see if the active and passive partner lengths have any differences: 
+
+
+
+```{r fig.height=6, fig.width=10}
+fig2a <- function(rundata,prop=0.1,dolen=T,ylim=NULL,plax,prax,pbax){
+  time <- seq(1:length(rundata))
+  val <- time
+  val2 <- time
+  par(mar=mymar)
+  
+  
+  for(tt in 1:length(time)){
+    rd <- rundata[[tt]]
+    rd <- rd[order(rd$nobs,decreasing = T),]
+    totrp <- sum(rd$nobs)*prop
+    count<- 0
+    rsum <- 0
+    rsum2 <- 0
+    idx <- 1
+    while(count<totrp){
+      rsum <- rsum + (rd$nobs[idx]*rd$actlen[idx])
+      rsum2 <- rsum2 + (rd$nobs[idx]*rd$paslen[idx])
+      count <- count + rd$nobs[idx]
+      idx<-idx+1
+    }
+    
+    
+    val[tt] <-rsum/count
+    val2[tt] <-rsum2/count
+  }
+  
+  plot(x=time*20000,y=val,type="l",xlab="time",ylab="avg species length",ylim=c(0,100),col=cols[1],axes=F)
+  box()
+  if(pbax)axis(1)
+  if(plax)axis(2)
+  par(new=T)
+  plot(x=time*20000,y=val2,type="l",xlab="time",ylab="",col=cols[2],ylim=c(0,100),axes=F)
+  if(prax)axis(4)
+  
+}
+
+par(mfrow=c(2,4),oma=myoma,mar=c(3,3,0,0))
+for(rr in 1:length(smsp))fig2a(smsp[[rr]],prop=1,dolen=T,ylim=c(0,80),lax[rr],rax[rr],bax[rr])
+title("Average length of active (red) and passive(green) molecules for all reactions",outer=T)
+```
+
+Note that passive is on average shorter because parasites are usually passive. Also, there will be fewer long reactions in hypercycles (plot 6)
+
+Let's try the same, but for the top 10% reactions
+
+```{r fig.height=6, fig.width=10}
+
+par(mfrow=c(2,4),oma=myoma,mar=c(3,3,0,0))
+for(rr in 1:length(smsp))fig2a(smsp[[rr]],prop=0.1,dolen=T,ylim=c(0,80),lax[rr],rax[rr],bax[rr])
+title("Average length of active (red) and passive(green) molecules for top 10% of reactions",outer=T)
+```
+
+The lengths are almost identical in most situations, because the top 10% of reactions consist of replicators replicating other replicators. Run 6 is an exception because only one half of a hypercyclie is parasitised.  
+
+# Figure 3: Replicating vs Parasitic reactions
+
+
+
+```{r fig.height=6, fig.width=10}
+fig3 <- function(rundata,prop=0.1,ylim=NULL,nsteps=F,plax,prax,pbax,ratio=F,v2=T){
+  time <- seq(1:length(rundata))
+  nrep <- time
+  nrep <- time
+  npar <- time
+  par(mar=mymar)
+  
+  for(tt in 1:length(time)){
+    if(nsteps){
+      if(v2){
+        nrep[tt] <- mean(rundata[[tt]]$nsteps[  rundata[[tt]]$pp_Replicator | rundata[[tt]]$pp_SelfReplicator  ])
+      }else{
+        nrep[tt] <- mean(rundata[[tt]]$nsteps[  rundata[[tt]]$np_MutualRepl | rundata[[tt]]$pp_SelfReplicator  ])
+      }
+      npar[tt] <- mean(rundata[[tt]]$nsteps[  rundata[[tt]]$np_Parasite])
+    }
+    else{
+      if(v2){
+        nrep[tt] <- sum(rundata[[tt]]$nobs[rundata[[tt]]$np_MutualRepl |rundata[[tt]]$pp_SelfReplicator])
+      }else{
+        nrep[tt] <- sum(rundata[[tt]]$nobs[rundata[[tt]]$pp_Replicator |rundata[[tt]]$pp_SelfReplicator])
+      }
+      
+      npar[tt] <- sum(rundata[[tt]]$nobs[rundata[[tt]]$np_Parasite])
+    }
+  }
+  
+  if(!ratio){
+    if(is.null(ylim))
+      ylim=c(0,5000)
+    plot(x=time*20000,y=nrep,type="l",xlab="time",ylab="population",col=cols[1],ylim=ylim,axes=F)
+    box()
+    if(pbax)axis(1)
+    if(plax)axis(2)
+    par(new = T)
+    plot(x=time*20000,y=npar,col=cols[2],axes=F,type="l",ylim=ylim,ylab="",xlab="")
+    if(prax)axis(4)
+  }
+  else{
+    nrep <- 100*npar/(nrep+npar)
+    if(is.null(ylim))
+      ylim = range(nrep)
+    plot(x=time*20000,y=nrep,type="l",xlab="time",ylab="population",col=cols[2],ylim=ylim,axes=F)
+    box()
+    if(pbax)axis(1)
+    if(plax)axis(2)
+    
+  }
+}
+
+
+par(mfrow=c(2,4),oma=myoma,mar=c(3,3,0,0))
+for(rr in 1:length(smsp))
+  fig3(smsp[[rr]],prop=0.1,ylim=NULL,nsteps=F,lax[rr],rax[rr],bax[rr],v2=F)
+title(sprintf("Frequency of Replicating (%s) vs Parasitic (%s) reactions",cols[1],cols[2]), outer = T)
+
+```
+
+- Fig 3 is much more visually similar to figure 1 than figure 2.
+- This suggests that R-P dynamics are drivng the efficiency of the system
+- The spatial arrangements ensure survival of the replicating cohort(s), but how can the occupancy of the arena increase without corresponding changes in program size or execution time? 
+
+Here's the same figure with the new classification scheme:
+
+
+```{r}
+
+par(mfrow=c(2,4),oma=myoma,mar=c(3,3,0,0))
+for(rr in 1:length(smspv2))
+  fig3(smspv2[[rr]],prop=0.1,ylim=NULL,nsteps=F,lax[rr],rax[rr],bax[rr],v2=T)
+title(sprintf("Frequency of Replicating (%s) vs Parasitic (%s) reactions",cols[1],cols[2]), outer = T)
+```
+
+
+
+
+
+We can also look at the replication time for replicators and parasites: 
+
+
+```{r fig.height=6, fig.width=10}
+
+par(mfrow=c(2,4),oma=myoma,mar=c(3,3,0,0))
+for(rr in 1:length(smsp))
+  fig3(smsp[[rr]],prop=0.1,ylim=c(0,350),nsteps=T,lax[rr],rax[rr],bax[rr])
+title("Replicating time for Replicating (red) vs Parasitic (green) reactions", outer = T)
+
+```
+
+
+
+*All can generally be explained by a mix of 'efficient' waves (short/fast replicators) and 'immune' waves. (long/slow replicators with resistance to parasites)*
+
+
+```{r fig.height=6, fig.width=10}
+fig3a <- function(rundata,prop=0.1,ylim=NULL,plax,prax,pbax){
+  time <- seq(1:length(rundata))
+  nrep <- time
+  nrep <- time
+  npar <- time
+  par(mar=mymar)
+  
+  for(tt in 1:length(time)){
+    nrep[tt] <- sum(rundata[[tt]]$nobs[rundata[[tt]]$pp_Replicator |rundata[[tt]]$pp_SelfReplicator])
+    npar[tt] <- sum(rundata[[tt]]$nobs[rundata[[tt]]$np_Parasite])
+  }
+  
+  plot(x=time*20000,y=nrep/npar,type="l",xlab="time",ylab="population",col=cols[1],ylim=c(0,25),axes=F)
+  box()
+  if(pbax)axis(1)
+  if(plax)axis(2)
+  #par(new = T)
+  #plot(x=time*20000,y=npar,col=cols[2],axes=F,type="l",ylim=c(0,5000),ylab="",xlab="")
+}
+
+
+par(mfrow=c(2,4),oma=myoma,mar=c(3,3,0,0))
+for(rr in 1:length(smsp))
+  fig3a(smsp[[rr]],prop=0.1,ylim=NULL,lax[rr],rax[rr],bax[rr])
+title("Ratio of Replicating (red) to Parasitic (green) reactions", outer = T)
+
+```
+
+# Arena fig
+
+
+```{r fig.height=6, fig.width=10,echo=F,eval=T}
+
+t1 <-  90000
+t2 <-  600000
+t3 <-  680000
+t4 <- 1080000
+t4a<- 1240000
+t5 <- 1500000
+t6 <- 2000000
+#t6 <- 1800000 #2000000
+#t6a <-2000000
+
+par(mfrow=c(2,3))
+library(png)
+imnos<- c(t1,t2,t3,t4,t5,t6)
+par(mar=c(0,0,0,0),oma=c(0,0,0,5))
+for(ii in 1:length(imnos)){
+  #par(mar=c(0,0,0,0))
+  plot(NA,xlim=c(0,125),ylim=c(0,100),axes=F,main=sprintf("\nt%d = %d",ii,imnos[ii]),asp = 1,xlab="",ylab="")
+  imname = sprintf("~/Desktop/paulien/smsp/1705smsp/out2png/lenframe%07d.png",imnos[ii])
+  img <- readPNG(source = imname)
+  rasterImage(image=img,xleft = 0,xright = 125,ybottom = 0,ytop=100,interpolate = F)
+}
+
+# LEGEND:
+
+#/*This colormap was generated using the following R script:
+# *
+message <- require(colorRamps)
+xc <- matlab.like(70)
+yc <- col2rgb(xc)
+
+#Draw the ramp 'by hand' using an overlaid empty plot: 
+par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
+plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n", xlim=c(0,200), ylim=c(-10,80))
+
+xl = 200
+xr = 203
+
+for(cc in 1:70){
+  rect(xleft = xl,xright = xr, ybottom = cc-1, ytop = cc, col = rgb(red = yc[1,cc]/255,green = yc[2,cc]/255, blue = yc[3,cc]/255),border = F)
+  if(cc %% 5 == 0){
+    text(x=xl+1,y=cc-0.7,labels = sprintf("%d",cc),pos = 2)
+  }
+}
+
+ost <- 0.2
+rect(xleft = xl,xright = xr, ybottom = -3, ytop = 0, col = "black",border = F)
+    text(x=xl+1,y=-1.5,labels = "V",pos = 2)
+rect(xleft = xl+ost,xright = xr-ost, ybottom = 70+ost, ytop = 72-ost, col = NA)
+    text(x=xl+1,y=71,labels = ">70",pos = 2)
+    text(x=xr+2,y=75,labels = "Length",pos = 2)
+#rect(xleft = xl-5,xright = xr+1, ybottom = -4, ytop = 77, col = NA)
+
+# Write to pdf
+mm <- dev.copy2pdf(file="figarena.pdf")
+```
+
+Need to generate a length/runtime plot and mark the times on 
+
+
+
+```{r fig.height=2.5, fig.width=10,echo=F,eval=T}
+par(mfrow=c(1,2),oma=c(2.5,2.5,0,2.5))#,oma=c(0,0,0,0))
+rr<-2
+
+
+#fig3(smsp[[rr]],prop=1,dolen=T,ylim=c(0,80),lax[rr],rax[rr],bax[rr],rr)
+#par(oma=c(2,2,2,2))
+fig3(smsp[[rr]],prop=0.1,ylim=NULL,nsteps=F,lax[rr],rax[rr],bax[rr],ratio=T)
+axis(1)
+axis(2)
+yl <- 66
+yt <- 68
+segments(x0=t1,y0=0,y1=yl,lty=3);text(labels = "t1",x=t1,y=yt)
+segments(x0=t2,y0=0,y1=yl,lty=3);text(labels = "t2",x=t2,y=yt)
+segments(x0=t3,y0=0,y1=yl,lty=3);text(labels = "t3",x=t3,y=yt)
+segments(x0=t4,y0=0,y1=yl,lty=3);text(labels = "t4",x=t4,y=yt)
+segments(x0=t5,y0=0,y1=yl,lty=3);text(labels = "t5",x=t5,y=yt)
+segments(x0=t6,y0=0,y1=yl,lty=3);text(labels = "t6",x=t6,y=yt)
+
+mtext("Time", side = 1, line = 2, cex = 1)
+mtext("Parasitic Reactions (%)", side = 2, line = 2, cex = 1)
+#title(xlab="time",ylab="pasitic reactions (%)")
+
+
+fig2(smsp[[rr]],prop=1,dolen=T,ylim=c(80,280),lax[rr],rax[rr],bax[rr],rr,plotlen = F)
+axis(1)
+axis(4,)
+yl <- 264
+yt <- 267
+segments(x0=t1,y0=0,y1=yl,lty=3);text(labels = "t1",x=t1,y=yt)
+segments(x0=t2,y0=0,y1=yl,lty=3);text(labels = "t2",x=t2,y=yt)
+segments(x0=t3,y0=0,y1=yl,lty=3);text(labels = "t3",x=t3,y=yt)
+segments(x0=t4,y0=0,y1=yl,lty=3);text(labels = "t4",x=t4,y=yt)
+segments(x0=t5,y0=0,y1=yl,lty=3);text(labels = "t5",x=t5,y=yt)
+segments(x0=t6,y0=0,y1=yl,lty=3);text(labels = "t6",x=t6,y=yt)
+
+mtext("Time", side = 1, line = 2, cex = 1)
+mtext("Reaction Time", side = 4, line = 2, cex = 1)
+
+
+mm <- dev.copy2pdf(file="figr2len.pdf")
+```
+
+# Macromutations figure
+
+Strategy: 
+
+- load the splist data from the `ancestries-V3.rmd` file for the current molecule(s)
+- Get the dominant reaction at t2  - assuming its self-self
+- repeat 
+    - find the earliest spp instance - deduce its origin - was there a point mutation? 
+    - get the 'parent' molecule(s)
+- until all parents are in the seed replicator quasispecies
+
+```{r}
+load("../rp1705smsp2.RData")
+sub <- rundata[[t2/20000]]
+sub <- sub[order(sub$nobs,decreasing = T),]
+phyl<-readRDS("../manc1705smsp2.RDS")
+```
+
+Let's begin to interrogate this phylogeny by looking at the parent reactions of the dominant spp at t2: 
+
+```{r}
+parents <- phyl[phyl$seq == sub$actseq[1],]
+parents[parents$obst1==483266 & parents$rectime==500000,]
+```
+
+
+
+This shows that the dominant reaction at t2 has sequence `$=?>$$BUPOO^B$=?>D$BLU%}P=YH` and spno 63638. Obst1 for the candidate parent reactions is 483266. The only parent reaction that isn't 'self' is a reaction between two instances of 55617. 
+
+Now we can look at 55617 in a similar manner: 
+
+```{r}
+parents <- phyl[phyl$spp == 55617,]
+head(parents[parents$rectime== 400000,])
+```
+
+This shows that 55617 has sequence `$=?>$$BUPOO^B$=?>$$BLU%}P=YH` and was produced by a reaction between 50466 and 47242
+
+Note the reaction between 50466 and 47242 is a case of replication with a mutation on self scan
+
+
+```{r}
+parents <- phyl[phyl$spp == 50446,]
+head(parents[parents$rectime<= 400000,])
+```
+
+50466 is created on self scan when 47242 binds with (parasitic) 23453
+
+
+Following the sequnce (active or passive) that is most similar to the offspring, we get the following
+
+```{r}
+head(phyl[phyl$spp == 47242,])
+```
+
+
+47242 is created when 45966 acts on 46502
+
+```{r}
+head(phyl[phyl$spp == 45966,])
+```
+
+```
+No       T          seq                                          how created
+63638               $=?>$$BUPOO^ B $=?>D$BLU  %}P=YH                SR+PM
+                                       |      
+55617               $=?>$$BUPOO^ B $=?>$$BLU  %}P=YH                (SR)+PM on SS
+                                           -
+50446               $=?>$$BUPOO^ B $=?>$$BLU O%}P=YH                (repl)+PM on SS
+                                          -         --     
+47242    349348     $=?>$$BUPOO^ B $=?>$$BLUBO%}P=YHPB             overwriting $BHUB with $BUPO from 46502 (v. unlikely bind)
+                           |||
+45966    343003     $=?>$$BHUBO^ B $=?>$$BLUBO%}P=YHPB              
+                           +
+43353    343003     $=?>$$B UBO^ B $=?>$$BLUBO%}P=YHPB             23602 on 22046 - a null reaction - PM on SS
+                                -
+23602    327941     $=?>$$B UBO^B> $=?>$$BLUBO%}P=YHPB             PM on SR
+
+22046    185357     $=?>$$B UBO^B>C$=?>$$BLUBO%}P=YHPB             SR on 21659
+                             |
+21659    181771     $=?>$$B UAO^B>C$=?>$$BLUBO%}P=YHPB             SR on 21588
+                                               >
+21588    181140    RJUUUDYGRHJLRVWRE$BLUBO^ZB>C$=?>$$BUAO^B>C$=?>$$BLUBO%}P=YHPB 18159 on 11063 - PM as 18159 overwrites 11603
+
+18159    153273    RJUUUDYGRHJLRVWRE$BLUBO^ZB>C$=?>$$BUAO^B>C$=?>$$BLUBO%}P=YHOB 16021 on 17582 - PM as 16021 overwrites 17582
+
+16021    127995    RJUUUDYGRHJLRVWRE$BLUBO^ZB>C$=?>$$BUBO^B>C$=?>$$BLUBO%}P=YHOB 15954 on 12848 - PM as 15954 overwrites 12848
+
+15954    127532    RJUUUDYGRHJLRVWRE$BLUBO^ZB>C$=?>$$BUBO^B>C$=?>$$BLUBO%}O=YHOB 8586 on 12848 - PM as 8586 overwrites 12848
+
+8586      69977    RJUUUDYGRHJLRWWRE$BLUBO^ZB>C$=?>$$BUBO^B>C$=?>$$BLUBO%}O=YHOB 7473 on 5483 - 7473 *partially* overwrites 5483
+
+7473      58958    RJUUUDYGRHJLRWWRE$BLUBO^ZB>C$=?>$$B 6743 on 7471  -trailing LUBO%}=YHOB chopped off of 6743
+
+6743      52025    RJUUUDYGRHJLRWWRE$BLUBO^ZB>C$=?>$$BLUBO%}=YHOB 6597 on 6445 - PM as 6597 overwrites 6445
+
+6597      49862    RJUUUDYGRHJLRWWRE$BLUBO^ZB>C$=?>$$BLUBO%}O=YHOB 6521 on 6564 - advanced cleave on 6521 as it overwrites 6564
+
+6521      49862    RJUUUDYGRHJLRWWRE$BLUBO^ZB>C$=?>$$BLUBO%}O=YHOB$BLUBO%}O=YHOB 6513 on 5483 - ^ZB motif causes overwriting of 2ndbindsite onwards onto passive mol - the motif is preserved. 
+
+
+EWLHHHRLUEUWJKJRJUUUDYGRHJLRWWRE$BLUBO^ZB>C$=?>$$BLUBO%}O=YHOB
+EWLHHHRLUEUWJKJRJUUUDYGRHJLRWWRE$BLUBO^B>C$=?>$$BLUBO%}O=YHOB
+
+
+-----------
+5483 branch
+
+```
+
+## Mutation rate study: 
+
+```{r mutpermol}
+ti <- seq(20000,2000000,20000)
+mr <- data.frame(time = ti,stringsAsFactors = F)
+mr$mrate <- 0
+mr$mmov <- 0
+rd <- smspv2[[2]]
+for(tt in 1:length(rd)){
+  info<- rd[[tt]]
+  sumcop <- 0
+  sumov <- 0
+  sumobs <- 0
+  for(rr in 1:nrow(info)){
+    sumcop <- sumcop + (info$ccopy[rr]*info$nobs[rr]) 
+    sumov <- sumov + (info$cover[rr]*info$nobs[rr]) 
+    sumobs <- sumobs + info$nobs[rr] 
+  }
+  mr$mrate[tt] <- 0.0002 * sumcop/sumobs
+  mr$mmov[tt] <- 0.0002 * (sumcop-sumov)/sumobs
+}
+
+plot(x = mr$time, y = mr$mrate, ylim=c(0.002,0.014),type = "l",main="mutations per reaction")
+lines(x = mr$time, y = mr$mmov, col="red")
+
+yl <- 0.013
+yt <- 0.014
+segments(x0=t1,y0=0,y1=yl,lty=3);text(labels = "t1",x=t1,y=yt)
+segments(x0=t2,y0=0,y1=yl,lty=3);text(labels = "t2",x=t2,y=yt)
+segments(x0=t3,y0=0,y1=yl,lty=3);text(labels = "t3",x=t3,y=yt)
+segments(x0=t4,y0=0,y1=yl,lty=3);text(labels = "t4",x=t4,y=yt)
+segments(x0=t5,y0=0,y1=yl,lty=3);text(labels = "t5",x=t5,y=yt)
+segments(x0=t6,y0=0,y1=yl,lty=3);text(labels = "t6",x=t6,y=yt)
+
+
+
+```
+
+..Paulien suggested normalising based on the length of the thing that is copied, so: 
+
+
+
+```{r mutperopcode}
+require(stringr)
+ti <- seq(20000,2000000,20000)
+mr <- data.frame(time = ti,stringsAsFactors = F)
+mr$mrate <- 0
+mr$mmov <- 0
+rd <- smspv2[[2]]
+for(tt in 1:length(rd)){
+  info<- rd[[tt]]
+  sumcop <- 0
+  sumov <- 0
+  sumobs <- 0
+  for(rr in 1:nrow(info)){
+    doit <- F
+    # Cases where string 2 is copied
+    if(info$pp_SelfReplicator[rr] | info$pp_Repl2[rr]){
+      norm <- str_length(info$passeq[rr])
+      doit <- T
+    }
+    else{ # Cases where string 1 is copied
+      if(info$pp_Repl1[rr]){
+        norm <- str_length(info$actseq[rr])
+        doit <- T
+      }
+    }
+    
+    if(doit){
+      sumcop <- sumcop + ((info$ccopy[rr])*info$nobs[rr])/norm
+      sumov <- sumov + ((info$cover[rr])*info$nobs[rr])/norm 
+      sumobs <- sumobs + info$nobs[rr] 
+    }
+  }
+  mr$mrate[tt] <- 0.0002 * sumcop/sumobs
+  mr$mmov[tt] <- 0.0002 * (sumcop-sumov)/sumobs
+}
+
+plot(x = mr$time, y = mr$mrate, type = "l",main="mutations per reaction/length(replicated string)")
+lines(x = mr$time, y = mr$mmov, col="red")
+
+yl <- 7.5e-04
+yt <- 8e-04
+segments(x0=t1,y0=0,y1=yl,lty=3);text(labels = "t1",x=t1,y=yt)
+segments(x0=t2,y0=0,y1=yl,lty=3);text(labels = "t2",x=t2,y=yt)
+segments(x0=t3,y0=0,y1=yl,lty=3);text(labels = "t3",x=t3,y=yt)
+segments(x0=t4,y0=0,y1=yl,lty=3);text(labels = "t4",x=t4,y=yt)
+segments(x0=t5,y0=0,y1=yl,lty=3);text(labels = "t5",x=t5,y=yt)
+segments(x0=t6,y0=0,y1=yl,lty=3);text(labels = "t6",x=t6,y=yt)
+
+
+
+```
+
+
+
+
+```{r mutperallopcodes-reponly}
+require(stringr)
+ti <- seq(20000,2000000,20000)
+mr <- data.frame(time = ti,stringsAsFactors = F)
+mr$mrate <- 0
+mr$mmov <- 0
+rd <- smspv2[[2]]
+for(tt in 1:length(rd)){
+  info<- rd[[tt]]
+  sumcop <- 0
+  sumov <- 0
+  sumobs <- 0
+  for(rr in 1:nrow(info)){
+    doit <- F
+    if(info$pp_Repl1[rr] | info$pp_Repl2[rr]){
+      norm <- str_length(info$passeq[rr]) + str_length(info$actseq[rr])
+      doit <- T
+    }
+    if(doit){
+      sumcop <- sumcop + ((info$ccopy[rr])*info$nobs[rr])/norm
+      sumov <- sumov + ((info$cover[rr])*info$nobs[rr])/norm 
+      sumobs <- sumobs + info$nobs[rr] 
+    }
+  }
+  mr$mrate[tt] <- 0.0002 * sumcop/sumobs
+  mr$mmov[tt] <- 0.0002 * (sumcop-sumov)/sumobs
+}
+
+plot(x = mr$time, y = mr$mrate, ylim = c(0,0.0002), type = "l",main="Replicator mrate * Copy operations / sum(length(str1)+length(str2))")
+lines(x = mr$time, y = mr$mmov, col="red")
+
+yl <- 0.00019
+yt <- 0.0002
+segments(x0=t1,y0=0,y1=yl,lty=3);text(labels = "t1",x=t1,y=yt)
+segments(x0=t2,y0=0,y1=yl,lty=3);text(labels = "t2",x=t2,y=yt)
+segments(x0=t3,y0=0,y1=yl,lty=3);text(labels = "t3",x=t3,y=yt)
+segments(x0=t4,y0=0,y1=yl,lty=3);text(labels = "t4",x=t4,y=yt)
+segments(x0=t5,y0=0,y1=yl,lty=3);text(labels = "t5",x=t5,y=yt)
+segments(x0=t6,y0=0,y1=yl,lty=3);text(labels = "t6",x=t6,y=yt)
+
+
+
+```
+
+
+
+
+```{r mutperallopcodes}
+require(stringr)
+ti <- seq(20000,2000000,20000)
+mr <- data.frame(time = ti,stringsAsFactors = F)
+mr$mrate <- 0
+mr$mmov <- 0
+rd <- smspv2[[2]]
+for(tt in 1:length(rd)){
+  info<- rd[[tt]]
+  sumcop <- 0
+  sumov <- 0
+  sumobs <- 0
+  for(rr in 1:nrow(info)){
+    doit <- F
+    if(T){
+      norm <- str_length(info$passeq[rr]) + str_length(info$actseq[rr])
+      doit <- T
+    }
+    if(doit){
+      sumcop <- sumcop + ((info$ccopy[rr])*info$nobs[rr])/norm
+      sumov <- sumov + ((info$cover[rr])*info$nobs[rr])/norm 
+      sumobs <- sumobs + info$nobs[rr] 
+    }
+  }
+  mr$mrate[tt] <- 0.0002 * sumcop/sumobs
+  mr$mmov[tt] <- 0.0002 * (sumcop-sumov)/sumobs
+}
+
+plot(x = mr$time, y = mr$mrate, ylim = c(0,0.0002), type = "l",main="mrate * Copy operations / sum(length(str1)+length(str2))")
+lines(x = mr$time, y = mr$mmov, col="red")
+
+yl <- 0.00019
+yt <- 0.0002
+segments(x0=t1,y0=0,y1=yl,lty=3);text(labels = "t1",x=t1,y=yt)
+segments(x0=t2,y0=0,y1=yl,lty=3);text(labels = "t2",x=t2,y=yt)
+segments(x0=t3,y0=0,y1=yl,lty=3);text(labels = "t3",x=t3,y=yt)
+segments(x0=t4,y0=0,y1=yl,lty=3);text(labels = "t4",x=t4,y=yt)
+segments(x0=t5,y0=0,y1=yl,lty=3);text(labels = "t5",x=t5,y=yt)
+segments(x0=t6,y0=0,y1=yl,lty=3);text(labels = "t6",x=t6,y=yt)
+
+
+
+```
+
+----
+
+# Reaction Diagrams
+
+
+Here's the first figure
+
+```{r seedrep,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1.2);
+
+  %Names
+  \draw (0, 0.85) node[right] {String 1};
+  \draw (0,-0.85) node[right] {String 2};
+
+  %'title'
+  \draw (2, 1) node[right]{\scriptsize {\bf{\sffamily 1:}} Replicator reaction at t=40,000};
+
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+
+  %'active molecule'
+  \fill[black!40!white] (0,0.5) rectangle (6.4,0.7);
+  % copy loop:
+  \fill[red!40!white] (4.7,0.5) rectangle (5.2,0.7);
+  %bind site
+  \draw[red] (1.7,0.5) rectangle (3.0,0.7);
+
+  % 'Execution:' 
+  \fill[green] (1.65,0.4) circle (0.05);
+  \draw[->] (1.7,0.4) -- (4.7,0.4);
+
+  \fill[blue] (4.75,0.4) circle (0.05);
+  \draw[-> , draw=blue] (4.7,0.4) -- (5.2,0.4); 
+
+  \draw[->] (5.2,0.4) -- (5.9,0.4);
+  \fill (5.95,0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \filldraw[black!40!white] (0,-0.5) rectangle (6.4,-0.7);
+  %bind site
+  \draw[red] (0,-0.5) rectangle (1.6,-0.7);
+
+
+\end{tikzpicture}
+```
+
+...and the second
+
+```{r prefloodrep,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1.2);
+  %Names
+  \draw (0, 0.85) node[right] {String 1};
+  \draw (0,-0.85) node[right] {String 2};
+
+  %'title'
+  \draw (2, 1) node[right]{\scriptsize {\bf{\sffamily 2:}} Replicator reaction at t=600,000};
+
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+  %'ACTIVE MOL'
+  \fill[black!40!white] (0,0.5) rectangle (2.8,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (1.2,0.5) rectangle (1.7,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.6,0.7);
+
+
+  % 'Execution:' 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->] (0.5,0.4) -- (1.2,0.4);
+
+  \draw[->] (1.7,0.4) -- (2.0,0.4);
+  \fill[blue] (1.25,0.4) circle (0.05);
+  \draw[-> , draw=blue] (1.2,0.4) -- (1.7,0.4); 
+
+  \fill (2.05,0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \filldraw[black!40!white] (0,-0.5) rectangle (2.8,-0.7);
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.6,-0.7);
+
+\end{tikzpicture}
+```
+
+## Panel 3
+
+```{r floodrep,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1.2);
+  %Names
+  \draw (0, 0.85) node[right] {String 1};
+  \draw (0,-0.85) node[right] {String 2};
+
+  %'title'
+  \draw (2, 1) node[right]{\scriptsize {\bf{\sffamily 3:}} Replicator reaction at t=680,000};
+
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+
+  %'Active molecule'
+  \fill[black!40!white] (0,0.5) rectangle (3.8,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % toggle
+  \fill[blue!40!white] (1.0,0.5) rectangle (1.2,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (1.2,0.5) rectangle (1.7,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,0.5) rectangle (2.5,0.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (2.5,0.5) rectangle (3.0,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.6,0.7);
+
+  % 'Execution:' 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->] (0.5,0.4) -- (1.0,0.4);
+  \draw[->] (1.0,0.4) -- (0,-0.4);
+  \draw[->] (0,-0.4) -- (1.0,-0.4);
+  \draw[->] (1.0,-0.4) -- (1.1,0.4);
+  \draw[->] (1.1,0.4) -- (2.5,0.4);
+  \fill[blue] (2.55,0.4) circle (0.05);
+  \draw[-> , draw=blue] (2.5,0.4) -- (3.0,0.4); 
+  \draw[->] (3.0,0.4) -- (3.4,0.4);
+  \fill (3.45,0.4) circle (0.05);
+
+
+  % 'Passive molecule'
+  \filldraw[black!40!white] (0,-0.5) rectangle (3.8,-0.7);
+  \fill[blue!40!white] (1.0,-0.5) rectangle (1.2,-0.7);
+
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.6,-0.7);
+
+\end{tikzpicture}
+```
+
+## Panel 4
+
+```{r ffloodpar,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1.2);
+  %Names
+  \draw (0, 0.85) node[right] {String 1};
+  \draw (0,-0.85) node[right] {String 2};
+
+  %'title'
+  \draw (2, 1) node[right]{\scriptsize {\bf{\sffamily 4:}} Parasite resistance at t=1,080,000};
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+
+
+  %'Active molecule'
+  \fill[black!40!white] (0,0.5) rectangle (3.8,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % toggle
+  \fill[blue!40!white] (1.0,0.5) rectangle (1.2,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (1.2,0.5) rectangle (1.7,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,0.5) rectangle (2.5,0.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (2.5,0.5) rectangle (3.0,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.6,0.7);
+
+
+
+  % Execution: 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->] (0.5,0.4) -- (1.0,0.4);
+  \draw[->] (1.0,0.4) -- (0,-0.4);
+  \draw[->] (0,-0.4) -- (1.1,-0.4);
+  \fill[red] (1.15,-0.4) circle (0.05);
+  \draw[-> , draw=red] (1.1,-0.4) -- (1.6,-0.4); 
+  \draw[->] (1.6,-0.4) -- (2.2,-0.4);
+  \fill (2.25,-0.4) circle (0.05);
+
+  % Passive molecule
+  \filldraw[black!40!white] (0,-0.5) rectangle (2.5,-0.7);
+  \fill[red!40!white] (1.1,-0.5) rectangle (1.6,-0.7);
+
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.5,-0.7);
+
+\end{tikzpicture}
+```
+
+
+## Panel 5
+
+```{r floodt3,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+%\tikzset{>=latex}
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1.2);
+  %Names
+  \draw (0, 0.85) node[right] {String 1};
+  \draw (0,-0.85) node[right] {String 2};
+
+  %'title'
+  \draw (2, 1) node[right]{\scriptsize {\bf{\sffamily 5:}} Replicator reaction at t=1,500,000};
+  % dividing line
+  \draw[black!20!white] (-0.1,-0.1) -- (6.5,-0.1);
+
+  % 'ACTIVE MOLECULE'
+  \fill[black!40!white] (0,0.5) rectangle (3.4,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % toggle
+  \fill[blue!40!white] (0.7,0.5) rectangle (0.9,0.7);
+  % move
+  \fill[green!40!white] (1.2,0.5) rectangle (1.4,0.7);
+  % loop:
+  \fill[red!40!white] (2.0,0.5) rectangle (2.4,0.7);
+  % move
+  \fill[green!40!white] (2.2,0.5) rectangle (2.4,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,0.5) rectangle (2.5,0.7);
+  % 2nd scan loop:
+  %\fill[red!40!white] (3.1,0.5) rectangle (3.6,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.5,0.7);
+
+
+
+  % 'Execution:' 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->] (0.5,0.4) -- (0.7,0.4);
+
+  %first toggle and back:
+  \draw[->] (0.7,0.4) -- (0,-0.4);
+  \draw[->] (0,-0.4) -- (0.7,-0.4);
+  \draw[->] (0.7,-0.4) -- (0.8,0.4);
+
+  %toggle at move: 
+  \draw[->] (0.8,0.4) -- (1.2,0.4);
+  \draw[->] (1.2,0.4) -- (1.2,0.3) -- (0.1,0.3);
+  \draw[->] (0.1,0.3) -- (0.1,0.2) -- (0.7,0.2);
+  \draw[->] (0.7,0.2) -- (0.8,-0.4);
+  \draw[->] (0.8,-0.4) -- (1.2,-0.4);
+
+  %second toggle at move 
+  \draw[->] (1.2,-0.4) -- (0.1,0.1);
+  \draw[->] (0.1,0.1) -- (0.7,0.1);
+  \draw[->] (0.7,0.1) -- (1.3,-0.4);
+
+  %toggle at second move and copy loop:
+  \draw[->] (1.3,-0.4) -- (2.2,-0.4);
+  \draw[->] (2.2,-0.4) -- (2.0,0.35);
+  \draw[-> , draw=blue] (2.0,0.4) -- (2.4,0.4); 
+  \fill[blue] (2.0,0.4) circle (0.05);
+  
+  %cleave and end
+  \draw[->] (2.4,0.4) -- (2.95,0.4);
+  \fill (3.0,0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \fill[black!40!white] (0,-0.5) rectangle (3.4,-0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,-0.5) rectangle (0.5,-0.7);
+  % toggle
+  \fill[blue!40!white] (0.7,-0.5) rectangle (0.9,-0.7);
+  % move
+  \fill[green!40!white] (1.2,-0.5) rectangle (1.4,-0.7);
+  % loop:
+  \fill[red!40!white] (2.0,-0.5) rectangle (2.4,-0.7);
+  % move
+  \fill[green!40!white] (2.2,-0.5) rectangle (2.4,-0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,-0.5) rectangle (2.5,-0.7);
+  % 2nd scan loop:
+  %\fill[red!40!white] (3.1,-0.5) rectangle (3.6,-0.7);
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.5,-0.7);
+
+\end{tikzpicture}
+```
+
+## Panel 6
+
+```{r floodt6p, echo=FALSE, fig.width=10, message=FALSE, engine='tikz'}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1.2);
+  %Names
+  \draw (0, 0.85) node[right] {String 1};
+  \draw (0,-0.85) node[right] {String 2};
+
+  %'title'
+  \draw (2, 1) node[right]{\scriptsize {\bf{\sffamily 6:}} Parasitic reaction at t=2,000,000};
+  % dividing line
+  \draw[black!20!white] (-0.1,-0.1) -- (6.5,-0.1);
+
+
+
+  % 'ACTIVE MOLECULE'
+  \fill[black!40!white] (0,0.5) rectangle (0.7,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.4,0.7);
+  % toggle
+  \fill[blue!40!white] (0.4,0.5) rectangle (0.6,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.3,0.7);
+
+
+
+  % Execution: 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.4,0.4); 
+  \draw[->] (0.4,0.4) -- (0.45,0.4);
+  \draw[->] (0.45,0.4) -- (0,-0.4);
+  \draw[->] (0,-0.4) -- (1.0,-0.4);
+  \draw[->] (1.0,-0.4) -- (0.1,0.3);
+  \draw[->] (0.1,0.3) -- (0.45,0.3);
+  \draw[->] (0.45,0.3) -- (1.1,-0.4);
+  \draw[->] (1.1,-0.4) -- (1.5,-0.4);
+  \draw[->] (1.5,-0.4) -- (0.1,0.2);
+  %copy:
+  \draw[-> , draw=blue] (0,0.2) -- (0.4,0.2);   
+  \fill[blue] (0,0.2) circle (0.05);
+  \draw[->] (0.4,0.2) -- (0.45,0.2);
+  \draw[->] (0.45,0.2) -- (1.6,-0.4);
+  \draw[->] (1.6,-0.4) -- (1.95,-0.4);
+  \fill (2.0,-0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \fill[black!40!white] (0,-0.5) rectangle (2.2,-0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,-0.5) rectangle (0.4,-0.7);
+  % toggle
+  %\fill[blue!40!white] (0.7,-0.5) rectangle (0.9,-0.7);
+  % move
+  \fill[green!40!white] (1.0,-0.5) rectangle (1.2,-0.7);
+  \fill[green!40!white] (1.5,-0.5) rectangle (1.7,-0.7);
+
+\end{tikzpicture}
+```
+
+
+
+Here's the key to the tikz pictures: 
+
+```{r tikzkey,engine='tikz',fig.width=20, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+
+  %'canvas'
+  \fill[black!5!white] (0,-0.1) rectangle (12.8,1);
+
+  %Names
+  \draw (0, 0.85) node[right] {KEY};
+
+  % 'ACTIVE MOLECULE'
+  \fill[black!40!white] (0.2,0.5) rectangle (0.4,0.7);
+  \draw (0.5, 0.6) node[right] {Program};
+
+  % 'bind site'
+  \draw[red] (0.2,0.2) rectangle (0.4,0.4);
+  \draw (0.5, 0.3) node[right] {Bind Site};
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  % 'toggle'
+  \fill[blue!40!white] (2.7,0.5) rectangle (2.9,0.7);
+  \draw (3.0, 0.6) node[right] {Toggle};
+
+  % 'move'
+  \fill[green!40!white] (2.7,0.2) rectangle (2.9,0.4);
+  \draw (3.0, 0.3) node[right] {Move};
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  % 'loop':
+  \fill[red!40!white] (5.2,0.5) rectangle (5.4,0.7);
+  \draw (5.5, 0.6) node[right] {Loop};
+
+  % Execution path:
+  \draw[->] (5.2,0.3) -- (5.4,0.3);
+  \draw (5.5, 0.3) node[right] {Execution path};
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  % Execution start: 
+  \fill[green] (7.7,0.6) circle (0.05);
+  \draw (8.0, 0.6) node[right] {Program Entry Point};
+
+  % 'copy loop':
+  \fill[blue] (7.6,0.3) circle (0.05);
+  \draw[->, draw = blue] (7.6,0.3) -- (7.8,0.3);
+  \draw (8.0, 0.3) node[right] {Copy loop};
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  
+  \fill[red] (10.1,0.6) circle (0.05);
+  \draw[-> , draw=red] (10.1,0.6) -- (10.3,0.6); 
+  \draw (10.4, 0.6) node[right] {Self-scan loop};
+
+  % Execution end: 
+  \fill[black] (10.2,0.3) circle (0.05);
+  \draw (10.4, 0.3) node[right] {Program Exit};
+
+
+\end{tikzpicture}
+```
+
+
+# Figure 5
+
+
+```{r fig.height=3, fig.width=4}
+msg <- require("Rstringmol")
+well.mixed.dynamics <- function(bprob,nsteps,initpop=100,maxt=20000,death=0.0005,lim=(125*100)){
+  
+  t <- 1
+  
+  pop <- vector(length=maxt)
+  bpop <- vector(length=maxt)
+  pop[] <- 0
+  bpop[] <- 0
+  pop[1] <- initpop
+  
+  
+  for(tt in 2:maxt){
+        
+        #decay
+        pop[tt]<- pop[tt-1]*(1-death)
+        bpop[tt]<- bpop[tt-1]*(1-death)
+  
+        #bind - count a pair of bound reactants as 1 in the bpop array - keeps the maths easier
+        bpop[tt] <- bpop[tt]+(0.5*(pop[tt]*bprob))
+        pop[tt]  <-  pop[tt]-((pop[tt]*bprob))
+              
+        #occupancy
+        occ <- pop[tt]+(2*bpop[tt])
+        
+        #birthrate is dependant upon occupancy, number of bound mols, and rep.rate
+        pop[tt] <- pop[tt] +(((lim-occ)/lim)  * (bpop[tt]) * (1/nsteps) )
+      
+        #unbinding after replication (assume replication and unbinding are the same rate)
+        pop[tt]  <- pop[tt]  + (2 * bpop[tt] * 1/nsteps)
+        bpop[tt] <- bpop[tt] - (bpop[tt] * 1/nsteps)
+  }
+  
+  return(data.frame(pop,bpop))
+}
+####
+ccplot <- function(drr,title,dox=F,doy=F){
+  maxt = 10000
+  lim = 125*100
+
+  #drr  <-  d2r
+  drr <- drr[drr$nobs > 1,]
+  drr$carrycap <- 0
+  
+  #todo: figure out how to avoid redoing this from scratch!
+  rp <- runReactionFP(c("WWGEWLHHHRLUEUWJJJRJXUUUDYGRHJLRWWRE$BLUBO^B>C$=?>$$BLUBO%}OYHOB","WWGEWLHHHRLUEUWJJJRJXUUUDYGRHJLRWWRE$BLUBO^B>C$=?>$$BLUBO%}OYHOB"))
+  d.seed <- well.mixed.dynamics(rp$bprob,rp$count,maxt = maxt)
+  
+  plot(x=seq(1:maxt), y=d.seed$pop+(2*d.seed$bpop),type="l",xlim=c(0,10000),ylim=c(0,lim*1.1),axes=F)#xlab="timesteps",ylab="population")
+  for(rr in 1:min(10,nrow(drr))){#nrow(d5rr)){
+    d.rr <- well.mixed.dynamics(drr$bprob[rr],drr$nsteps[rr],maxt = maxt)
+   
+    lines(x=seq(1:maxt),y=d.rr$pop+(2*d.rr$bpop),col="green") 
+    
+    drr$carrycap[rr]<-max(d.rr$bpop)
+  } 
+  title(main = title,line=-1.5)
+  lines(x=seq(1:maxt),y=d.seed$pop+(2*d.seed$bpop)) 
+  segments(x0=0,x1=20000,y0=lim,lty=2,col="red")
+  segments(x0=0,x1=20000,y0=(5671*2),lty=2,col="blue")
+  
+  if(dox){
+    axis(side=1)
+  }else{
+    axis(side=1,labels=F)
+  }
+  if(doy){
+    axis(side=2,labels=F)
+    axis(side=2)
+  }else{
+  }
+  
+}
+dts <- function(time,rd){
+  dt <- rd[[time/20000]]
+  dt <- dt[order(dt$nobs,decreasing = T),]
+  return(dt)
+}
+
+```
+
+fig dims were h=6,w=10 but text was too small in paper
+
+```{r ccplots,fig.height=4.8, fig.width=8}
+par(mfrow=c(2,3),oma=c(7,4,0,0)+0.1, mar = c(0,0,1,1) + 0.1)
+
+dt2  <- dts(90000,rundata)
+d2r  <- dt2[dt2$pp_SelfReplicator,]
+title <- "t1"
+ccplot(d2r,title,doy=T)
+
+dt2  <- dts(600000,rundata)
+d3r  <- dt2[dt2$pp_SelfReplicator,]
+title <- "t2"
+ccplot(d3r,title)
+
+dt3  <- dts(680000,rundata)
+d3r  <- dt3[dt3$pp_SelfReplicator,]
+title <- "t3"
+ccplot(d3r,title)
+
+dt4  <- dts(1080000,rundata)
+d4r  <- dt4[dt4$pp_SelfReplicator,]
+title <- "t4"
+ccplot(d4r,title,dox=T,doy=T)
+
+dt5  <- dts(1500000,rundata)
+d5r  <- dt5[dt5$pp_SelfReplicator,]
+title <- "t5"
+ccplot(d5r,title,dox=T)
+
+dt6  <- dts(2000000,rundata)
+d6r  <- dt6[dt6$pp_SelfReplicator,]
+title <- "t6"
+ccplot(d6r,title,dox=T)
+
+title(xlab = "Timesteps",
+      ylab = "Population",
+      outer = TRUE, line = 3)
+
+#Put legend as in the other fi
+# Legend
+par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
+plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n")
+legend("bottom",horiz=T,border = 'n',legend=c("arena size","carrying capacity","replicators","seed replicator"),lty=c(2,2,1,1),col=c("red","blue","green","black"),bty="n")
+
+mm <- dev.copy2pdf(file="figcctfinal.pdf")
+```
+
+
+# New versions of figure 4
+
+## Panel for t3
+
+```{r t3reactions,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,2.2);
+  %Names
+  \draw (0, 0.85) node[right] {String 1};
+  \draw (0,-0.85) node[right] {String 2};
+
+  %'title'
+  \draw (2, 2) node[right]{\scriptsize {\bf{\sffamily 4:}} Parasite resistance at t=1,080,000};
+  % dividing line
+  \draw[black!20!white] (-0.1,0) -- (6.5,0);
+
+
+
+  %'Self-self partner'
+  \fill[black!40!white] (0,1.5) rectangle (3.8,1.7);
+  % first scan loop:
+  \fill[red!40!white]   (0,1.5) rectangle (0.5,1.7);
+  % toggle
+  \fill[blue!40!white]  (1.0,1.5) rectangle (1.2,1.7);
+  % inactive loop:
+  %\fill[red!40!white] (1.2,1.5) rectangle (1.7,1.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,1.5) rectangle (2.5,1.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (2.5,1.5) rectangle (3.0,1.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.6,0.7);
+
+
+
+
+
+  %'Replicator'
+  \fill[black!40!white] (0,0.5) rectangle (3.8,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % toggle
+  \fill[blue!40!white] (1.0,0.5) rectangle (1.2,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (1.2,0.5) rectangle (1.7,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,0.5) rectangle (2.5,0.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (2.5,0.5) rectangle (3.0,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.6,0.7);
+
+
+
+  % Execution: 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->] (0.5,0.4) -- (1.0,0.4);
+  \draw[->] (1.0,0.4) -- (0,-0.4);
+  \draw[->] (0,-0.4) -- (1.1,-0.4);
+  \fill[red] (1.15,-0.4) circle (0.05);
+  \draw[-> , draw=red] (1.1,-0.4) -- (1.6,-0.4); 
+  \draw[->] (1.6,-0.4) -- (2.2,-0.4);
+  \fill (2.25,-0.4) circle (0.05);
+
+  % 'Parasite'
+  \filldraw[black!40!white] (0,-0.5) rectangle (2.5,-0.7);
+  \fill[red!40!white] (1.1,-0.5) rectangle (1.6,-0.7);
+
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.5,-0.7);
+
+\end{tikzpicture}
+```
+
+
+
+
+
+
+----
+
+## Notes on phylogenies
+
+- RNA world has high gene copy number, and interactions between non-self
+
+
+## Notes on stringmol 2
+
+- need to do this better! Have an 'origins' file - that doesn't break on restart
+- need to indicate whether (and where?) a point mutation has happened
+
+
+
+
+
+
+

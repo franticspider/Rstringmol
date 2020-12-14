@@ -1,0 +1,222 @@
+---
+title: "Completed Runs, and analysis plots"
+author: "Simon Hickinbotham"
+date: "21 July 2017"
+output: 
+  html_document: 
+    number_sections: no
+---
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Summary of plots: 
+
+- For each of the eight successful runs and the longest run for the 'slot-rand' config, I have plotted the following:
+    - YouTube animations
+    - Active vs Passive length plots
+    - Number of bound molecules
+    - Reaction Time ("beta")
+    - Simpson's diversity, for different proportions of the popluation, ranked by abundunce. High values for 10% (purple) indicate floods..?
+    
+# Events & Suggested times for flood studies
+
+I think I should look at two timesteps either side of some of the floods. I think the following are best: 
+
+- Run 1: flood ~9s (t=220k). Second flood at ~37s. Long "parasites" at 58s. Suggest study t = 1.5m and t = 1.9m
+- Run 2: flood ~9s (t=220k). Second flood at ~29s. Third flood at ~47s (t=1.13m).  Suggest study t = 1.0m and t = 1.5m
+- Run 3: short-long coexistence. Short wins. Flood at 58s (t=1.4m). Suggest study t=1.2m and t=1.7m
+- Run 4: flood ~24s (t=580k). Second flood at ~42s. Third flood at 50s (t=1.2m). Suggest study t=0.8m and t= 1.3m (and t=1.8m)
+- Run 5: flood ~25s (t=600k). Speed of movement appears to increase at 30s. Long parasites at 50s. Highly dynamic run! Suggest study t=0.7m and t=1.2m
+- Run 6: hypercycles at ~9s. Long "parasites" at 40s. Long replicators at 60s. Sugest study t=1.5m only
+- Run 7: flood at 55s. Three distinct patches at 75s. Jumpers appear to run in "advance" of the bloom, parasites behind. Extreme jumping at 42s. Suggest study t = 0.8m and t=1.3m 
+- Run 8: Flood at 37s (t=0.9m); 
+- Run 9: Find out what's going on at t=320k, just before extinction
+
+
+    
+
+
+
+
+```{r include=FALSE}
+require(rje)
+
+#source code: 
+source("../Rstringmol/R/diversityplot.R")
+source("../Rstringmol/R/violinplots.R")
+
+
+APLenPlot <- function(rundata,title,parasites=F){
+  #col <- rainbow(n=length(rundata)+ 10)
+  col <- cubeHelix(n=(1.2*length(rundata)))
+  plot(NA,xlab="Active length", ylab = "Passive length",xlim=c(0,200),ylim=c(0,200),main=title,asp=1)
+    segments(x0=0,y0=0,x1=200,y1=200)
+    segments(x0=0,y0=0,x1=200,y1=100)
+    segments(x0=0,y0=0,x1=100,y1=200)
+    segments(x0=65,y0=0,x1=65,y1=200,col="red")
+  for(rr in 1:length(rundata)){
+    pr <- rundata[[rr]]
+    if(parasites)
+      pr <- pr[pr$np_Parasite,]
+    else
+      pr <- pr[pr$np_MutualRepl,]
+    points(x=pr$actlen,y=pr$paslen,pch=19,cex=0.2+(0.5 * log(pr$nobs)),col=col[rr])
+  }
+}
+
+#' Function to generate *all* the plots below each youTube vid
+plotplots <- function(rd,divd,title){
+  load(rd)
+  par(      oma = c(5,5,2,0) + 0.1,
+            mar = c(0,0,4,4) + 0.1)
+  
+  layout(matrix(c(1,2,3,3,4,4,5,5), 4, 2, byrow = TRUE))
+  APLenPlot(rundata,title=sprintf("%s, Mutual Replications",title))
+  APLenPlot(rundata,title=sprintf("%s, Parasitic",title),parasites = T)
+  
+  par(mar = c(0,0,4,4)+0.1)
+  
+  sumvp(rundata,"nos",myylim=c(0,6000))
+  title("Numbers of bound molecules",line=-4)
+  sumvp(rundata,"beta")
+  title("Reaction time (beta)",line=-3)
+  
+  
+  load(divd)
+  diversityplot(cdata)
+  title("Simpson's diversity")
+  
+  #remove the loaded datasets
+  rm(rundata)
+  rm(cdata)
+}
+
+```
+
+
+
+----
+
+# Run 1: 125x100, block seed
+
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/UxZ3c6NDEe4" frameborder="0" allowfullscreen></iframe>
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/WuAv_-iipec" frameborder="0" allowfullscreen></iframe>
+
+```{r echo=FALSE, fig.height=12, fig.width=10}
+plotplots("rp1705smsp1.RData","div1705smsp1.Rdata","box-box replicate 1")
+```
+
+
+
+---- 
+
+
+
+# run 2
+
+
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/qzMC4aN7SRg" frameborder="0"  allowfullscreen></iframe><iframe width="400" height="500" src="https://www.youtube.com/embed/R2DbrIDl-og" frameborder="0"  allowfullscreen></iframe>
+
+```{r echo=FALSE, fig.height=12, fig.width=8.5}
+plotplots("rp1705smsp2.RData","div1705smsp2.Rdata","box-box replicate 2")
+```
+
+-------
+
+# Run 3
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/8onxqVtAKEs" frameborder="0" allowfullscreen></iframe><iframe width="400" height="500" src="https://www.youtube.com/embed/BtkpgIMrgpc" frameborder="0"  allowfullscreen></iframe>
+
+
+```{r echo=FALSE, fig.height=12, fig.width=8.5}
+plotplots("rp1705smsp3.RData","div1705smsp3.Rdata","box-box replicate 3")
+```
+
+----
+
+# Run 4
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/_3BKWf8KeTs" frameborder="0"         allowfullscreen></iframe><iframe width="400" height="500" src="https://www.youtube.com/embed/1a-Iy97dLlU" frameborder="0"  allowfullscreen></iframe>
+
+```{r echo=FALSE, fig.height=12, fig.width=8.5}
+plotplots("rp1705smsp5.RData","div1705smsp5.Rdata","box-box replicate 5")
+```
+
+----
+
+# Run 5 
+
+<iframe  width="400" height="500" src="https://www.youtube.com/embed/g59Z_i73U38" frameborder="0"  allowfullscreen>
+</iframe><iframe  width="400" height="500" src="https://www.youtube.com/embed/Eieme6UgmXc" frameborder="0" allowfullscreen></iframe>
+
+
+```{r echo=FALSE, fig.height=12, fig.width=8.5}
+plotplots("rp1705smspr2.RData","div1705smspr2.Rdata","box-rand replicate 2")
+```
+
+----
+
+# Run 6
+
+
+<iframe width="400" height="500" src="https://www.youtube.com/embed/X-denaujGw0" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe><iframe width="400" height="500" src="https://www.youtube.com/embed/CxZmAquvJlI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+
+```{r echo=FALSE, fig.height=12, fig.width=8.5}
+plotplots("rp1705smspr3.RData","div1705smspr3.Rdata","box-rand replicate 3")
+```
+
+----
+
+# Run 7 
+
+### 250x50, block seed replicate 4
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/-xLd_C2Cuas" frameborder="0"  allowfullscreen></iframe>
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/sbFVzCjbihw" frameborder="0"  allowfullscreen></iframe>
+
+
+```{r echo=FALSE, fig.height=12, fig.width=8.5}
+plotplots("rp1705sm2504.RData","div1705sm2504.Rdata","slot-box replicate 4")
+```
+
+----
+
+# Run 8 
+
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/Tbuwcpt1uEw" frameborder="0" allowfullscreen></iframe>
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/tRATTpQnmLU" frameborder="0" allowfullscreen></iframe>
+
+```{r echo=FALSE, fig.height=12, fig.width=8.5}
+plotplots("rp1705sm2505.RData","div1705sm2505.Rdata","slot-box replicate 5")
+```
+
+----
+
+# Run 9
+
+## 250x50, random seed
+
+### run 3
+*
+
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/SuMCD-EcAQQ" frameborder="0" allowfullscreen></iframe>
+<iframe width="1000" height="200" src="https://www.youtube.com/embed/_QsuVtPg93o" frameborder="0" allowfullscreen></iframe>
+
+
+
+```{r echo=FALSE, fig.height=12, fig.width=8.5}
+plotplots("rp1705sm250r4.RData","div1705sm250r3.Rdata","slot-rand replicate 3")
+```

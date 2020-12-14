@@ -1,0 +1,386 @@
+---
+title: "Ancestries"
+author: "Simon Hickinbotham"
+date: "10/06/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Strategies: 
+
+- plot
+- tikz
+- graphviz
+- ape
+
+# Issues
+
+- 
+
+# Functions
+
+We need a function to parse the 'raw' splist files: 
+
+
+```{r message=FALSE, warning=FALSE, cache=TRUE, eval = F}
+require(Rstringmol)
+source("../Rstringmol/R/splist_stats.R")
+
+makemanc <- function(froot){
+  
+  manc <- list()
+  ll=1
+  for(tt in seq(2000000,20000,-20000)){
+    df <- splist_stats(fn=sprintf("%ssplist%d.dat",froot,tt),verbose = F)
+    df$rectime <- tt
+    manc[[ll]] <- df
+    ll <- ll + 1
+  }
+  
+  require(data.table)
+  manc <- rbindlist(manc)
+  #unfortunately rbindlist converts strings to factors, so we have to fix that: 
+  manc <- data.frame(lapply(manc, as.character), stringsAsFactors=FALSE)
+  manc$spp <- as.numeric(manc$spp)
+  manc$act <- as.numeric(manc$act)
+  manc$pass <- as.numeric(manc$pass)
+  manc$obsn <- as.numeric(manc$obsn)
+  manc$obst1 <- as.numeric(manc$obst1)
+  manc$rectime <- as.numeric(manc$rectime)
+  manc$restart <- as.logical(manc$restart)
+  
+  return(manc)
+}
+
+
+anc1705smsp2 <- makemanc("~/Desktop/paulien/smsp/1705smsp/out2/")
+
+
+
+  
+#save(manc,file="manc1705smsp3.Rdata")
+```
+
+
+
+
+# Step 1: 2m down, simple plot
+
+Let's try a naive approach where we plot the ancestries of the top ten spp at 2m timesteps - this is mainly to get a feel for the size of the problem and get a graphical view of it. 
+
+We'll start with `box-box3` as that is a simple run with clear demarcation of the flood. We'll first try with the `splist_stats` function that we wrote over a year ago. Let's load all the data for that run into a list (this is a big step so it makes sense to cach this chunk)
+
+```{r message=FALSE, warning=FALSE, cache=TRUE, eval = F}
+require(Rstringmol)
+source("../Rstringmol/R/splist_stats.R")
+manc <- list()
+ll=1
+for(tt in seq(2000000,20000,-20000)){
+  df <- splist_stats(fn=sprintf("~/Desktop/paulien/smsp/1705smsp/out3/splist%d.dat",tt),verbose = F)
+  df$rectime <- tt
+  manc[[ll]] <- df
+  ll <- ll + 1
+}
+
+require(data.table)
+manc <- rbindlist(manc)
+#unfortunately rbindlist converts strings to factors, so we have to fix that: 
+manc <- data.frame(lapply(manc, as.character), stringsAsFactors=FALSE)
+manc$spp <- as.numeric(manc$spp)
+manc$act <- as.numeric(manc$act)
+manc$pass <- as.numeric(manc$pass)
+manc$obsn <- as.numeric(manc$obsn)
+manc$obst1 <- as.numeric(manc$obst1)
+manc$rectime <- as.numeric(manc$rectime)
+manc$restart <- as.logical(manc$restart)
+
+save(manc,file="manc1705smsp3.Rdata")
+```
+
+We also need to load the config file at t=2m to get the most numerous molecules and initialise the data frame:  
+
+```{r}
+load("rp1705smsp3.RData")
+load("manc1705smsp3.Rdata")
+
+r2m <- rundata[[2000000/20000]]
+r2m <- r2m[order(r2m$nobs,decreasing = T),]
+
+seqs <- unique(c(r2m$actseq[1:10],r2m$passeq[1:10]))
+
+anchead <- data.frame(idx=NA,seq=seqs,t=2000000,birtht=0,actparent=NA,pasparent=NA,stringsAsFactors = F)
+anchead$gen <- 0
+```
+
+
+Let's now find the parents of each of these molecules:
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+
+for(pp in 1:nrow(anchead)){
+  time = 2000000
+  idx<-0
+  found<-F
+  while(!found){
+    idx<- idx+1
+    
+    anc<-manc[manc$rectime == time,]
+    parents <- anc[anc$seq == anchead$seq[pp],]  
+    
+    if(nrow(parents)>1){
+      if(max(parents$obst1)>0){
+        found <- T
+        message(sprintf("Found parents of seq %s at time %d: %d and %d in splist %d",anchead$seq[pp], parents$obst1[1], parents$act[1], parents$pass[1],time))
+        
+        anchead$idx[pp]<- parents$spp[1]
+        anchead$birtht[pp]<-parents$obst1[1]
+        anchead$actparent[pp] <- parents$act[1]
+        anchead$pasparent[pp] <- parents$pass[1]
+                
+        break
+      }
+    }
+    
+    
+    if(idx>100)break
+    time = time - 20000
+  }
+}
+```
+Let's plot this information so we can get a feel for what we are looking at: 
+```{r}
+plot(x=anchead$actparent,y=anchead$birtht,ylim = c(min(anchead$birtht),2000000),xlim=range(c(anchead$idx,anchead$actparent,anchead$pasparent)),pch=19,col="red",cex=1.5,xlab="Species number",ylab="time")
+points(x=anchead$pasparent,y=anchead$birtht,pch=19,col="blue")
+points(x=anchead$idx,y=rep(2000000,nrow(anchead)),pch=19,col="green")
+points(x=anchead$idx,y=anchead$birtht,pch=19,col="green")
+segments(x0=anchead$idx,x1=anchead$actparent,y0=anchead$birtht,lwd=2,col="red")
+segments(x0=anchead$idx,x1=anchead$pasparent,y0=anchead$birtht,col="blue")
+segments(x0=anchead$idx,y0=anchead$birtht,y1=rep(2000000,nrow(anchead)),col="green")
+
+```
+
+OK, that's quite nice. So we can have an algorithm that works like this: 
+
+- Get molecules in the top $N$ reactions for time $t$ - put info in dataframe
+- For $g$ in $G$, the number of generations: 
+    - Call function to find the parent molecules
+    - append info to data frame
+    
+    
+Here are some helper functions that we can use to find our way around:     
+    
+```{r}
+
+getsppidx <- function(seq,data){
+  spent <- unique(data$spp[data$seq == seq])
+  
+  if(length(spent)>1)
+    message(sprintf("WARNING! More than one spp number found for %s - values are %d",seq,spent))
+  
+  return(spent[1])
+  
+}
+
+#TODO: Check that this works generally
+getidxdata <- function(idx,data){
+  spent <- unique(data[data$spp == idx,])
+  
+  rtimes <- unique(spent$rectime)
+  
+  spent <- spent[spent$rectime == min(rtimes),]
+  return(spent[1,])
+  
+}
+
+
+getseq <- function(idx,data){
+  spent <- unique(data$seq[data$spp == idx])
+  
+  if(length(spent)>1)
+    message(sprintf("WARNING! More than one spp number found for %s - values are %d",seq,spent))
+  
+  return(spent[1])
+  
+}
+
+# NB 'data' is HUGE here - copying this will slow things down a lot!
+getparentidx <- function(idx,data){
+  c <- data[data$spp == idx,]
+  c <- c[c$restart==F,]
+  c <- c[c$rectime == min(c$rectime),]
+  
+  # Assume first entry is the original reaction
+  res <- list()
+  res$actp <-c$act[1]
+  res$passp <-c$pass[1]
+  res$t <-c$obst1[1]
+  
+  return(res)
+}
+```
+
+...and here's a function for finding the sequences for the previous generation. 
+
+
+```{r message=FALSE, warning=FALSE}
+require(knitr)
+anctable <- function(head,time,data,ngen=3,verbose=T){
+  
+  
+  head$gen <- 0
+  
+  for(gg in 1:ngen){
+    gidx <- head$idx
+    
+    pidx <- unique(c(head$actparent,head$pasparent))
+    if(verbose)message(sprintf("Found %d unique parents for generation %d",length(pidx),gg))
+    #Now build the generation data: 
+    for(ii in 1:length(pidx)){
+      
+      idd<-getidxdata(pidx[ii],data)
+      message(sprintf("%d",ii))
+      message(sprintf("Recording details for %0.0f: %s",idd$spp,idd$seq))
+      
+      # idx, seq, t, birtht, actparent, pasparent
+      pd <- data.frame(stringsAsFactors = F,
+                       idx=pidx[ii],
+                       seq=idd$seq,
+                       t=max(unique(data$rectime[data$spp == pidx[ii]])),#idd$rectime,
+                       birtht=idd$obst1,
+                       actparent=idd$act,
+                       pasparent=idd$pass
+                       )
+      
+      if(ii==1)
+        newgen<-pd
+      else
+        newgen<-rbind(newgen,pd)
+    }
+    
+  }
+  
+  
+  return (newgen)
+}
+
+pd <- anctable(anchead,2000000,manc,ngen=1)
+```
+
+The output of the function is a table similar to the input: 
+
+
+```{r echo=FALSE}
+pd
+```
+   
+   
+   
+```{r}
+plotphyl <- function(phyl){
+  
+  plot(x=phyl$actparent,y=phyl$birtht,
+       ylim = c(min(phyl$birtht),2000000),
+       xlim=range(c(phyl$idx,phyl$actparent,phyl$pasparent)),
+       pch=19,col="red",cex=1.5,xlab="Species number",ylab="time")
+  
+  points(x=phyl$pasparent,y=phyl$birtht,pch=19,col="blue")
+  points(x=phyl$idx,y=phyl$t,pch=19,col="green")
+  points(x=phyl$idx,y=phyl$birtht,pch=19,col="green")
+  
+  segments(x0=phyl$idx,x1=phyl$actparent,y0=phyl$birtht,lwd=2,col="red")
+  segments(x0=phyl$idx,x1=phyl$pasparent,y0=phyl$birtht,col="blue")
+  segments(x0=phyl$idx,y0=phyl$birtht,y1=phyl$t,col="green")
+  
+  
+}
+
+plotphyl(pd[pd$birtht>-1,])
+```
+   
+Now let's add the nextgen function, which does a bit of tidying up outside the anctable function: 
+
+
+```{r fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+
+nextgen<- function(bigspeciestable,childspp,doplot=F){
+  
+  next.gen <- anctable(childspp[childspp$gen == max(childspp$gen) & childspp$trace,],2000000,bigspeciestable,ngen=1)
+  genno <- max(childspp$gen) + 1
+  next.gen$gen <- genno
+  
+  #remove entries in this gen that were also in previous gens: 
+  #p1[!(p1$idx %in% anchead$idx),]
+  next.gen <- next.gen[!(next.gen$idx %in% childspp$idx),]
+  
+  if(nrow(next.gen)>0){
+    
+    next.gen$trace <- T
+    
+    
+    #TODO: consider keeping these in but adding a "tracable" boolean field for which these would be false
+    #Don't trace rows with -1 birtht
+    next.gen$trace[next.gen$birtht == -1] <- F
+    #Don't trace rows where idx == actparent or pasparent
+    next.gen$trace[next.gen$idx == next.gen$actparent | next.gen$idx == next.gen$pasparent] <- F
+    
+    next.gen$t[!next.gen$trace] <- min(bigspeciestable$rectime[bigspeciestable$spp==next.gen$idx[!next.gen$trace]])
+    
+    
+    #childspp<-childspp[childspp$gen<(genno-1),]
+    childspp<-rbind(childspp,next.gen)
+    
+    
+    
+    for(ii in 1:nrow(childspp))childspp$t[ii] <- max(bigspeciestable$rectime[bigspeciestable$spp == childspp$idx[ii]])
+  }
+  
+  if(doplot){  
+    plotphyl(childspp[childspp$trace,])
+    title(main=sprintf("%d Speciations",genno))
+    
+    points(x=childspp$idx[!childspp$trace],y=childspp$t[!childspp$trace],pch=19,cex=2)
+  }
+  
+  return(childspp)
+}
+
+anchead$trace <- T
+#phyl <- nextgen(manc,anchead)
+```   
+   
+   
+   
+   To build this into a loop
+   
+```{r}
+
+phyl <- nextgen(manc,anchead)
+newrows<- nrow(phyl)
+depth<-0
+while(newrows>0){
+  oldr<- nrow(phyl)
+  phyl<-nextgen(manc,phyl,doplot=T)
+ 
+  newr<- nrow(phyl) 
+  
+  newrows <- newr-oldr
+  depth <- depth + 1
+  message(sprintf("Depth %d: Found %d new species",depth,newrows))
+  
+  
+}
+
+
+
+```
+   
+   
+   
+   
+   
+   
+  

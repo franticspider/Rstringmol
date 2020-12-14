@@ -1,0 +1,1114 @@
+---
+title: "Fig 4 version For 'Biology' Paper"
+author: "Simon Hickinbotham"
+date: "13/07/2020"
+output:
+  html_document:
+    code_folding: hide
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Reaction Diagrams
+```{r}
+plot(cars)
+```
+
+
+## Panel 5
+
+```{r floodt3,engine='tikz',fig.width=10, message=F, echo=F, cache=T}
+\begin{tikzpicture}[font=\sffamily\tiny]
+%\tikzset{>=latex}
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1.2);
+  %Names
+  \draw (0, 0.85) node[right] {String 1};
+  \draw (0,-0.85) node[right] {String 2};
+
+  %'title'
+  \draw (2, 1) node[right]{\scriptsize {\bf{\sffamily 5:}} Replicator reaction at t=1,500,000};
+  % dividing line
+  \draw[black!20!white] (-0.1,-0.1) -- (6.5,-0.1);
+
+  % 'ACTIVE MOLECULE'
+  \fill[black!40!white] (0,0.5) rectangle (3.4,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % toggle
+  \fill[blue!40!white] (0.7,0.5) rectangle (0.9,0.7);
+  % move
+  \fill[green!40!white] (1.2,0.5) rectangle (1.4,0.7);
+  % loop:
+  \fill[red!40!white] (2.0,0.5) rectangle (2.4,0.7);
+  % move
+  \fill[green!40!white] (2.2,0.5) rectangle (2.4,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,0.5) rectangle (2.5,0.7);
+  % 2nd scan loop:
+  %\fill[red!40!white] (3.1,0.5) rectangle (3.6,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.5,0.7);
+
+
+
+  % 'Execution:' 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->] (0.5,0.4) -- (0.7,0.4);
+
+  %first toggle and back:
+  \draw[->] (0.7,0.4) -- (0,-0.4);
+  \draw[->] (0,-0.4) -- (0.7,-0.4);
+  \draw[->] (0.7,-0.4) -- (0.8,0.4);
+
+  %toggle at move: 
+  \draw[->] (0.8,0.4) -- (1.2,0.4);
+  \draw[->] (1.2,0.4) -- (1.2,0.3) -- (0.1,0.3);
+  \draw[->] (0.1,0.3) -- (0.1,0.2) -- (0.7,0.2);
+  \draw[->] (0.7,0.2) -- (0.8,-0.4);
+  \draw[->] (0.8,-0.4) -- (1.2,-0.4);
+
+  %second toggle at move 
+  \draw[->] (1.2,-0.4) -- (0.1,0.1);
+  \draw[->] (0.1,0.1) -- (0.7,0.1);
+  \draw[->] (0.7,0.1) -- (1.3,-0.4);
+
+  %toggle at second move and copy loop:
+  \draw[->] (1.3,-0.4) -- (2.2,-0.4);
+  \draw[->] (2.2,-0.4) -- (2.0,0.35);
+  \draw[-> , draw=blue] (2.0,0.4) -- (2.4,0.4); 
+  \fill[blue] (2.0,0.4) circle (0.05);
+  
+  %cleave and end
+  \draw[->] (2.4,0.4) -- (2.95,0.4);
+  \fill (3.0,0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \fill[black!40!white] (0,-0.5) rectangle (3.4,-0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,-0.5) rectangle (0.5,-0.7);
+  % toggle
+  \fill[blue!40!white] (0.7,-0.5) rectangle (0.9,-0.7);
+  % move
+  \fill[green!40!white] (1.2,-0.5) rectangle (1.4,-0.7);
+  % loop:
+  \fill[red!40!white] (2.0,-0.5) rectangle (2.4,-0.7);
+  % move
+  \fill[green!40!white] (2.2,-0.5) rectangle (2.4,-0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,-0.5) rectangle (2.5,-0.7);
+  % 2nd scan loop:
+  %\fill[red!40!white] (3.1,-0.5) rectangle (3.6,-0.7);
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.5,-0.7);
+
+\end{tikzpicture}
+```
+
+## Panel 6
+
+```{r floodt6p, echo=FALSE, fig.width=10, message=FALSE, engine='tikz', cache=T}
+\begin{tikzpicture}[font=\sffamily\tiny]
+  %'canvas'
+  \fill[black!5!white] (0,-1) rectangle (6.4,1.2);
+  %Names
+  \draw (0, 0.85) node[right] {String 1};
+  \draw (0,-0.85) node[right] {String 2};
+
+  %'title'
+  \draw (2, 1) node[right]{\scriptsize {\bf{\sffamily 6:}} Parasitic reaction at t=2,000,000};
+  % dividing line
+  \draw[black!20!white] (-0.1,-0.1) -- (6.5,-0.1);
+
+
+
+  % 'ACTIVE MOLECULE'
+  \fill[black!40!white] (0,0.5) rectangle (0.7,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.4,0.7);
+  % toggle
+  \fill[blue!40!white] (0.4,0.5) rectangle (0.6,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.3,0.7);
+
+
+
+  % Parasite Execution: 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.4,0.4); 
+  \draw[->] (0.4,0.4) -- (0.45,0.4);
+  \draw[->] (0.45,0.4) -- (0,-0.4);
+  \draw[->] (0,-0.4) -- (1.0,-0.4);
+  \draw[->] (1.0,-0.4) -- (0.1,0.3);
+  \draw[->] (0.1,0.3) -- (0.45,0.3);
+  \draw[->] (0.45,0.3) -- (1.1,-0.4);
+  \draw[->] (1.1,-0.4) -- (1.5,-0.4);
+  \draw[->] (1.5,-0.4) -- (0.1,0.2);
+  %copy:
+  \draw[-> , draw=blue] (0,0.2) -- (0.4,0.2);   
+  \fill[blue] (0,0.2) circle (0.05);
+  \draw[->] (0.4,0.2) -- (0.45,0.2);
+  \draw[->] (0.45,0.2) -- (1.6,-0.4);
+  \draw[->] (1.6,-0.4) -- (1.95,-0.4);
+  \fill (2.0,-0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \fill[black!40!white] (0,-0.5) rectangle (2.2,-0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,-0.5) rectangle (0.4,-0.7);
+  % toggle
+  %\fill[blue!40!white] (0.7,-0.5) rectangle (0.9,-0.7);
+  % move
+  \fill[green!40!white] (1.0,-0.5) rectangle (1.2,-0.7);
+  \fill[green!40!white] (1.5,-0.5) rectangle (1.7,-0.7);
+
+\end{tikzpicture}
+```
+
+
+
+Here's the key to the tikz pictures: 
+
+```{r tikzkey,engine='tikz',fig.width=20, message=F, echo=F, cache=T}
+\begin{tikzpicture}[font=\sffamily\tiny]
+\usetikzlibrary{arrows.meta}
+\tikzset{>=latex}
+
+  %'canvas'
+  \fill[black!5!white] (0,-0.5) rectangle (6.4,1);
+
+  %Names
+  \draw (0, 0.85) node[right] {KEY};
+
+  \def\cxa{0.2}
+  \def\cxb{2.1}
+  \def\cxc{4.3}
+
+
+  % 'ACTIVE MOLECULE'
+  \fill[black!40!white] (\cxa,0.5) rectangle (\cxa+0.2,0.7);
+  \draw (\cxa+0.3, 0.6) node[right] {Program};
+
+  % 'bind site'
+  \draw[red] (\cxa,0.2) rectangle (\cxa+0.2,0.4);
+  \draw (\cxa+0.3, 0.3) node[right] {Bind Site};
+
+  % 'toggle'
+  \fill[blue!40!white] (\cxa,-0.1) rectangle (\cxa+0.2,0.1);
+  \draw (\cxa+0.3, 0) node[right] {Toggle};
+
+  % 'move'
+  \fill[green!40!white] (\cxa,-0.4) rectangle (\cxa+0.2,-0.2);
+  \draw (\cxa+0.3, -0.3) node[right] {Move};
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  % 'loop':
+  \fill[red!40!white] (\cxb,0.5) rectangle (\cxb+0.2,0.7);
+  \draw (\cxb+0.3, 0.6) node[right] {Loop};
+
+  % Execution start: 
+  \fill[green] (\cxb+0.1,0.3) circle (0.05);
+  \draw (\cxb+0.3, 0.3) node[right] {Program start};
+
+
+  % Execution path:
+  \draw[->] (\cxb-0.05,0.0) -- (\cxb+0.25,0.0);
+  \draw (\cxb+0.3, 0.0) node[right] {Execution path};
+
+  %'self scan loop'
+  \fill[red] (\cxb-0.05,-0.3) circle (0.05);
+  \draw[-> , draw=red] (\cxb,-0.3) -- (\cxb+0.25,-0.3); 
+  \draw (\cxb+0.3,-0.3) node[right] {Self-scan loop};
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+  % 'copy loop':
+  \fill[blue] (\cxc-0.05,0.6) circle (0.05);
+  \draw[->, draw = blue] (\cxc,0.6) -- (\cxc+0.25,0.6);
+  \draw (\cxc+0.3, 0.6) node[right] {Copy loop};
+
+
+  % Execution end: 
+  \fill[black] (\cxc+0.1,0.3) circle (0.05);
+  \draw (\cxc+0.3, 0.3) node[right] {Program end};
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  
+
+
+
+\end{tikzpicture}
+```
+
+
+
+# New versions of figure 4
+
+## Panel for t1
+
+Here's the parasite reaction at this timepoint:
+
+```{r}
+require(Rstringmol)
+rp <- runReactionFP(c("WWGEWLHHHRLUEUWJJJRJXUUUDYGRHJLRWWRE$BLUBO^B>C$=?>$$BLUBO%}OYHOB","WWGEWLHHHRYGRHJLRWWRE$BLUBO^ZB>C$=?>$$BLUBO%}OYHOB"))
+```
+
+t1 is 40,000
+
+```{r seedrepp,engine='tikz',fig.width=10, message=F, echo=F, cache=T}
+\begin{tikzpicture}[font=\sffamily\tiny]
+
+\usetikzlibrary{arrows.meta}
+\tikzset{>=latex}
+
+  %'canvas'
+  \fill[black!5!white] (-0.5,-1) rectangle (8.0,2.2);
+  %Names
+  \draw (-0.3, 1.6) node[right] {R};
+  \draw (-0.3, 0.6) node[right] {R};
+  \draw (-0.3,-0.6) node[right] {P};
+
+  %Names
+  %\draw (0, 0.85) node[right] {String 1};
+  %\draw (0,-0.85) node[right] {String 2};
+
+  %'title'
+  \draw (2, 2) node[right]{\scriptsize {Reactions at t1}};
+
+  %'Self-self partner'
+  \fill[black!40!white] (0,1.5) rectangle (6.4,1.7);
+  % copy loop:
+  \fill[red!40!white] (4.7,1.5) rectangle (5.2,1.7);
+  %bind site
+  \draw[red] (0,1.5) rectangle (1.6,1.7);
+
+  % 'Self-self Execution:' 
+  \fill[green] (1.65,0.8) circle (0.05);
+  \draw[->] (1.7,0.8) -- (4.7,0.8);
+  \fill[blue] (4.75,0.8) circle (0.05);
+  \draw[-> , draw=blue] (4.7,0.8) -- (5.2,0.8); 
+  \draw[->] (5.2,0.8) -- (5.9,0.8);
+  \fill (5.95,0.8) circle (0.05);
+
+
+  %'active molecule'
+  \fill[black!40!white] (0,0.5) rectangle (6.4,0.7);
+  % copy loop:
+  \fill[red!40!white] (4.7,0.5) rectangle (5.2,0.7);
+  %bind site
+  \draw[red] (1.7,0.5) rectangle (3.0,0.7);
+
+  % 'Execution:' 
+  \fill[green] (1.65,0.4) circle (0.05);
+  \draw[->] (1.7,0.4) -- (4.7,0.4);
+  \fill[blue] (4.75,0.4) circle (0.05);
+  \draw[-> , draw=blue] (4.7,0.4) -- (5.2,0.4); 
+  \draw[->] (5.2,0.4) -- (5.9,0.4);
+  \fill (5.95,0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \filldraw[black!40!white] (0,-0.5) rectangle (4.6,-0.7);
+  %bind site
+  \draw[red] (0,-0.5) rectangle (1.6,-0.7);
+
+  % 'Products'
+  \draw (6.26, 1.2) node[left] {R+R};
+  \draw (7.22, 1.2) node[right] {R+R+R};
+  \draw[-{Triangle[width=12pt,length=8pt]}, line width=6pt, draw=red!60!white](6.2,1.2) -- (7.2, 1.2);
+  \draw (6.4, 1.2  ) node[right] {230};
+
+  % 
+  \draw (6.26, 0  ) node[left] {R+P};
+  \draw[-{Triangle[width=12pt,length=8pt]}, line width=6pt, draw=red!60!white](6.2,0) -- (7.2, 0);
+  \draw (7.22, 0  ) node[right] {R+R+P};
+  \draw (6.4, 0  ) node[right] {188};
+
+
+\end{tikzpicture}
+```
+
+
+
+
+## Panel for t2
+
+```{r}
+# load rundata
+ load("/home/sjh518/git/Rstringmol/examples/rp1705smsp2v2.RData")
+rp2 <- rundata[[680000/20000]]
+rp2 <- rp2[order(rp2$nobs,decreasing = T),]
+rr <- runReactionFP(c("$=?>$$BUPOO^B$=?>D$BLU%}P=YH","$=?>$$BUPOO^B$=?>D$BLU%}P=YH"))
+rr$count
+
+rp2p <- rp2[rp2$np_Parasite & rp2$actseq == "$=?>$$BUPOO^B$=?>D$BLU%}P=YH",]
+rr <- runReactionFP(c("$=?>$$BUPOO^B$=?>D$BLU%}P=YH","$=?Q$$BUPO"))
+rr$count
+```
+
+
+parasite is l 1.0 ; t2 == 680,000
+
+
+```{r t2reactions,engine='tikz',fig.width=10, message=F, echo=F, cache=T}
+\begin{tikzpicture}[font=\sffamily\tiny]
+
+\usetikzlibrary{arrows.meta}
+\tikzset{>=latex}
+
+  %'canvas'
+  \fill[black!5!white] (-0.5,-1) rectangle (8.0,2.2);
+  %Names
+  \draw (-0.3, 1.6) node[right] {R};
+  \draw (-0.3, 0.6) node[right] {R};
+  \draw (-0.3,-0.6) node[right] {P};
+
+  %'title'
+  \draw (2, 2) node[right]{\scriptsize {Reactions at t2}};
+
+
+  %'Self-self partner'
+  \fill[black!40!white] (0,1.5) rectangle (2.8,1.7);
+  % first scan loop:
+  \fill[red!40!white]   (0,1.5) rectangle (0.5,1.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (1.2,1.5) rectangle (1.7,1.7);
+  %bind site
+  \draw[red] (0,1.5) rectangle (0.6,1.7);
+
+  % 'Self-self Execution:' 
+  \fill[green] (-0.1,0.8) circle (0.05);
+  \fill[red] (0,0.8) circle (0.05);
+  \draw[-> , draw=red] (0,0.8) -- (0.5,0.8); 
+  \draw[->, rounded corners = 0.5] (0.5,0.8) -- (1.0,0.8)
+  -- (1.15,0.8);
+  \fill[blue] (1.2,0.8) circle (0.05);
+  \draw[-> , draw=blue] (1.2,0.8) -- (1.7,0.8); 
+  \draw[->] (1.7,0.8) -- (2.45,0.8);
+  \fill (2.5,0.8) circle (0.05);
+
+  %'Replicator'
+  \fill[black!40!white] (0,0.5) rectangle (2.8,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (1.2,0.5) rectangle (1.7,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.6,0.7);
+
+  % Execution: 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->, rounded corners = 0.5] (0.5,0.4) -- (1.0,0.4)
+  -- (1.15,0.4);
+  \fill[blue] (1.2,0.4) circle (0.05);
+  \draw[-> , draw=blue] (1.2,0.4) -- (1.7,0.4); 
+  \draw[->] (1.7,0.4) -- (2.45,0.4);
+  \fill (2.5,0.4) circle (0.05);
+
+  % 'Parasite'
+  \filldraw[black!40!white] (0,-0.5) rectangle (1.1,-0.7);
+  \fill[red!40!white] (0,-0.5) rectangle (0.5,-0.7);
+
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.5,-0.7);
+
+
+  % 'Products'
+  \draw (6.26, 1.2) node[left] {R+R};
+  \draw[-{Triangle[width=12pt,length=8pt]}, line width=6pt, draw=red!60!white](6.2,1.2) -- (7.2, 1.2);
+  \draw (7.22, 1.2) node[right] {R+R+R};
+  \draw (6.4, 1.2  ) node[right] {183};
+
+  \draw (6.26, 0  ) node[left] {R+P};
+  \draw[-{Triangle[width=12pt,length=8pt]}, line width=6pt, draw=red!60!white](6.2,0) -- (7.2, 0);
+  \draw (7.22, 0  ) node[right] {R+P+P};
+  \draw (6.4, 0  ) node[right] {129};
+
+\end{tikzpicture}
+```
+
+## Panel for t3
+
+t3 = 680,000; t4 = 1,080,000
+```{r}
+# load rundata
+ load("/home/sjh518/git/Rstringmol/examples/rp1705smsp2v2.RData")
+rp2 <- rundata[[680000/20000]]
+rp2 <- rp2[order(rp2$nobs,decreasing = T),]
+rr <- runReactionFP(c("$=?>$$UPOO^A$=?>$$UPOO^B$=?>$BLUO%}=YH","$=?>$$UPOO^A$=?>$$UPOO^B$=?>$BLUO%}=YH"))
+rr$count
+
+rp2p <- rp2[rp2$np_Parasite & rp2$actseq == "$=?>$$UPOO^A$=?>$$UPOO^B$=?>$BLUO%}=YH",]
+rr <- runReactionFP(c("$=?>$$UPOO^A$=?>$$UPOO^B$=?>$BLUO%}=YH","$=?>$$BUPO^B$=?>D$BLU%}O=YH"))
+rr$count
+```
+
+
+```{r t4reactions,engine='tikz',fig.width=10, message=F, echo=F, cache=T}
+\begin{tikzpicture}[font=\sffamily\tiny]
+
+\usetikzlibrary{arrows.meta}
+\tikzset{>=latex}
+
+  %'canvas'
+  \fill[black!5!white] (-0.5,-1) rectangle (8.0,2.2);
+  %Names
+  \draw (-0.3, 1.6) node[right] {R};
+  \draw (-0.3, 0.6) node[right] {R};
+  \draw (-0.3,-0.6) node[right] {P};
+
+  %'title'
+  \draw (2, 2) node[right]{\scriptsize {Reactions at t3}};
+
+
+  %'Self-self partner'
+  \fill[black!40!white] (0,1.5) rectangle (3.8,1.7);
+  % first scan loop:
+  \fill[red!40!white]   (0,1.5) rectangle (0.5,1.7);
+  % toggle
+  \fill[blue!40!white]  (1.0,1.5) rectangle (1.2,1.7);
+  % inactive loop:
+  %\fill[red!40!white] (1.2,1.5) rectangle (1.7,1.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,1.5) rectangle (2.5,1.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (2.5,1.5) rectangle (3.0,1.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.6,0.7);
+
+  % 'Self-self Execution:' 
+  \fill[green] (-0.1,0.8) circle (0.05);
+  \fill[red] (0,0.8) circle (0.05);
+  \draw[-> , draw=red] (0,0.8) -- (0.5,0.8); 
+  \draw[->, rounded corners = 0.5] (0.5,0.8) -- (1.0,0.8)
+  -- (0,1.4)
+  -- (1.0,1.4)
+  -- (1.1,0.8)
+  -- (2.5,0.8);
+  \fill[blue] (2.55,0.8) circle (0.05);
+  \draw[-> , draw=blue] (2.5,0.8) -- (3.0,0.8); 
+  \draw[->] (3.0,0.8) -- (3.4,0.8);
+  \fill (3.45,0.8) circle (0.05);
+
+  %'Replicator'
+  \fill[black!40!white] (0,0.5) rectangle (3.8,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % toggle
+  \fill[blue!40!white] (1.0,0.5) rectangle (1.2,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (1.2,0.5) rectangle (1.7,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,0.5) rectangle (2.5,0.7);
+  % 2nd scan loop:
+  \fill[red!40!white] (2.5,0.5) rectangle (3.0,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.6,0.7);
+
+  % Execution: 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->, rounded corners = 0.5] (0.5,0.4) -- (1.0,0.4)
+  -- (0,-0.4)
+  -- (1.1,-0.4);
+  \fill[red] (1.15,-0.4) circle (0.05);
+  \draw[-> , draw=red] (1.1,-0.4) -- (1.6,-0.4); 
+  \draw[->] (1.6,-0.4) -- (2.2,-0.4);
+  \fill (2.25,-0.4) circle (0.05);
+
+  % 'Parasite'
+  \filldraw[black!40!white] (0,-0.5) rectangle (2.5,-0.7);
+  \fill[red!40!white] (1.1,-0.5) rectangle (1.6,-0.7);
+
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.5,-0.7);
+
+
+  % 'Products'
+  \draw (6.26, 1.2) node[left] {R+R};
+  \draw[-{Triangle[width=12pt,length=8pt]}, line width=6pt, draw=red!60!white](6.2,1.2) -- (7.2, 1.2);
+  \draw (7.11, 1.2) node[right] {R+R+R};
+  \draw (6.4, 1.2  ) node[right] {262};
+
+  \draw (6.26, 0  ) node[left] {R+P};
+  \draw[-{Triangle[width=12pt,length=8pt]}, line width=6pt, draw=black!30!white](6.2,0) -- (7.2, 0);
+  \draw (7.11, 0  ) node[right] {R+P};
+  \draw (6.4, 0  ) node[right] {218};
+
+\end{tikzpicture}
+```
+
+
+
+
+## Panel for t5
+
+
+t3 = 680,000; t4 = 1,080,000
+```{r}
+# load rundata
+ load("/home/sjh518/git/Rstringmol/examples/rp1705smsp2v2.RData")
+rp2 <- rundata[[1500000/20000]]
+rp2 <- rp2[order(rp2$nobs,decreasing = T),]
+rr <- runReactionFP(c("$=?>DIO^ABL>VOO^BB=>$BLUO%}=YH","$=?>DIO^ABL>VOO^BB=>$BLUO%}=YH"))
+rr$count
+
+rp2p <- rp2[rp2$np_Parasite & rp2$actseq == "$=?>DIO^ABL>VOO^BB=>$BLUO%}=YH",]
+rr <- runReactionFP(c("$=?>DIO^ABL>VOO^BB=>$BLUO%}=YH","$=?>$$BUPO^B$=?>D$BLU%}O=YH"))
+rr$count
+```
+
+```{r t5reactions,engine='tikz',fig.width=10, message=F, echo=F, cache=T}
+\begin{tikzpicture}[font=\sffamily\tiny]
+
+\usetikzlibrary{arrows.meta}
+\tikzset{>=latex}
+
+  %'canvas'
+  \fill[black!5!white] (-0.5,-1) rectangle (8.0,2.2);
+  %Names
+  \draw (-0.3, 1.6) node[right] {R};
+  \draw (-0.3, 0.6) node[right] {R};
+  \draw (-0.3,-0.6) node[right] {P};
+
+  %'title'
+  \draw (2, 2) node[right]{\scriptsize {Reactions at t5}};
+
+
+  %'Self-self partner'
+  \fill[black!40!white] (0,1.5) rectangle (3.4,1.7);
+  % first scan loop:
+  \fill[red!40!white] (0,1.5) rectangle (0.5,1.7);
+  % toggle
+  \fill[blue!40!white] (0.7,1.5) rectangle (0.9,1.7);
+  % move
+  \fill[green!40!white] (1.2,1.5) rectangle (1.4,1.7);
+  % loop:
+  \fill[red!40!white] (2.0,1.5) rectangle (2.4,1.7);
+  % move
+  \fill[green!40!white] (2.2,1.5) rectangle (2.4,1.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,1.5) rectangle (2.5,1.7);
+  % 2nd scan loop:
+  %\fill[red!40!white] (3.1,1.5) rectangle (3.6,1.7);
+  %bind site
+  \draw[red] (0,1.5) rectangle (0.5,1.7);
+
+  % 'Self-self Execution:' 
+  \fill[green] (-0.1,0.8) circle (0.05);
+  \fill[red] (0,0.8) circle (0.05);
+  \draw[-> , draw=red] (0,0.8) -- (0.5,0.8); 
+
+  \draw[->, rounded corners = 0.5] (0.5,0.8) -- (0.7,0.8)
+  %'first toggle and back:'
+   -- (0  , 1.4)
+   -- (0.7, 1.4)
+  %'toggle at move:' 
+   -- (0.8,0.8) -- (1.2,0.8)
+   -- (1.2,0.8) -- (1.2,0.9) -- (0.1,0.9)
+   -- (0.1,1.0) -- (0.7,1.0)
+   -- (0.8,1.4)
+   -- (1.2,1.4)
+  %'second toggle at move' 
+   -- (0.1,1.1)
+   -- (0.7,1.1)
+   -- (1.3,1.4)
+
+  %toggle at second move and copy loop:
+   -- (2.2,1.4)
+   -- (2.0,0.85);
+  \draw[-> , draw=blue] (2.0,0.8) -- (2.4,0.8); 
+  \fill[blue] (2.0,0.8) circle (0.05);
+  
+  %cleave and end
+  \draw[->] (2.4,0.8) -- (2.95,0.8);
+  \fill (3.0,0.8) circle (0.05);
+
+
+  %\draw[->] (0.5,0.8) -- (1.0,0.8);
+  %\draw[->] (1.0,0.8) -- (0,1.4);
+  %\draw[->] (0,1.4) -- (1.0,1.4);
+  %\draw[->] (1.0,1.4) -- (1.1,0.8);
+  %\draw[->] (1.1,0.8) -- (2.5,0.8);
+  %\fill[blue] (2.55,0.8) circle (0.05);
+  %\draw[-> , draw=blue] (2.5,0.8) -- (3.0,0.8); 
+  %\draw[->] (3.0,0.8) -- (3.4,0.8);
+  %\fill (3.45,0.8) circle (0.05);
+
+  %'Replicator'
+  % 'ACTIVE MOLECULE'
+  \fill[black!40!white] (0,0.5) rectangle (3.4,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.5,0.7);
+  % toggle
+  \fill[blue!40!white] (0.7,0.5) rectangle (0.9,0.7);
+  % move
+  \fill[green!40!white] (1.2,0.5) rectangle (1.4,0.7);
+  % loop:
+  \fill[red!40!white] (2.0,0.5) rectangle (2.4,0.7);
+  % move
+  \fill[green!40!white] (2.2,0.5) rectangle (2.4,0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,0.5) rectangle (2.5,0.7);
+  % 2nd scan loop:
+  %\fill[red!40!white] (3.1,0.5) rectangle (3.6,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.5,0.7);
+
+  % 'Execution:' 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.5,0.4); 
+  \draw[->, rounded corners = 0.5] (0.5,0.4) -- (0.7,0.4)
+
+  %first toggle and back:
+   -- (0,-0.4)
+   -- (0.7,-0.4)
+   -- (0.8,0.4)
+
+  %toggle at move: 
+   -- (1.2,0.4)
+   -- (1.2,0.3) -- (0.1,0.3)
+   -- (0.1,0.2) -- (0.7,0.2)
+   -- (0.8,-0.4)
+   -- (1.2,-0.4)
+
+  %second toggle at move 
+   -- (0.1,0.1)
+   -- (0.7,0.1)
+   -- (1.3,-0.4)
+
+  %toggle at second move and copy loop:
+   -- (1.95,-0.4);
+  \draw[-> , draw=red] (2.0,-0.4) -- (2.4,-0.4); 
+  \fill[red] (2.0,-0.4) circle (0.05);
+  
+  %cleave and end
+  \draw[->] (2.4,-0.4) -- (2.65,-0.4);
+  \fill (2.7,-0.4) circle (0.05);
+
+  % 'Passive molecule'
+  \fill[black!40!white] (0,-0.5) rectangle (2.7,-0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,-0.5) rectangle (0.5,-0.7);
+  % toggle
+  \fill[blue!40!white] (0.7,-0.5) rectangle (0.9,-0.7);
+  % move
+  \fill[green!40!white] (1.2,-0.5) rectangle (1.4,-0.7);
+  % loop:
+  \fill[red!40!white] (2.0,-0.5) rectangle (2.4,-0.7);
+  % inactive loop:
+  %\fill[red!40!white] (2.0,-0.5) rectangle (2.5,-0.7);
+  % 2nd scan loop:
+  %\fill[red!40!white] (3.1,-0.5) rectangle (3.6,-0.7);
+  %bind site
+  \draw[red] (0,-0.5) rectangle (0.5,-0.7);
+
+  % 'Products'
+  \draw (6.26, 1.2) node[left] {R+R};
+  \draw[-{Triangle[width=12pt,length=8pt]}, line width=6pt, draw=red!60!white](6.2,1.2) -- (7.2, 1.2);
+  \draw (7.11, 1.2) node[right] {R+R+R};
+  \draw (6.4, 1.2  ) node[right] {224};
+
+  \draw (6.26, 0  ) node[left] {R+P};
+  \draw[-{Triangle[width=12pt,length=8pt]}, line width=6pt, draw=black!30!white](6.2,0) -- (7.2, 0);
+  \draw (7.11, 0  ) node[right] {R+P};
+  \draw (6.4, 0  ) node[right] {191};
+
+\end{tikzpicture}
+```
+
+# Figure for t6 
+
+```
+##     n                   active                  passive    sR     P
+## 1 671  $=?>^AHCL>Q^B>$BLU%G}YH  $=?>^AHCL>Q^B>$BLU%G}YH  TRUE FALSE
+## 2 181    $=?>^ACL>Q^B>$BLU%GOY    $=?>^ACL>Q^B>$BLU%GOY  TRUE FALSE
+## 3 147 $=?D}ICAT>V^BC>$UO%}UYNH $=?D}ICAT>V^BC>$UO%}UYNH FALSE FALSE
+## 4 117   $=?D}ICAT>V^BC>$UP%}UY   $=?D}ICAT>V^BC>$UP%}UY FALSE FALSE
+## 5 116    $=?>^ACL>Q^B>$BLU%G}Y    $=?>^ACL>Q^B>$BLU%G}Y  TRUE FALSE
+## 6  93                  $=?>^AC   $=?D}ICAT>V^BC>$UP%}UY FALSE  TRUE
+## 7  84    $=?V>DJ^A>W^B>$UO%UYH $=?D}ICAT>V^BC>$UO%}UYNH FALSE  TRUE
+```
+
+- Row 1 is a self-replicator and has immunity to `BBB`. 
+- Row 2 has the `ZAA` molecule I've been investigating w.r.t `BBB`
+
+
+```{r t6reactions,engine='tikz',fig.width=10, message=F, echo=F}
+\begin{tikzpicture}[font=\sffamily\tiny]
+
+\usetikzlibrary{arrows.meta}
+\tikzset{>=latex}
+
+  %'canvas'
+  \fill[black!5!white] (-1.0,-2.2) rectangle (7.5,2.2);
+  %Names
+  \draw (-0.01, 1.6) node[left] {ZAA};
+  \draw (-0.01, 0.6) node[left] {ZAA};
+  \draw (-0.01,-0.4) node[left] {BBB};
+  \draw (-0.01,-1.4) node[left] {Z};
+  \draw (-0.01,-1.9) node[left] {AABBB};
+
+  %'title'
+  \draw (2, 2) node[right]{\scriptsize {Reactions at t6}};
+
+
+  %'Self-self partner'
+  \fill[black!40!white] (0,1.5) rectangle (2.2,1.7);
+  % first scan loop:
+  \fill[red!40!white] (0,1.5) rectangle (0.4,1.7);
+  % toggle
+  \fill[blue!40!white] (0.5,1.5) rectangle (0.7,1.7);
+  % move
+  \fill[green!40!white] (0.8,1.5) rectangle (1.0,1.7);
+  % move
+  \fill[green!40!white] (1.2,1.5) rectangle (1.4,1.7);
+  %bind site
+  \draw[red] (0,1.5) rectangle (0.5,1.7);
+
+
+  % 'Self-self Execution:' 
+  \fill[green] (-0.1,0.8) circle (0.05);
+  \fill[red] (0,0.8) circle (0.05);
+  \draw[-> , draw=red] (0,0.8) -- (0.4,0.8); 
+  %'Toggle path'
+  \draw[->, rounded corners = 0.5] (0.4,0.8) -- (0.5,0.8)
+  %'first toggle and back:'
+   -- (0.1, 1.4)
+   -- (0.5, 1.4)
+  %'toggle at move:' 
+   -- (0.6,0.8) -- (0.8,0.8)
+   -- (0.8,0.875) -- (0.1,0.875)
+   -- (0.1,0.95) -- (0.7,0.95)
+   -- (0.6,1.4)
+   -- (0.8,1.4)
+  %'second toggle at move' 
+   -- (0.1,1.025)
+   -- (0.7,1.025)
+   -- (0.9,1.4)
+  %'third toggle at move' 
+   -- (1.2,1.4)
+   -- (0.1,1.2)
+   -- (0.1,1.1);
+
+  %'copy loop:'
+  \draw[-> , draw=blue] (0.1,1.1) -- (0.4,1.1); 
+  \fill[blue] (0.1,1.1) circle (0.05);
+  
+  %cleave and end
+  \draw[->, rounded corners = 0.5] (0.4,1.1) -- (1.3,1.4)--(1.65,1.4);
+  \fill (1.7,1.4) circle (0.05);
+
+
+  %'Replicator'
+  % 'ZAA as ACTIVE MOLECULE'
+  \fill[black!40!white] (0,0.5) rectangle (2.2,0.7);
+  % first scan loop:
+  \fill[red!40!white] (0,0.5) rectangle (0.4,0.7);
+  % toggle
+  \fill[blue!40!white] (0.5,0.5) rectangle (0.7,0.7);
+  % move
+  \fill[green!40!white] (0.8,0.5) rectangle (1.0,0.7);
+  % move
+  \fill[green!40!white] (1.2,0.5) rectangle (1.4,0.7);
+  %bind site
+  \draw[red] (0,0.5) rectangle (0.5,0.7);
+
+
+
+  % 'Execution:' 
+  \fill[green] (-0.1,0.4) circle (0.05);
+  \fill[red] (0,0.4) circle (0.05);
+  \draw[-> , draw=red] (0,0.4) -- (0.4,0.4); 
+  \draw[->, rounded corners = 0.5] (0.4,0.4) -- (0.5,0.4)
+
+  %first toggle and back:
+   -- (0.1,-0.2)
+   -- (1.0,-0.2)
+   -- (0.1, 0.325)
+  %second toggle and back:
+   -- (0.4, 0.325)
+   -- (1.1,-0.2)
+   -- (1.5,-0.2)
+   -- (0.1,0.15)
+   -- (0.1,0.2)
+  ;
+  %'copy loop:'
+  \draw[-> , draw=blue] (0.1,0.25) -- (0.4,0.25); 
+  \fill[blue] (0.1,0.25) circle (0.05);
+
+
+  \draw[->, rounded corners = 0.5] (0.4,0.25) -- (1.6,-0.2)
+  -- (1.85,-0.2)
+  ;
+
+  %cleave and end
+  \fill (1.9,-0.2) circle (0.05)
+  ;
+
+  % 'Passive molecule BBB'
+  \fill[black!40!white] (0,-0.3) rectangle (2.3,-0.5);
+  % move
+  \fill[green!40!white] (1.0,-0.3) rectangle (1.2,-0.5);
+  % move
+  \fill[green!40!white] (1.5,-0.3) rectangle (1.7,-0.5);
+  % loop:
+  %\fill[red!40!white] (2.0,-0.3) rectangle (2.4,-0.5);
+  %'bind site'
+  %\draw[red] (0,-0.3) rectangle (0.3,-0.5);
+
+
+  % 'Execution:' 
+  \fill[green] (-0.1,-1.2) circle (0.05);
+  \fill[red] (0,-1.2) circle (0.05);
+  \draw[-> , draw=red] (0,-1.2) -- (0.4,-1.2); 
+
+
+  \draw[->, rounded corners = 0.5] (0.4,-1.2) -- (0.5,-1.2)
+  %%first toggle and ba
+   -- (0.1,-0.6)
+   -- (1.0,-0.6)
+   -- (0.1, -1.125)
+  %%second toggle and back:
+   -- (0.4, -1.125)
+   -- (1.1,-0.6)
+   -- (1.5,-0.6)
+   -- (0.1, -0.9)
+   -- (0.1, -1.0)
+  ;
+
+  %%'copy loop:'
+  \draw[-> , draw=blue] (0.1,-1.025) -- (0.4,-1.025); 
+  \fill[blue] (0.1,-1.025) circle (0.05);
+
+
+  \draw[->, rounded corners = 0.5] (0.4,-1.025) -- (1.6,-0.6)
+  -- (1.85,-0.6)
+  ;
+
+  %%cleave and end
+  \fill (1.9,-0.6) circle (0.05)
+  ;
+
+
+  % 'Passive molecule Z'
+  \def\aa{-1.3}
+  \def\bb{-1.5}
+  \fill[black!40!white] (0,\aa) rectangle (0.8,\bb);
+  % first scan loop:
+  \fill[red!40!white] (0,\aa) rectangle (0.4,\bb);
+  % toggle
+  \fill[blue!40!white] (0.5,\aa) rectangle (0.7,\bb);
+
+
+  % 'Passive molecule AABBB'
+  % ZAA is 2.2; Z is 0.8; BBB is 2.3
+  \def\aa{-1.8}
+  \def\bb{-2.0}
+  \fill[black!40!white] (0,\aa) rectangle (3.5,\bb);
+  % move AA 
+  \fill[green!40!white] (0,\aa) rectangle (0.2,\bb);
+  % move AA
+  \fill[green!40!white] (0.4,\aa) rectangle (0.6,\bb);
+  % move
+  \fill[green!40!white] (1.8,\aa) rectangle (2,\bb);
+  % move
+  \fill[green!40!white] (2.3,\aa) rectangle (2.5,\bb);
+  % loop:
+  %\fill[red!40!white] (2.0,\aa) rectangle (2.4,\bb);
+  %'bind site'
+  %\draw[red] (0,\aa) rectangle (0.3,\bb);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  % 'Products of ZAA-ZAA'
+  \draw (4.49, 1.1) node[left] {ZAA+ZAA};
+  \draw[-{Triangle[width=12pt,length=8pt]}, line width=6pt, draw=red!60!white](4.5,1.1) -- (5.5, 1.1);
+  \draw (5.51, 1.1) node[right] {ZAA+ZAA+ZAA};
+  \draw (4.7,  1.1  ) node[right] {157};
+
+
+  % 'Products of ZAA-BBB'
+  \draw (4.49, 0.1  ) node[left] {ZAA+BBB};
+  \draw[-{Triangle[width=12pt,length=8pt]}, line width=6pt, draw=black!30!white](4.5,0.1) -- (5.5, 0.1);
+  \draw (5.51, 0.1  ) node[right] {Z+BBB+AABBB};
+  \draw (4.7,  0.1  ) node[right] {150};
+
+
+  % 'Products of Z-BBB'
+  \draw (4.49, -0.9  ) node[left] {Z+BBB};
+  \draw[-{Triangle[width=12pt,length=8pt]}, line width=6pt, draw=red!60!white](4.5,-0.9) -- (5.5, -0.9);
+  \draw (5.51, -0.9  ) node[right] {Z+BBB+BBB};
+  \draw (4.7, -0.9  ) node[right] {108};
+
+\end{tikzpicture}
+```
+
+# Pauien's questions about BBB
+
+*This BBB parasite is haunting me in my sleep! Where did it come from? In the notation BBB is does not seem a close relative of the prevalent replicator,...as the parasite non-lineage would suggest. Might be from a very separate replicator..?*
+
+This is correct, as shown below
+
+*Also more intriguing still - Could it be called a self-reflective replicator, needing a "primer" (which can be anybody but BBB) and sometimes destroying it (as ZAA)?*
+
+Yes I think I see what you mean - there is an emboidied logical check as to whether self-scan has occurred or not, encoded in the sequence `?A}`. A reductionist view would be that it's just the function of this arrangement of opcodes, but the facility this gives BBB does make it appear to be "reasoning" about whether to terminate the reaction early. 
+
+*Finally, but less important, who is, according to your classification the parent of AABBB?*
+
+I guess if you approach this issue with a machine-role vs template-role mindset it is a tricky question - you'd expect the template to be the parent usually. But stringmols are like Ribozymes: the machine or template role is context-dependant, which is why Susan and I are tyring to adopt the idea that the reaction is the entity, not the input molecules. With this mindset it becomes easier to accept that both molecules have template roles - BBB is 'full' template, ZAA is 'partial' template, and the shared machinery of both makes this particular product.
+
+If your question is more about the non-catalytic nature of the reaction (since ZAA is )
+
+Also: apologies - I messed  up the position of AABBB in the table - it should be: 
+
+
+5       ZAA        BBB      |    Z          BBB     AABBB
+
+*Where did it come from?*
+
+A self replicator with sequence 507074 `$=?>DI^AT>V^BC>$UO%}UYNH` does a deletion during self-scan which prevents the cleave operation and has the resulting sequence: `$=?DI^AT>V^BC>$UO%}UYNH$=?>DI^AT>V^BC>$UO%}UYNH` This reacts again with 507074 which appends 507074 to the end and then truncates in the wrong place as shown below: 
+
+I've aligned the sequences below where it helps the explanation
+
+```
+$=?>D-I^AT>V^BC>$UO%}UYNH                          507074 is a functioning replicator
+$=?>D-I^AT>V^BC>$UO%}UYNH$=?>DI^AT>V^BC>$UO%}UYNH  507074 is repeated due to a missed cleave via a deletion during self-scan
+   -
+$=?-D-I^AT>V^BC>$UO%}UYNH$=?>DI^AT>V^BC>$UO%}UYNH  524609 - off-centre cleave of the above
+
+$=?-D-I$AT>V^BC>$UO%}UYNH                          524673 - truncation 
+     +
+$=?-D}I$AT>V^BC>$UO%}UYNH                          546808 - point insertion
+       |
+$=?-D}ICAT>V^BC>$UO%}UYNH                          550209 - point mutation
+                  |
+$=?-D}ICAT>V^BC>$UP%}UYNH                          554054 - point mutation
+
+$=?-D}ICAT>V^BC>$UP%}UYNH$=?>^ACL>Q^B>$BLU%G}Y     568046 - concat due to missed cleave
+
+$=?-D}ICAT>V^BC>$UP%}UY                            BBB
+```
+
+
+```
+$=?>D-I^AT>V^BC>$UO%}UYNH 
+   - + |          |
+$=? D}ICAT>V^BC>$UP%}UY
+```
+
+
+It's quite interesting that this is a lineage of sorts, and it reveals that our classification of lineages is potentially tweakable.  At the moment we calculate the "length" of the lineage as an unbroken chain of parasitic reactions. But 
+
+
+*Timeline:*
+
+The timelines below indicate the origin time of the molecules shown above
+
+- **1,790,981:** deletion during self scan of self-replicator 507074 causes 'doubling up', but keeps the deletion in one of the repeats
+- **1,791,163:** truncation of the doubled  524673,524609,507074,0.000000,1,1791163,0,$=?DI^AT>V^BC>$UO%}UYNH`
+- **1,878,154:** point insertion of the `}` opcode to make 546808
+550209,530406,546808,0.000000,1,1892082,48,$=?D}ICAT>V^BC>$UO%}UYNH`
+
+- **~1,910,000:** point mutation 
+- **1,949,483:** concat with self-replicator `$=?>^ACL>Q^B>$BLU%G}Y$=?D}ICAT>V^BC>$UP%}UYNH`
+- **1,951,006:** molecule BBB: `$=?D}ICAT>V^BC>$UP%}UY`
+
+
+
+
+
+
+
+
+
+
+## Fine Details (these will need tidying up if someone else is to understand them: 
+
+BBB has sequence 
+`$=?D}ICAT>V^BC>$UP%}UY`, which is species number 568125, produced from 568046:
+`$=?D}ICAT>V^BC>$UP%}UYNH$=?>^ACL>Q^B>$BLU%G}Y` and ,546986:
+`                        $=?>^ACL>Q^B>$BLU%G}Y`
+
+Here's the "Origin Line" in the log:
+
+`568125,568046,546986,0.000000,17,1951006,0,$=?D}ICAT>V^BC>$UP%}UY`
+
+To use the three-letter notation combined with, this reaction is as follows 
+
+[BBBCC,AAA] -> [BBB,AAA],CCAAA
+
+Here, AAA is a self-replicator and BBBCC has the following self-self reaction:
+
+[BBBCC,BBBCC] -> [BBB,BBBCC],CCCC
+
+So we need to follow the origin of BBBCC(568046) which has sequence
+`$=?D}ICAT>V^BC>$UP%}UYNH$=?>^ACL>Q^B>$BLU%G}Y`, and is produced from 567729:
+`                        $=?>^ACL>Q^B>$BLU%G}Y$=?D}ICAT>V^BC>$UP%}UYNH` and ,546986, which we have seen above
+
+567729 is *not* a self-replictor - it's another concatenate/truncate behaviour - part of the cascade of reactions that lead to BBB. It's origin record is: 
+
+`567729,546986,554054,0.000000,240,1949483,47,$=?>^ACL>Q^B>$BLU%G}Y$=?D}ICAT>V^BC>$UP%}UYNH`
+
+Thus we see that the origin of 567729 is *another* reaction with 546986 as the active molecule, but with 554054 as the passive. This has the sequence
+`$=?D}ICAT>V^BC>$UP%}UYNH` - identical to BBB apart from the extra two n-ops at the end. 
+
+`554054,-1,-1,2,$=?D}ICAT>V^BC>$UP%}UYNH`
+
+Just before `t=1920000` molecule 567729 was created as a neutral point mutant from 550209 
+`$=?D}ICAT>V^BC>$UO%}UYNH` - the exact reaction wasn't recorded before a restart unfortunately, but this is a reasonable assumption. It's origin record is:
+
+`550209,530406,546808,0.000000,1,1892082,48,$=?D}ICAT>V^BC>$UO%}UYNH`
+
+The self-self reaction for 530406 replicates but doesn't cleave, thus duplicating the sequence and doubling the length of the active string. 546808 differs only by *another* point mutation
+
+`$=?D}ICAT>V^BC>$UO%}UYNH` is 550209
+`$=?D}I$AT>V^BC>$UO%}UYNH` is 530406
+
+`546808,527173,524681,0.000000,1,1878154,48,$=?D}I$AT>V^BC>$UO%}UYNH`
+
+`$=?V>DI^AT>W^BC>$UO%UYH` is 527173
+`$=?DI$AT>V^BC>$UO%}UYNH` is 524681 - this has *not* got the killer `}` opcode at position 5 - this is a "standard" parasite on 527173
+
+It remains to answer the origins of this parasite from a self-replicator - the origin statement is: 
+
+`524681,524673,507074,0.000000,3,1791201,6,$=?DI$AT>V^BC>$UO%}UYNH`
+
+`$=?DI$AT>V^BC>$UO%}UYNH` is 524673 - identical sequence to 524681. 507074 is a replicator much like `ZAA`. The origin statement is: 
+
+`524673,524609,507074,0.000000,1,1791163,0,$=?DI^AT>V^BC>$UO%}UYNH`
+
+`$=?DI^AT>V^BC>$UO%}UYNH$=?>DI^AT>V^BC>$UO%}UYNH` is 524609, created by reaction with self-replicator 507074. This sequence is almost identical to a doubling up of 507074, but with a deletion at the 4th position on the active molecule during self-scan, removing the `>` opcode. 
+`$=?>DI^AT>V^BC>$UO%}UYNH$=?>DI^AT>V^BC>$UO%}UYNH`
+
+`524609,507074,507074,0.000000,1,1790981,48,$=?DI^AT>V^BC>$UO%}UYNH$=?>DI^AT>V^BC>$UO%}UYNH`
+
+
+
+
+
+
+
+`524681,524673,507074,0.000000,3,1791201,6,$=?DI$AT>V^BC>$UO%}UYNH`
+`524673,524609,507074,0.000000,1,1791163,0,$=?DI^AT>V^BC>$UO%}UYNH`
+
+Origin of 507074:  
+`507074,429166,429166,0.000000,1,1754014,49,$=?>DI^AT>V^BC>$UO%}UYNH`
+
+
+
+
+
