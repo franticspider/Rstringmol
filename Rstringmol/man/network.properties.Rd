@@ -4,7 +4,7 @@
 \alias{network.properties}
 \title{Identify the network-level properties in a reaction}
 \usage{
-network.properties(nwp)
+network.properties(nwp, dummy.reverse.pwp = NULL)
 }
 \arguments{
 \item{fn}{the file name}
