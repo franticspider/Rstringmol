@@ -68,3 +68,4 @@ Rstringmol/*.pdf
 withoutR/*.o
 withoutR/stst
 withoutR/valgrind/*
+papers/*
