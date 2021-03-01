@@ -18,12 +18,13 @@ knitr::opts_chunk$set(
 
 This file gives example R code to analyse the raw stringmol data and produce analysis plots. The pdf version of this document shows the graphical outputs that can be generated. The .rmd version of the file can be run in Rstudio to generate the outputs. 
 
-The raw stringmol text file outputs are in the `raw` directory. This data can be parsed into R data objects using the script `makeRdata.R`. This is a lengthy analysis, taking about 6 hours on a modern (2020) laptop. Because of this, we have made the R data objects availible in this archive in the `rdata` directory, but to recreate the datasets, the following Rscript command should be used: 
+**NOTE:** Since the output data files from a stringmol run can be large, they are not provided as part of the `Rstringmol` package. The examples below were written to parse the outputs of a dataset available at [https://doi.org/10.15124/305dfdb6-9483-4c5b-8a01-c030570b9c31], and cannot be run without this data being available. Within that dataset, the raw stringmol text file outputs are in the `raw` directory. This data can be parsed into R data objects using the script `makeRdata.R`. This is a lengthy analysis, taking about 6 hours on a modern (2020) laptop. Because of this, we have made the R data objects availible in this archive in the `rdata` directory, but to recreate the datasets, the following Rscript command should be used: 
 
 `Rscript makeRdata.R FULL`
 
-This will generate the rdata objects used, and also some similar graphic in separate pdf files for each run - these can be found in the `rdata/runX` sub directories. 
+This will generate the rdata objects used, and also some similar graphic in separate pdf files for each run - these can be found in the `rdata/runX` sub directories. A version of this vignette is provided in the root of the data archive, named `README.rmd`. 
 
+The example code blocks below are intended to demonstrate how to generate figures which reveal features of a strtingmol run. 
 
 ## Software
 
@@ -41,7 +42,7 @@ Configuration files for each of these runs are available in the `script/runX` fo
 
 ## Running the analysis
 
-The remainder of this document focuses on generating the graphical outputs seen in the paper. The `.rmd` version of this document will run the code and generate the pdf in RStudio using the `knit` command.  
+The remainder of this document focuses on generating the graphical outputs.
 
 ## Loading the R packages
 
@@ -93,7 +94,7 @@ for(rr in 1:8)
 ```
 
 
-With that to hand, we can look at the full population and the species diversity compared with the 'bound only' numbers we plotted above: 
+With that to hand, we can look at the full population and the species diversity as follows: 
 
 
 ```{r popfig, fig.height=6, fig.width=10, message = F, warning=FALSE, eval=FALSE, include=TRUE}
@@ -217,7 +218,9 @@ mtext("Reaction Time", side = 4, line = 2, cex = 1)
 
 ![](unnamed-chunk-2-1.png){width=100%}
 
-## Figure 5: Capacity plots for well-mixed systems
+The plo on the left shows tha the proportion of parasitic reactions is lowest at around `t=1,500,000`, which corresponds with the period on the right hand plot where the reaction time is longest. 
+
+## Capacity plots for well-mixed systems
 
 Here we take the 10 most common self-replicating reactions and calculate the time to reach carrying capacity in a well-mixed system. 
 
@@ -250,7 +253,7 @@ legend("bottom",horiz=T,border = 'n',
 ![](ccplots-1.png){width=100%}
 
 
-## Figure 7: Phylogeny plots
+## Phylogeny plots
 
 The main paper describes a phylogeny for run 2. Here we generate the same for each run: 
 
@@ -273,20 +276,4 @@ for(rr in 1:8){
 }
 
 ```
-
-
-
 ![](plotpyl-1.png){width=100%}
-
-## Appendix:
-
-Finally, here is a summary of the original run names on the YARCC cluster for reference:
-
-- run1 (box-box1):  `smsp/1705smsp/out1`
-- run2 (box-box2):  `smsp/1705smsp/out2`
-- run3 (box-box3):  `smsp/1705smsp/out3`
-- run4 (box-box5):  `smsp/1705smsp/out5`
-- run5 (box-rand2): `smsp/1705smspr/out2`
-- run6 (box-rand3): `smsp/1705smspr/out3`
-- run7 (slot-box4): `smsp/1705sm250/out4`
-- run8 (slot-box5): `smsp/1705sm250/out5`
