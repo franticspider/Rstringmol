@@ -44,7 +44,7 @@ rsconnect/
 # html, pdf and dat files in examples folder
 examples/*.dat
 examples/*.txt
-examples/*.RDS
+examples/**/*.RDS
 examples/*.aux
 examples/*.log
 examples/*.tex
