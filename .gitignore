@@ -67,5 +67,3 @@ Rstringmol/*.pdf
 #object files in withoutR:
 withoutR/*.o
 withoutR/stst
-
-
