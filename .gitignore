@@ -42,24 +42,8 @@ vignettes/*.pdf
 rsconnect/
 
 # html, pdf and dat files in examples folder
-examples/*.dat
-examples/*.txt
-examples/**/*.RDS
-examples/*.aux
-examples/*.log
-examples/*.tex
-
-examples/**/*.png
-examples/**/*.rdx
-examples/**/*.rdb
-examples/**/*.Rdata
-examples/**/*.RData
-examples/**/*.pdf
-examples/**/__packages
-examples/**/*.log
-examples/**/*.html
-
-
+# The examples are now summarised in the vignette
+examples/*
 
 # pdf files in Rstringmol folder
 Rstringmol/*.pdf
