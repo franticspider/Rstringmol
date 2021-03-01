@@ -1,32 +1,5 @@
 
 
-
-
-# TODO: do we need these?
-# OBSOLETE!!!
-# List of reaction types - not sure this is the best place for them...
-rtypes = c(
-  "SelfSelfNoProduct",
-  "SelfSelfReplicator",
-  "SelfSelfDifferentProduct",
-  "Parasite",
-  "NonSelfNoProduct",
-  "NonSelfReplicator",
-  "NonSelfDifferentProduct",
-  "Macromutation"
-)
-
-# TODO: do we need these?
-rcols = c("grey",
-          "blue",
-          "orange",
-          "red",
-          "darkgrey",
-          "deepskyblue",
-          "yellow",
-          "white")
-
-
 print_mols <- function(type,
                        act,
                        pas,
@@ -210,6 +183,8 @@ pairwise.properties <- function(fdata,dummy.result=NULL){
 }
 
 
+
+
 #' Identify the network-level properties in a reaction
 #'
 #' @param fn the file name
@@ -282,7 +257,6 @@ network.properties <- function(nwp,dummy.reverse.pwp = NULL){
 ############################################
 ## PARSING BIG DATA FILES
 
-
 #' Create a data structure from a *.conf* file for passing into the standard *pairwise.properties* function
 #'
 #' @param fn the file name
@@ -300,6 +274,7 @@ pairwise.properties.from.conf <- function(fn){
 
 
 
+
 #' Obtain the reaction properties from an active and passive sequence
 #'
 #' @param actseq the active sequence
@@ -312,6 +287,8 @@ propfromseqs <- function(actseq,passeq){
   ng <- network.properties(pwp)
   return(ng)
 }
+
+
 
 
 #' Obtain the reaction properties of all the reactions in a stringmol run
@@ -350,6 +327,419 @@ runproplist <- function(froot,from=20000,to=2000000,step=20000,outfn=NULL,verbos
   return(rundata)
 
 }
+
+
+
+
+#' Obtain the species count and population sizes from a stringmol datafile
+#'
+#' @param froot the path and file stem of the data files, e.g. "~/Desktop/smsp/out3/out1_%d.conf"
+#' @param trange the time range and step size of the log files
+#' @export
+spdata <- function(froot="",trange=seq(20000,2000000,20000)){
+
+  nspp <- vector(length=length(trange))
+  nmols <- vector(length=length(trange))
+
+  idx <- 1
+  for(tt in trange){
+    fn <- sprintf("%s%d.conf",froot,tt)
+    #message(sprintf("Loading file %s",fn))
+    raw <- read.table(fn,stringsAsFactors = F,fill=T,sep=",")
+
+    ##lx <- raw[str_detect("TOTSPPCT",str_sub(raw$V1,1,8)),]
+
+    lx <- data.frame(raw[str_detect(str_sub(raw$V1,1,40),"extant"),],stringsAsFactors = F)
+    if(nrow(lx) != 1){
+      message(sprintf("%d: problem finding extant species"))
+    }
+    else{
+      nspp[idx] <- as.numeric(str_sub(lx,17,str_length(lx)))
+    }
+    #message(sprintf("%d: Found %d species",tt,nspp[tt]))
+
+    lx <- data.frame(raw[str_detect(str_sub(raw$V1,1,40),"NUMAGENTS"),],stringsAsFactors = F)
+    if(nrow(lx) != 1){
+      message(sprintf("%d: problem finding number of agents"))
+    }
+    else{
+      nmols[idx] <- as.numeric(str_sub(lx,11,str_length(lx)))
+    }
+    #message(sprintf("%d: Found %d mols and %d species",tt,nmols[idx],nspp[idx]))
+    idx <- idx + 1
+  }
+
+  rdf <- data.frame(time=trange,nspp=nspp,nmols=nmols,stringsAsFactors = F)
+
+  return (rdf)
+}
+
+
+
+
+#' Obtain the species count and population sizes from a stringmol datafile
+#' From https://www.dataanalytics.org.uk/make-transparent-colors-in-r/
+#'
+#' @param col the colour
+#' @param percent the percentage transparency
+#' @export
+opcol <- function(col,percent = 70){
+  rgbc<-col2rgb(col)
+  t.col <- rgb(rgbc["red",1], rgbc["green",1], rgbc["blue",1],
+               max = 255,
+               alpha = (100 - percent) * 255 / 100)
+  return(t.col)
+}
+
+
+
+
+#' Deterministic calculation of the carrying capacity of a self-replicator
+#'
+#' @param bprob the bind probability
+#' @param nsteps the number of timesteps to replicate
+#' @param initpop the initial population
+#' @param maxt the time limit on the calculation
+#' @param death the death rate
+#' @param lim the arena size
+#' @export
+well.mixed.dynamics <- function(bprob,nsteps,initpop=100,maxt=20000,death=0.0005,lim=(125*100)){
+
+  t <- 1
+
+  pop <- vector(length=maxt)
+  bpop <- vector(length=maxt)
+  pop[] <- 0
+  bpop[] <- 0
+  pop[1] <- initpop
+
+
+  for(tt in 2:maxt){
+
+    #decay
+    pop[tt]<- pop[tt-1]*(1-death)
+    bpop[tt]<- bpop[tt-1]*(1-death)
+
+    #bind - count a pair of bound reactants as 1 in the bpop array - keeps the maths easier
+    bpop[tt] <- bpop[tt]+(0.5*(pop[tt]*bprob))
+    pop[tt]  <-  pop[tt]-((pop[tt]*bprob))
+
+    #occupancy
+    occ <- pop[tt]+(2*bpop[tt])
+
+    #birthrate is dependant upon occupancy, number of bound mols, and rep.rate
+    pop[tt] <- pop[tt] +(((lim-occ)/lim)  * (bpop[tt]) * (1/nsteps) )
+
+    #unbinding after replication (assume replication and unbinding are the same rate)
+    pop[tt]  <- pop[tt]  + (2 * bpop[tt] * 1/nsteps)
+    bpop[tt] <- bpop[tt] - (bpop[tt] * 1/nsteps)
+  }
+
+  return(data.frame(pop,bpop))
+}
+
+
+
+
+#' Get reaction data from a time, and sort it by frequency of occurrence
+#' NB: it is currently assumed that the data is in timesteps of 20000
+#'
+#' @param time the time
+#' @param rd the data
+#' @param plax whether to plot the left axis
+#' @param plax whether to plot the right axis
+#' @param plax whether to plot the bottom axis
+#' @param mymar the figure margins
+#' @param cols the plot colours (defaults to orange and blue)
+#' @param rno the run number
+#' @export
+dts <- function(time,rd,sr = T){
+  dt <- rd[[time/20000]]
+  dt <- dt[order(dt$nobs,decreasing = T),]
+  if(sr)
+    dt <- dt[dt$pp_SelfReplicator,]
+  return(dt)
+}
+
+
+
+
+#' Figure of population dynamics in a stringmol run
+#'
+#' @param rundata the reaction data from the run
+#' @param popd the population data from the run (including unbound molecules)
+#' @param plax whether to plot the left axis
+#' @param plax whether to plot the right axis
+#' @param plax whether to plot the bottom axis
+#' @param mymar the figure margins
+#' @param cols the plot colours (defaults to orange and blue)
+#' @param rno the run number
+#' @export
+figpopdy <- function(rundata,popd,plax=F,prax=F,pbax=F,mymar = c(0.5,0.5,0.5,0.5),cols = c("orange","blue"),rno=NULL){
+  time <- seq(1:length(rundata))
+  val <- time
+  var <- time
+  par(mar=mymar)
+
+  for(tt in 1:length(time)){
+    val[tt] <- sum(rundata[[tt]]$nobs)*2
+    var[tt] <- length(unique(c(rundata[[tt]]$actseq,rundata[[tt]]$passeq)))
+  }
+  plot(x=time*20000,axes=F,y=val,type="l",xlab="time",ylab="population",col=cols[1],ylim=c(0,12500),lty=2)
+  box()
+  lines(x=popd$time,y=popd$nmols,lty=1,col=cols[1])
+  if(pbax)axis(1)
+  if(plax)axis(2)
+  par(new = T)
+  plot(x=time*20000,y=var,col=cols[2],axes=F,type="l",ylim=c(0,2000),ylab="",xlab="",lty=2)
+  lines(x=popd$time,y=popd$nspp,lty=1,col=cols[2])
+  if(prax)axis(4)
+  if(!is.null(rno))text(labels = sprintf("Run %d",rno),x=0,y=1900,pos = 4)
+
+}
+
+
+
+
+#' Figure of molecule length and reaction time
+#'
+#' @param rundata the reaction data from the run
+#' @param prop the proportion of all reacitons to be included (defaults to 0.1, i.e the top 10 percent)
+#' @param ylim axis limits for the length (left) axis
+#' @param ylim2 axis limits for the reaction time (right) axis
+#' @param plax whether to plot the left axis
+#' @param prax whether to plot the right axis
+#' @param pbax whether to plot the bottom axis
+#' @param mymar the figure margins
+#' @param cols the plot colours (defaults to orange and blue)
+#' @param rno the run number
+#' @param plotlen whether to plot the length
+#' @param quartiles whether to plot the quartiles
+#' @export
+figlentime <- function(rundata,prop=0.1,ylim=NULL,ylim2=NULL,plax,prax,pbax,mymar = c(0.5,0.5,0.5,0.5),cols = c("orange","blue"),rno=NULL,plotlen=T,quartiles=T){
+
+  time <- seq(1:length(rundata))
+  #val <- time
+  #val2 <- time
+
+  # these will be arrays to hold the median and quartile values:
+  valm <- time
+  valql <- time
+  valqh <- time
+
+  lvm <-time
+  lvl <-time
+  lvu <-time
+
+  par(mar=mymar)
+
+  if(is.null(ylim))
+    ylim=c(0,120)
+
+  if(is.null(ylim2))
+    ylim2=c(0,400)
+
+  repvals <- list()
+
+  #for each time
+  for(tt in 1:length(time)){
+    # Get the data
+    rd <- rundata[[tt]]
+    rd <- rd[order(rd$nobs,decreasing = T),]
+
+    #work out the end point - this is to get the average of the top *n* reactions
+    totrp <- sum(rd$nobs)*prop
+    count<- 0
+    rsum <- 0
+    rsum2 <- 0
+    idx <- 1
+    firstentry <- T
+    while(count<totrp){
+      rsum <- rsum + (rd$nobs[idx]*0.5*(rd$actlen[idx] + rd$paslen[idx]))
+      rsum2 <- rsum2 + (rd$nobs[idx]*(rd$nsteps[idx]))
+      count <- count + rd$nobs[idx]
+
+      #gather the data for medians
+      if(firstentry){
+        mdata <- rep( (rd$actlen[idx]), rd$nobs[idx])
+        ldata <- rep(  (rd$nsteps[idx]) , rd$nobs[idx])
+        firstentry <- F
+      }
+      else{
+        mdata <- c(mdata,rep((rd$actlen[idx]), rd$nobs[idx]))
+        ldata <- c(ldata,rep(  (rd$nsteps[idx]) , rd$nobs[idx]))
+      }
+      idx<-idx+1
+    }
+
+    #val[tt] <-rsum/count
+    #val2[tt] <-rsum2/count
+    q <- quantile(mdata)
+    valm[tt] <- q[3]
+    valql[tt] <- q[2] #25th
+    valqh[tt] <- q[4] #75th
+    #q <- quantile(mdata)
+
+    q <- quantile(ldata)
+    lvm[tt]<-q[3]
+    lvl[tt]<-q[2]
+    lvu[tt]<-q[4]
+  }
+
+  if(plotlen){
+    # Plot string length in orange on the firxt axis:
+    plot(x=time*20000,y=valm,type="l",xlab="time",ylab="string length",col=cols[1],axes=F,ylim=ylim)
+
+    #plot quartiles first so line is overlaid
+    if(quartiles){
+      shf <- data.frame(t=time*20000,v=valql)
+      shr <- data.frame(t = rev(time*20000), v = rev(valqh))
+      sh <- rbind(shf,shr)
+      polygon(x=sh$t,y=sh$v,col=opcol(cols[1],percent = 40),border=F)
+    }
+
+    lines(x = time*20000,y=valm,col=cols[1])
+    #plot the lhs y axis now before we get a new ylim
+    if(plax)axis(2)
+
+    par(new=T)
+  }
+
+  plot(x=time*20000,y=lvm,type="l",xlab="time",ylab="",col=cols[2],ylim=ylim2,axes=F)
+
+  if(quartiles){
+    shf <- data.frame(t=time*20000,v=lvl)
+    shr <- data.frame(t = rev(time*20000), v = rev(lvu))
+    sh <- rbind(shf,shr)
+    polygon(x=sh$t,y=sh$v,col=opcol(cols[2]),border=F)
+  }
+  lines(x = time*20000,y=lvm,col=cols[2])
+
+  box()
+  if(pbax)axis(1)
+  if(prax)axis(4)
+  if(!is.null(rno))
+     text(labels = sprintf("Run %d",rno),x=0,y=380,pos = 4)
+
+  #emphasise the orange line:
+  if(plotlen){
+    par(new=T)
+    plot(x=time*20000,y=valm,type="l",xlab="time",ylab="string length",col=cols[1],axes=F,ylim=ylim)
+  }
+}
+
+
+
+#' Figure of number of mutual-replicating vs parasitic reactions
+#'
+#' @param rundata the reaction data from the run
+#' @param ylim y axis limits
+#' @param plax whether to plot the left axis
+#' @param prax whether to plot the right axis
+#' @param pbax whether to plot the bottom axis
+#' @param mymar the figure margins
+#' @param cols the plot colours (defaults to orange and blue)
+#' @param ratio whether to plot the ratio
+#' @param v2 whether to count all replicators (v2=F) or just mututal replicators (v2=T)
+#' @export
+figrepvpar <- function(rundata,ylim=NULL,nsteps=F,plax,prax,pbax,mymar = c(0.5,0.5,0.5,0.5),cols = c("orange","blue"),ratio=F,v2=T){
+  time <- seq(1:length(rundata))
+  nrep <- time
+  nrep <- time
+  npar <- time
+  par(mar=mymar)
+
+  for(tt in 1:length(time)){
+    if(nsteps){
+      if(v2){
+        nrep[tt] <- mean(rundata[[tt]]$nsteps[  rundata[[tt]]$pp_Replicator | rundata[[tt]]$pp_SelfReplicator  ])
+      }else{
+        nrep[tt] <- mean(rundata[[tt]]$nsteps[  rundata[[tt]]$np_MutualRepl | rundata[[tt]]$pp_SelfReplicator  ])
+      }
+      npar[tt] <- mean(rundata[[tt]]$nsteps[  rundata[[tt]]$np_Parasite])
+    }
+    else{
+      if(v2){
+        nrep[tt] <- sum(rundata[[tt]]$nobs[rundata[[tt]]$np_MutualRepl |rundata[[tt]]$pp_SelfReplicator])
+      }else{
+        nrep[tt] <- sum(rundata[[tt]]$nobs[rundata[[tt]]$pp_Replicator |rundata[[tt]]$pp_SelfReplicator])
+      }
+
+      npar[tt] <- sum(rundata[[tt]]$nobs[rundata[[tt]]$np_Parasite])
+    }
+  }
+
+  if(!ratio){
+    if(is.null(ylim))
+      ylim=c(0,5000)
+    plot(x=time*20000,y=nrep,type="l",xlab="time",ylab="population",col=cols[1],ylim=ylim,axes=F)
+    box()
+    if(pbax)axis(1)
+    if(plax)axis(2)
+    par(new = T)
+    plot(x=time*20000,y=npar,col=cols[2],axes=F,type="l",ylim=ylim,ylab="",xlab="")
+    if(prax)axis(4)
+  }
+  else{
+    nrep <- 100*npar/(nrep+npar)
+    if(is.null(ylim))
+      ylim = range(nrep)
+    plot(x=time*20000,y=nrep,type="l",xlab="time",ylab="population",col=cols[2],ylim=ylim,axes=F)
+    box()
+    if(pbax)axis(1)
+    if(plax)axis(2)
+
+  }
+}
+
+
+
+
+
+#' Figure of number of mutual-replicating vs parasitic reactions
+#'
+#' @param rates datframe of the two reaction rates: bind probability (bprob) and
+#' @param title plot title
+#' @param dox whether to plot x axis
+#' @param doy whether to plot y axis
+#' @export
+ccplot <- function(rates,title,dox=F,doy=F){
+  maxt = 10000
+  lim = 125*100
+
+  #drr  <-  d2r
+  rates <- rates[rates$nobs > 1,]
+  rates$carrycap <- 0
+
+  #todo: figure out how to avoid redoing this from scratch!
+  rp <- runReactionFP(c("WWGEWLHHHRLUEUWJJJRJXUUUDYGRHJLRWWRE$BLUBO^B>C$=?>$$BLUBO%}OYHOB","WWGEWLHHHRLUEUWJJJRJXUUUDYGRHJLRWWRE$BLUBO^B>C$=?>$$BLUBO%}OYHOB"))
+  d.seed <- well.mixed.dynamics(rp$bprob,rp$count,maxt = maxt)
+
+  plot(x=seq(1:maxt), y=d.seed$pop+(2*d.seed$bpop),type="l",xlim=c(0,10000),ylim=c(0,lim*1.1),axes=F)#xlab="timesteps",ylab="population")
+  for(rr in 1:min(10,nrow(rates))){#nrow(d5rr)){
+    d.rr <- well.mixed.dynamics(rates$bprob[rr],rates$nsteps[rr],maxt = maxt)
+
+    lines(x=seq(1:maxt),y=d.rr$pop+(2*d.rr$bpop),col="green")
+
+    rates$carrycap[rr]<-max(d.rr$bpop)
+  }
+  title(main = title,line=-1.5)
+  lines(x=seq(1:maxt),y=d.seed$pop+(2*d.seed$bpop))
+  segments(x0=0,x1=20000,y0=lim,lty=2,col="red")
+  segments(x0=0,x1=20000,y0=(5671*2),lty=2,col="blue")
+
+  if(dox){
+    axis(side=1)
+  }else{
+    axis(side=1,labels=F)
+  }
+  if(doy){
+    axis(side=2,labels=F)
+    axis(side=2)
+  }else{
+  }
+}
+
 
 
 #############################################

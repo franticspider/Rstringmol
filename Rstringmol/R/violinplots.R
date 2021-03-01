@@ -7,6 +7,8 @@ require(stringr)
 
 #Here's the basic plotting function:
 # ptype is the switch btween 'beta', 'k' and 'length'#' Load mass spec data from a 2-column space-delimited text file
+
+#' plot a single vioplot in analysing a run
 #'
 #' @param data is the datafile - an Rstringmol data frame of properties
 #' @param cname the name of property column that is to be plotted. Set to NULL to plot all
@@ -19,7 +21,6 @@ require(stringr)
 #' @param wex the scalar for the vioplot width. defaults to 15
 #' @param col the colour of the vioplot. defaults to "black"
 #' @export
-#' @examples
 onevio <- function(data,cname="",text="",start=0,from=0,to=2000000,by=20000,ptype,wex=15,col="black",doplot=F){
 
   dlen <- length(data)

@@ -1,9 +1,9 @@
 Package: Rstringmol
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Analysis toolkit for the stringmol automata chemistry
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
+Author: Simon Hickinbotham
+Maintainer: Simon Hickinbotham <simon.hickinbotham@york.ac.uk>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
 License: What license is it under?
@@ -13,9 +13,14 @@ RoxygenNote: 7.0.2
 LinkingTo: 
     Rcpp
 Depends:
-    Rcpp
-Imports: 
     Rcpp,
-    stringr
+    stringr,
+    data.table,
+    colorRamps
+Imports: 
+    Rcpp
 Suggests: 
-    testthat (>= 2.1.0)
+    testthat (>= 2.1.0),
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
