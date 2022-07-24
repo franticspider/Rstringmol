@@ -373,7 +373,7 @@ runproplist <- function(froot,from=20000,to=2000000,step=20000,outfn=NULL,verbos
 
 #' Obtain the species count and population sizes from a stringmol datafile
 #'
-#' @param froot the path and file stem of the data files, e.g. "~/Desktop/smsp/out3/out1_%d.conf"
+#' @param froot the path and file stem of the data files, e.g. "~/Desktop/smsp/out3/out1_"
 #' @param trange the time range and step size of the log files
 #' @export
 spdata <- function(froot="",trange=seq(20000,2000000,20000)){

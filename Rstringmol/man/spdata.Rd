@@ -7,7 +7,7 @@
 spdata(froot = "", trange = seq(20000, 2e+06, 20000))
 }
 \arguments{
-\item{froot}{the path and file stem of the data files, e.g. "~/Desktop/smsp/out3/out1_%d.conf"}
+\item{froot}{the path and file stem of the data files, e.g. "~/Desktop/smsp/out3/out1_"}
 
 \item{trange}{the time range and step size of the log files}
 }
