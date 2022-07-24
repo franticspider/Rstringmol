@@ -24,8 +24,12 @@
 .Rproj.user/
 
 # produced vignettes
-vignettes/*.html
-vignettes/*.pdf
+Rstringmol/vignettes/*.html
+Rstringmol/vignettes/*.pdf
+Rstringmol/vignettes/**_cache/
+Rstringmol/vignettes/**/figure-html/*
+Rstringmol/vignettes/**/html/*
+Rstringmol/vignettes/**/__packages
 
 # OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
 .httr-oauth

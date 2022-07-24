@@ -1,0 +1,172 @@
+---
+title: "stringmol-analysis-II"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{stringmol-analysis-II}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Summary:
+
+This vignette follows on from the [stringmol-analysis](stringmol-analysis.html) 
+vignette and generates the data sets used in Stepney and Hickinbotham (2022). 
+
+
+## Output files: 
+
+- `species<ON>.csv`
+- `sppcounts<TTTTTTT>.csv`
+- `popdy<ON>.csv`
+- `oeeRunNprops<TTTTTTT>.csv`
+- `selfself<ON>.csv`
+- `qnn<ON>.csv`
+
+
+## Software
+
+Software for generating and interpreting this dataset is available as follows: 
+
+- Stringmol: [https://github.com/uoy-research/stringmol] version 0.2.3.4 
+- Rstringmol: [https://github.com/uoy-research/Rstringmol] version 1.1.0
+
+*Stringmol* runs the artificial chemistry, and *Rstringmol* runs the analysis 
+of the output logfiles generated during the run. 
+
+## Input data
+
+The input data used here is a mix of outputs from the C++ Stringmol program and 
+subsequent analysis as described in the [stringmol-analysis](stringmol-analysis.html) 
+vignette. An example of such data is available from 
+[https://doi.org/10.15124/305dfdb6-9483-4c5b-8a01-c030570b9c31]
+
+The input data covers eight runs of Stringmol which reached 2 million timesteps. 
+
+This data can be downloaded as a single .tgz zipfile of size approximately 1Gb. 
+When unzipped, the dataset is around 6Gb. 
+
+The sample code in this vignette assumes that the input dataset has been unzipped 
+to the working directory from where the R code is being run. The variable `input_data_path`
+can be changed if this is not the case. 
+
+## Output data
+
+The sections below describe how to generate the output data available at []() from 
+the input data described above. 
+
+## Setting file paths
+
+```{r}
+input_data_path = "./"
+output_data_path = "./output"
+```
+
+
+## Loading the R packages
+
+R packages are loaded as follows:
+
+```{r demoraw,eval=T, include=T,message=F}
+require("stringr")
+require("Rstringmol")
+```
+
+
+
+## Generating species and population log files.
+
+An example of how to process the input data to generate the output data is shown below. 
+Here, the code iterates through the input data for each of the eight runs. For each iteration,
+the key functions on each line in the loop execute the following operations:
+
+- `load` reads a file into an R object called `rundata`
+- `getallspp` finds all the species produced in the run
+- `makespptable` then determines the change in population size for each species
+- `write.csv` writes this information to file
+- `makepopdy` generates the `popdy` data structure for qnn analyis
+- `write.table` saves the `popdy` object to file. 
+
+```{r Make popdy file, eval=FALSE, include=TRUE}
+for (rr in 1:8){
+  
+  load(sprintf(   "%srdata/run%d/rprops%02d.RData",input_data_path,rr,rr))
+  pdl<-getallspp(rundata,sprintf("%sraw/run%d/out1_",input_data_path,rr))
+  
+  spp <- makespptable(pdl)
+  write.csv(spp,file = sprintf("%s/runs/run%d/species%02d.csv",output_data_path,
+            rr,rr),quote = F,row.names = F)
+  popdy <- makepopdy(pdl,spp,rr)
+  write.table(popdy,file = sprintf("%s/runs/run%d/popdy%02d.csv",output_data_path,
+              rr,rr),quote = F,row.names = F,col.names = F,sep=',')
+}
+```
+
+
+
+## Reaction files
+
+This code loop iterates over each run, and simply splits the input data object
+into a csv for each recorded time step. 
+
+```{r Make OEE Run File, eval=FALSE, include=TRUE}
+for (rr in 1:8){
+  load(sprintf("%s/rdata/run%d/rprops%02d.RData",input_data_path,rr,rr))
+  froot = sprintf("%s/runs/run%d/oeeRun%dprops",output_data_path,rr,rr)
+  for(ii in 1:length(rundata)){
+    ds = rundata[[ii]]
+    write.csv(ds,file=sprintf("%s%07d.csv",froot,ii*20000))
+  }
+}
+```
+
+
+
+
+## Self-self properties
+
+Now we have created a list of all the species in a run, we can calculate their 'self-self' reaction properties, and thus determine in particular if the molecule is self-replicating.
+This is achieved by loading the species data from csv and calculating the reaction properties for any observed reaction between identical strings. 
+
+```{r Self-self properties, eval=FALSE, include=TRUE}
+for (rr in 1:8){
+  fn = sprintf("%s/runs/run%d/species%02d.csv",output_data_path,rr,rr)
+  idata = read.csv(fn,stringsAsFactors = F)
+  fdata = data.frame(actseq=idata$seq,passeq=idata$seq)
+  pp = pairwise.properties(fdata)
+  write.csv(pp,file = sprintf("selfself%02d.csv",rr),quote=F,row.names = F)
+} 
+```
+
+
+
+## Evolutionary activity (QNN) log files
+
+Finally, the popdy data files are analysed to generate the QNN measure for these runs. In
+addition, the `qnn.summarize` function is used to generate a QNN score for each complete run. 
+
+*this function requires the qnn package to be loaded. See [https://github.com/franticspider/qnn]*
+
+```{r Export QNN, eval=FALSE, include=TRUE}
+require(qnn)
+for (rr in 1:8){
+  #Get the file path of example data set:
+  filename = sprintf("%s/runs/run%d/popdy%02d.csv",output_data_path,
+              rr,rr)
+  
+  x <- read.popdy(filename)
+  qnndata <- qa2(x)
+  
+  outfn <- sprintf("%s/runs/run%d/qnn%02d.csv",output_data_path,rr,rr)
+  popdy.totextfile(qnndata,fn=outfn,asfloat = T)
+  
+  score <- qnn.summarize(qnndata)
+  message(sprintf("%d,%0.6f",rr,score))
+}
+```

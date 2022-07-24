@@ -43,6 +43,41 @@ pairwise.properties <- function(fdata,dummy.result=NULL){
   #create a data frame of unique reactions for this file:
   ur <- unique(data.frame(actseq = fdata$actseq, passeq = fdata$passeq, stringsAsFactors = F))
 
+  if(nrow(ur)<1){
+    message("No bound molecules at this timestep")
+    ur <- data.frame(actseq=character(),
+                     passeq=character(),
+                     product=character(),
+                     pp_ActiveMod=logical(),
+                     pp_PassiveMod=logical(),
+                     pp_SelfMod=logical(),
+                     pp_NoProduct=logical(),
+                     pp_biolRep=logical(),
+                     pp_SelfReplicator=logical(),
+                     pp_Repl1=logical(),
+                     pp_Repl2=logical(),
+                     pp_Jumper=logical(),
+                     actlen=integer(),
+                     paslen=integer(),
+                     outputA=character(),
+                     outputP=character(),
+                     ccopy=integer(),
+                     cmove=integer(),
+                     cover=integer(),
+                     ctogg=integer(),
+                     bprob=double(),
+                     nsteps=integer(),
+                     nprod=integer(),
+                     oneway=logical(),
+                     #Networkproperties:
+                     np_Parasite2=logical(),
+                     np_Parasite1=logical(),
+                     np_Parasite=logical(),
+                     np_MutualRepl=logical(),
+                     np_Hypercycle=logical())
+    return(ur)
+  }
+
   #ur$type <- "unknown"
   ur$product <- ""
 
@@ -190,6 +225,11 @@ pairwise.properties <- function(fdata,dummy.result=NULL){
 #' @param fn the file name
 #' @export
 network.properties <- function(nwp,dummy.reverse.pwp = NULL){
+
+  if(nrow(nwp)<1){
+    #columns are created in pairwise properties
+    return(nwp)
+  }
 
   nwp$np_Parasite2 <- F
   nwp$np_Parasite1 <- F
